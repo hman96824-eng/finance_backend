@@ -1,0 +1,22 @@
+export const messages = {
+  USER_NOT_FOUND: "User not found",
+  INVALID_CREDENTIALS: "Invalid email or password",
+  EMAIL_SENT_SUBJECT: "Password reset OTP",
+  OTP_SENT_MESSAGE: "OTP sent to your email",
+  OTP_REQUEST_NOT_FOUND: "No OTP sent",
+  OTP_EXPIRED: "OTP expired",
+  INVALID_OTP: "Invalid OTP",
+  VERIFIED_OTP: "OTP verified successfully",
+  NEW_PASSWORD: "Choose a different password",
+  PASSWORD_UNMATCH: "do not match password",
+  PASSWORD_RESET: "Your password is reset. You can now login again ",
+  AUTH_TOKEN_REQUIRED: "Authorization token required",
+  AUTH_INVALID_TOKEN: "Invalid or expired token",
+  EMAIL_CHECK: "Valid email is required",
+  PASSWORD_CHECK: "Password must be at least 6 characters long",
+  CONFIRM_PASSWORD: "Passwords do not match",
+  PASSWORD_CHANGED: "Password changed successfully",
+  AUTH_INVALID_EMAIL: "You can change only your password",
+  SERVER_ERROR: "Internal Server Error",
+};
+export default messages;
