@@ -21,14 +21,14 @@ routes(app);
 app.use(errorMiddleware);
 
 const startServer = async () => {
-  try {
-    connectDB();
-    app.listen(port, () => {
-      console.log(`🚀 Server running on ${port}`);
-    });
-  } catch (err) {
-    throw new ApiError(404, err.message);
-  }
+    try {
+        connectDB();
+        app.listen(port, () => {
+            console.log(`🚀 Server running on ${port}`);
+        });
+    } catch (err) {
+        throw new ApiError(404, err.message);
+    }
 };
 
 startServer();

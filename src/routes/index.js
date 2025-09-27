@@ -2,7 +2,7 @@ import authUser from "../modules/user/routes.js";
 import express from "express";
 
 export default (app) => {
-  const apiRoute = express.Router();
-  apiRoute.use("/users", authUser);
-  app.use("/api/v1", apiRoute);
+    const apiRoute = express.Router();
+    apiRoute.use("/users", authUser);
+    app.use("/api/v1", apiRoute);
 };
