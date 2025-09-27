@@ -1,15 +1,16 @@
 import mongoose from "mongoose";
-import appConfig from "./setting.js";
+import appConfig from "./config.js";
 
 const connect = async () => {
     try {
-        if (!appConfig.mongoUri) {
-            throw new Error("MONGO_URI is missing in environment variables");
+        const uri = process.env.MONGO_URI || appConfig.mongoUri;
+        if (!uri) {
+            throw new Error("MongoDB connection string is missing");
         }
 
-        console.log("🔎 Connecting to:", appConfig.mongoUri);
+        console.log("🔎 Connecting to:", uri);
 
-        await mongoose.connect(appConfig.mongoUri, {
+        await mongoose.connect(uri, {
             useNewUrlParser: true,
             useUnifiedTopology: true,
         });

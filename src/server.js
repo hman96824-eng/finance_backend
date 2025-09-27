@@ -4,7 +4,7 @@ dotenv.config();
 import express from 'express';
 import cors from 'cors';
 import router from './routes/index.js';
-import { connect } from './config/index.js';
+import config from './config/index.js';
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -17,7 +17,7 @@ router(app);
 
 const startServer = async () => {
     try {
-        connect();
+        await config.connect();
         app.listen(port, () => {
             console.log(`✅ Server is running on http://localhost:${port}`);
         });

@@ -1,4 +1,94 @@
-import { config } from "../../config/index.js";
+import config from "../../config/index.js";
+
+/**
+ * Invitation Email Template
+ * @param {string} token - invitation token
+ * @param {string} role - role of invited user (e.g., ADMIN, MANAGER)
+ */
+export const generateTeamInviteTemplate = (token, role) => {
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Invitation</title>
+</head>
+<body>
+  <center>
+    <table border="0" cellspacing="0" cellpadding="0" align="center" width="100%" 
+      style="max-width:768px;margin:auto;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif">
+      <tbody>
+        <tr>
+          <td align="center" style="padding:16px">
+            <img src="https://onu.ai/wp-content/uploads/2024/03/onu-logo-blue-300-min.png" 
+              alt="OnuTeam" width="100" style="border-style:none">
+            <h2 style="margin:8px 0 0;font-size:24px;font-weight:400;line-height:1.25;">
+              You’re Invited!
+            </h2>
+          </td>
+        </tr>
+        <tr>
+          <td align="center" style="padding:0;">
+            <table border="0" cellspacing="0" cellpadding="0" width="70%" 
+              style="border:1px solid #e2e4e8; color:#242930">
+              <tbody>
+                <tr>
+                  <td style="padding:24px">
+                    <h3 style="text-align:center;font-size:20px;font-weight:600;color:#24292f">
+                      Invitation to join as <span style="color:#07131C">${role}</span>
+                    </h3>
+                    <p style="margin:10px 0;color:#555;">
+                      You're just a step away from exploring all the amazing features Onu has to offer.
+                    </p>
+                    <p style="margin:10px 0;color:#555;">
+                      Simply click the button below to accept your invitation. The link will expire in <b>24 hours</b>.
+                    </p>
+                    
+                    <table border="0" cellspacing="0" cellpadding="0" align="center" 
+                      style="margin:20px 0 33px;">
+                      <tbody>
+                        <tr>
+                          <td align="center">
+                            <a href="${config.frontEndUrl}auth/register?token=${token}" 
+                              style="background-color:#07131C;color:#fff;text-decoration:none;display:inline-block;
+                              font-size:16px;font-weight:500;border-radius:.5em;padding:.75em 1.5em;" 
+                              target="_blank">
+                              Accept Invitation
+                            </a>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+
+                    <p style="margin:10px 0;color:#555;">
+                      If you fail to register within the given time, the link will expire. Please reach out to your administrator for a new invitation.
+                    </p>
+                    <p style="margin:10px 0;color:#555;">Thanks,<br>The Onu Team</p>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <table border="0" cellspacing="0" cellpadding="0" align="center" width="100%" style="text-align:center">
+      <tbody>
+        <tr>
+          <td style="padding:16px">
+            <p style="margin:10px 0;color:#6a737d;font-size:14px;">
+              You're receiving this email because an invitation to join Onu has been sent to you.
+            </p>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </center>
+</body>
+</html>`;
+};
+
 
 export const generateEmailVerificationTemplate = (token) => {
     return `<!DOCTYPE html>
@@ -182,3 +272,10 @@ export const generateTeamEmailTemplate = (token) => {
 </body>
 </html>`;
 }
+
+export default {
+    generateTeamInviteTemplate,
+    generateEmailVerificationTemplate,
+    generateForgotEmailTemplate,
+    generateTeamEmailTemplate
+};

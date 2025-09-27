@@ -3,13 +3,10 @@ import dotenv from "dotenv";
 dotenv.config();
 
 export const transporter = nodemailer.createTransport({
-  host: "smtp.ethereal.email",
-  port: 587,
-  service: "gmail",
-  secure: false,
+  service: "gmail", // ✅ Gmail service
   auth: {
-    user: process.env.USER_EMAIL,
-    pass: process.env.USER_PASS,
+    user: process.env.USER_EMAIL, // your gmail address
+    pass: process.env.USER_PASS,  // your 16-char App Password
   },
 });
 

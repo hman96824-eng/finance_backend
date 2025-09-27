@@ -1,4 +1,7 @@
-import connect from './db.js'
-import Config from './setting.js'
+import connect from "./db.js";
+import appConfig from "./config.js";
 
-export { connect, Config };
+export default {
+    connect,
+    appConfig,
+};

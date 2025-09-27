@@ -29,13 +29,17 @@ const User = mongoose.model("User", userSchema);
 
 export const inviteSchema = new mongoose.Schema({
     email: { type: String, required: true },
-    role_id: { type: String, enum: ['ADMIN', 'MANAGER'], required: true },
+    role_id: { type: String, enum: ["ADMIN", "MANAGER"], required: true },
+    token: { type: String },
+    expiresAt: { type: Date }, // 🔹 New field
     accepted: { type: Boolean, default: false },
+    invite: { type: Number, default: 1 }, // count of invitations sent
 }, {
     timestamps: true,
 });
 
-const Invite = mongoose.model('Invite', inviteSchema);
+const Invite = mongoose.model("Invite", inviteSchema);
+
 
 
 export default {

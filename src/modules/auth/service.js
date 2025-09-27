@@ -1,9 +1,25 @@
 import models from './model.js';
 import bcrypt from 'bcrypt';
-import { generateToken, verifyToken, transporter } from '../../utils/index.js';
+import crypto from "crypto";
+import { generateToken, verifyToken, transporter, templates } from '../../utils/index.js';
 import tokenUtils from '../../utils/token.js';
 import Messages from '../../constants/messages.js';
 
+
+// ---------------- AUTHENTICATE USER ----------------
+export const authlogin = async (email, password) => {
+    const user = await models.User.findOne({ email });
+    if (!user) {
+        throw new Error("Invalid email or password");
+    }
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+        throw new Error("Invalid email or password");
+    }
+
+    return user; // Return user object if authenticated
+
+};
 // ---------------- USERS ----------------
 export const getAllUsers = async () => {
     return await models.User.find();
@@ -14,91 +30,123 @@ export const getUserById = async (id) => {
 };
 // ---------------- INVITATIONS ----------------
 export const createInvite = async (email, role_id) => {
+    const cleanEmail = email.trim().toLowerCase();
+
     // Check if user already exists
-    const existingUser = await models.User.findOne({ email });
+    const existingUser = await models.User.findOne({ email: cleanEmail });
     if (existingUser) {
-        throw new Error(Messages.USER_ALREADY_EXISTS);
+        throw new Error("User already registered with this email.");
     }
 
-    // Check if invite already exists
-    const existingInvite = await models.Invite.findOne({ email });
-    if (existingInvite) {
-        throw new Error(Messages.INVITE_FAILED);
+    // Check if invite exists already
+    let invite = await models.Invite.findOne({ email: cleanEmail });
+
+    const token = crypto.randomBytes(32).toString("hex"); // always generate fresh token
+    const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24); // 24h expiry
+
+    if (invite) {
+        // Update existing invite
+        invite.token = token;
+        invite.expiresAt = expiresAt;
+        invite.invite = invite.invite + 1;
+        await invite.save();
+    } else {
+        // Create new invite
+        invite = await models.Invite.create({
+            email: cleanEmail,
+            role_id,
+            token,
+            expiresAt,
+            invite: 1,
+        });
     }
 
-    // Generate invite JWT
-    const token = generateToken({ email, role_id }, '1d');
-
-    // Save invite in DB
-    const invite = await models.Invite.create({
-        email,
-        role_id,
-        accepted: false
-    });
-
-    // Send email
-    const link = `${process.env.CLIENT_URL}/register?token=${token}`;
+    // 🔹 Send email with invite link
+    const inviteLink = `${process.env.FRONTEND_URL}/auth/register?token=${token}`;
     await transporter.sendMail({
-        to: email,
-        subject: 'You are invited!',
-        html: `<p>You are invited as <b>${role_id}</b>. <a href="${link}">Click here to accept</a></p>`,
+        from: `"Onu Team" <${process.env.SMTP_USER}>`,
+        to: cleanEmail,
+        subject: "📩 You’re Invited to Join Onu",
+        html: templates.generateTeamInviteTemplate(invite.token, role_id),
     });
 
-    return {
-        message: Messages.INVITE_SENT,
-        token,
-        invite
-    };
+    return invite;
 };
 // ---------------- VERIFY TOKEN ----------------
-export const verifyInviteToken = (token) => {
-    return verifyToken(token);
+export const verifyInviteToken = async (token) => {
+    try {
+        // 1. Find invite by token
+        const invite = await models.Invite.findOne({ token });
+
+        if (!invite) {
+            throw new Error("Invite not found or invalid token");
+        }
+
+        // 2. Check if already accepted
+        if (invite.accepted) {
+            throw new Error("Invitation already accepted");
+        }
+
+        // 3. Check expiry (expiresAt from schema)
+        if (!invite.expiresAt || new Date() > invite.expiresAt) {
+            throw new Error("Invitation token expired");
+        }
+
+        return invite; // returns the invite document
+    } catch (err) {
+        throw new Error(err.message || "Invalid token");
+    }
 };
 // ---------------- REGISTRATION ----------------
-export const registerUser = async (token, userData) => {
-    // Verify token from query/header
-    const decoded = tokenUtils.verifyToken(token);
-
+export const registerUser = async (inviteToken, userData) => {
     const { name, phone, password, confirmPassword } = userData;
+
     if (!password || password !== confirmPassword) {
         throw new Error(Messages.PASSWORD_INVALID);
     }
 
-    // Check if user already exists
-    const existingUser = await models.User.findOne({ email: decoded.email });
-    if (existingUser) {
-        throw new Error(Messages.USER_ALREADY_EXISTS);
+    // 1️⃣ Find invite by token
+    const invite = await models.Invite.findOne({ token: inviteToken });
+    if (!invite) throw new Error(Messages.TOKEN_INVALID);
+
+    // 2️⃣ Check expiry
+    if (!invite.expiresAt || invite.expiresAt < new Date()) {
+        throw new Error("Invitation expired. Please request a new invite.");
     }
 
-    // Check invite
-    const invite = await models.Invite.findOne({ email: decoded.email });
-    if (!invite) {
-        throw new Error(Messages.INVITE_FAILED);
+    // 3️⃣ Check if already accepted
+    if (invite.accepted) {
+        throw new Error("Invitation already used.");
     }
 
-    // Hash password
+    // 4️⃣ Check if user already exists
+    const existingUser = await models.User.findOne({ email: invite.email });
+    if (existingUser) throw new Error(Messages.USER_ALREADY_EXISTS);
+
+    // 5️⃣ Hash password & create user
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create new user
     const newUser = new models.User({
         name,
-        email: decoded.email,
+        email: invite.email,
         phone,
         password: hashedPassword,
-        role_id: decoded.role_id,
-        status: 'active',
+        role_id: invite.role_id,
+        status: "active",
     });
 
     await newUser.save();
 
-    // ✅ Update invite to accepted
+    // 6️⃣ Mark invite accepted
     invite.accepted = true;
+    invite.token = null;
+    invite.expiresAt = null;
     await invite.save();
 
-    // Auth token
+    // 7️⃣ Generate auth token
     const authToken = generateToken(
         { id: newUser._id, email: newUser.email, role: newUser.role_id },
-        process.env.JWT_EXPIRES_IN || '7d'
+        process.env.JWT_EXPIRES_IN || "7d"
     );
 
     return {
@@ -132,6 +180,7 @@ export const toggleUserStatus = async (id) => {
 };
 
 export default {
+    authlogin,
     getAllUsers,
     getUserById,
     createInvite,
