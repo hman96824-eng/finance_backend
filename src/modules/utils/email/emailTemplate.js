@@ -38,7 +38,7 @@ const GenerateOtpEmailTemplate = (otp) => {
                       This OTP will expire in <strong>15 minutes</strong>. Please do not share it with anyone.
                     </p>
                     <p style="margin-top:20px;margin-bottom:10px;text-align:center">
-                      Thanks,<br>The Onu Team
+                      Thanks,<br>The developer Team
                     </p>
                   </td>
                 </tr>
@@ -54,7 +54,7 @@ const GenerateOtpEmailTemplate = (otp) => {
         <tr>
           <td style="padding:16px">
             <p style="margin-top:0;margin-bottom:10px;color:#6a737d;font-size:14px">
-              You're receiving this email because an OTP was requested for your Onu account.
+              You're receiving this email because an OTP was requested for verification of your account.
             </p>
           </td>
         </tr>

@@ -13,12 +13,19 @@ export const login = async (req, res, next) => {
     next(err);
   }
 };
-
 // signup
-
 export const signup = async (req, res, next) => {
   try {
     const data = await userService.signup(req.body);
+    return successResponse(res, data, messages.CONFIRM_EMAIL);
+  } catch (err) {
+    next(err);
+  }
+};
+// verifySignup
+export const verifySignup = async (req, res, next) => {
+  try {
+    const data = await userService.verifySignup(req.body);
     return successResponse(res, data, messages.REGISTER_MESSAGE);
   } catch (err) {
     next(err);
@@ -91,6 +98,7 @@ export const changePassword = async (req, res, next) => {
 export default {
   login,
   signup,
+  verifySignup,
   forgetpassword,
   verifyCode,
   resetPassword,

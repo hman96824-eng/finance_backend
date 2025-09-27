@@ -9,7 +9,7 @@ export const messages = {
   INVALID_OTP: "Invalid OTP",
   VERIFIED_OTP: "OTP verified successfully",
   NEW_PASSWORD: "Choose a different password",
-  PASSWORD_UNMATCH: "do not match password",
+  PASSWORD_UNMATCH: " password do not match ",
   PASSWORD_RESET: "Your password is reset. You can now login again ",
   AUTH_TOKEN_REQUIRED: "Authorization token required",
   AUTH_INVALID_TOKEN: "Invalid or expired token",
@@ -21,6 +21,7 @@ export const messages = {
   SERVER_ERROR: "Internal Server Error",
   LOGIN_MESSAGE: "login successful",
   REGISTER_MESSAGE: "Registered successfully",
+  CONFIRM_EMAIL: "Verify you Email.",
   NAME_CHECK: "Name should be atleast 3 charactors long",
   PHONE_CHECK: "Phone number must begin with country code",
 };

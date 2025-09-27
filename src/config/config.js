@@ -10,6 +10,9 @@ export const config = {
   EMAIL_PORT: process.env.EMAIL_PORT,
   EMAIL_SERVICE: process.env.EMAIL_SERVICE,
   EMAIL_HOST: process.env.EMAIL_HOST,
+  ACCESS_EXPIRES_IN: process.env.ACCESS_EXPIRES_IN,
+  REFRESH_EXPIRES_IN: process.env.REFRESH_EXPIRES_IN,
+  JWT_REFRESH_SECRET: process.env.JWT_REFRESH_SECRET,
 };
 
 export default config;
