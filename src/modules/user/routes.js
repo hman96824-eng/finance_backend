@@ -7,11 +7,13 @@ import {
   requestOTP,
   verifyOTP,
   resetpassword,
+  registerValidation,
 } from "./validation.js";
 const router = express.Router();
 
 router
   .post("/login", validate(loginValidation), userController.login)
+  .post("/register", validate(registerValidation), userController.signup)
   .post("/forgetpassword", validate(requestOTP), userController.forgetpassword)
   .post("/verifyCode", validate(verifyOTP), userController.verifyCode)
   .post("/resetpassword", validate(resetpassword), userController.resetPassword)

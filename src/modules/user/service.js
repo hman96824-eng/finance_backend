@@ -6,6 +6,8 @@ import { config } from "../../config/config.js";
 import transporter from "../../config/mail.js";
 import { comparePassword, hashPassword } from "../utils/bcrypt.helper.js";
 import GenerateOtpEmailTemplate from "../utils/email/emailTemplate.js";
+import User from "./model.js";
+import Otp from "./temp/otp.model.js";
 
 // login user
 export const login = async ({ email, password }) => {
@@ -26,6 +28,32 @@ export const login = async ({ email, password }) => {
     user: { id: user._id, email: user.email, role: user.role_id },
   };
 };
+
+// register user
+
+export const signup = async ({ name, email, phone, role_id, password }) => {
+  const user = await findByEmail(email);
+  if (user) throw new ApiError(404, messages.USER_EXISTS);
+  const otp = Math.floor(Math.random() * 10000)
+    .toString()
+    .padStart(4, "0");
+  const expiry = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes expiry time s
+
+  await Otp.findOneAndUpdate(
+    { email },
+    { otp, expiry, userData: { name, email, phone, role_id, password } },
+    { upsert: true, new: true }
+  );
+
+  await transporter.sendMail({
+    from: config.EMAIL_USER,
+    to: email,
+    html: GenerateOtpEmailTemplate(otp),
+  });
+};
+
+// verifyOtp for registration
+
 // forget password
 export const forgetpassword = async ({ email }) => {
   const user = await findByEmail(email);
@@ -85,6 +113,7 @@ export const resetPassword = async ({
 
 export default {
   login,
+  signup,
   forgetpassword,
   verifyCode,
   resetPassword,

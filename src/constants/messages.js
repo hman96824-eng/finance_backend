@@ -1,5 +1,6 @@
 export const messages = {
   USER_NOT_FOUND: "User not found",
+  USER_EXISTS: "This email already registered",
   INVALID_CREDENTIALS: "Invalid email or password",
   EMAIL_SENT_SUBJECT: "Password reset OTP",
   OTP_SENT_MESSAGE: "OTP sent to your email",
@@ -18,5 +19,9 @@ export const messages = {
   PASSWORD_CHANGED: "Password changed successfully",
   AUTH_INVALID_EMAIL: "You can change only your password",
   SERVER_ERROR: "Internal Server Error",
+  LOGIN_MESSAGE: "login successful",
+  REGISTER_MESSAGE: "Registered successfully",
+  NAME_CHECK: "Name should be atleast 3 charactors long",
+  PHONE_CHECK: "Phone number must begin with country code",
 };
 export default messages;

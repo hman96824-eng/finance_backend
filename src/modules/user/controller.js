@@ -8,7 +8,18 @@ export const login = async (req, res, next) => {
   try {
     const data = await userService.login(req.body);
     res.setHeader("Authorization", `Bearer ${data.token}`);
-    return successResponse(res, data, "login successful");
+    return successResponse(res, data, messages.LOGIN_MESSAGE);
+  } catch (err) {
+    next(err);
+  }
+};
+
+// signup
+
+export const signup = async (req, res, next) => {
+  try {
+    const data = await userService.signup(req.body);
+    return successResponse(res, data, messages.REGISTER_MESSAGE);
   } catch (err) {
     next(err);
   }
@@ -79,6 +90,7 @@ export const changePassword = async (req, res, next) => {
 
 export default {
   login,
+  signup,
   forgetpassword,
   verifyCode,
   resetPassword,
