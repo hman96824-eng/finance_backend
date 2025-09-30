@@ -159,6 +159,8 @@ export const createInvite = async (email, role_id) => {
     invite = await inviteRepo.create({ email: cleanEmail, role_id, token, expiresAt, invite: 1 });
     console.log("check 11");
 
+
+
   }
   console.log(config.USER_EMAIL);
 
