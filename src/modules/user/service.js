@@ -160,6 +160,7 @@ export const createInvite = async (email, role_id) => {
     console.log("check 11");
 
   }
+  console.log(config.USER_EMAIL);
 
   await transporter.sendMail({
     from: `Onu Team ${config.USER_EMAIL}`,
@@ -167,7 +168,7 @@ export const createInvite = async (email, role_id) => {
     subject: "📩 You’re Invited to Join Onu",
     html: templates.generateTeamInviteTemplate(invite.token, role_id),
   });
-  console.log("check 12");
+  console.log("check 12",);
 
 
   return invite;
