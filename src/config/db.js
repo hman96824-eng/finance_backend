@@ -3,9 +3,6 @@ import { config } from "./config.js";
 
 const connectDB = async () => {
   try {
-    console.log("Attempting to connect to MongoDB...");
-    console.log("Connection URI:", config.MONGO_URI);
-
     await mongoose.connect(config.MONGO_URI, {
       useNewUrlParser: true,
       useUnifiedTopology: true,

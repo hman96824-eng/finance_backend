@@ -1,5 +1,6 @@
-import { config } from "../../config/config.js";
+import { config } from "../config/config.js";
 import jwt from "jsonwebtoken";
+
 // generateToken
 export const generateToken = (payload) => {
   return jwt.sign(payload, config.JWT_SECRET, {

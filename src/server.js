@@ -1,12 +1,13 @@
 import dotenv from "dotenv";
 dotenv.config();
+
 import { config } from "./config/config.js";
 import connectDB from "./config/db.js";
 import routes from "./routes/index.js";
 import cors from "cors";
 import express from "express";
-import ApiError from "./modules/utils/ApiError.js";
-import errorMiddleware from "./middleware/error.middleware.js";
+import ApiError from "./utils/ApiError.js";
+import finalresponse from "./middleware/response.js";
 
 const port = config.PORT || 5000;
 
@@ -18,13 +19,13 @@ app.use(cors());
 routes(app);
 
 // Error handling middleware (should be last)
-app.use(errorMiddleware);
+app.use(finalresponse);
 
 const startServer = async () => {
     try {
         connectDB();
         app.listen(port, () => {
-            console.log(`🚀 Server running on ${port}`);
+            console.log(`✅ Server running on ${port}`);
         });
     } catch (err) {
         throw new ApiError(404, err.message);
