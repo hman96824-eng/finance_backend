@@ -1,5 +1,6 @@
 import dotenv from "dotenv";
 dotenv.config();
+
 export const config = {
     PORT: process.env.PORT,
     MONGO_URI: process.env.MONGO_URI,
@@ -17,5 +18,8 @@ export const config = {
     smtpPass: process.env.SMTP_PASS,
     JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN
 };
+
+console.log(config);
+
 
 export default config;
