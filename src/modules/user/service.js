@@ -166,7 +166,7 @@ export const createInvite = async (email, role_id) => {
   console.log(config.USER_EMAIL);
 
   await sendEmail({
-    to: cleanEmail,
+    to: email,
     subject: "Welcome to Our App 🎉",
     html: templates.generateTeamInviteTemplate(invite?.token, role_id),
   });
