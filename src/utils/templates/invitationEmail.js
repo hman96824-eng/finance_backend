@@ -91,9 +91,6 @@ export const generateTeamInviteTemplate = (token, role) => {
 
 
 export const generateEmailVerificationTemplate = (token) => {
-    console.log(token, "token");
-    console.log(config?.frontEndUrl, "email");
-
 
     return `<!DOCTYPE html>
 <html lang="en">
@@ -126,7 +123,7 @@ export const generateEmailVerificationTemplate = (token) => {
                                             <tbody>
                                                 <tr>
                                                     <td align="center">
-                                                        <a href="auth/verify-email?token=" style="background-color:#07131C;color:#fff;text-decoration:none !important;display:inline-block;font-size:inherit;font-weight:500;line-height:1.5;white-space:nowrap;vertical-align:middle;border-radius:.5em;padding:.75em 1.5em;" target="_blank">Verify your account</a>
+                                                        <a href="${config.frontEndUrl}auth/verify-email?token=${token}" style="background-color:#07131C;color:#fff;text-decoration:none !important;display:inline-block;font-size:inherit;font-weight:500;line-height:1.5;white-space:nowrap;vertical-align:middle;border-radius:.5em;padding:.75em 1.5em;" target="_blank">Verify your account</a>
                                                     </td>
                                                 </tr>
                                             </tbody>

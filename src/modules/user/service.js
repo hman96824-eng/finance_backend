@@ -95,7 +95,6 @@ export const forgetpassword = async ({ email }) => {
     html: GenerateOtpEmailTemplate(otp),
   });
 };
-
 export const verifyCode = async ({ email, code }) => {
   const user = await userRepo.findOne({ email });
   if (!user) throw ApiError.notFound(messages.USER_NOT_FOUND);
@@ -110,7 +109,6 @@ export const verifyCode = async ({ email, code }) => {
   await user.save();
   return { message: messages.VERIFIED_OTP };
 };
-
 export const resetPassword = async ({ email, newPassword, confirmPassword }) => {
   const user = await userRepo.findOne({ email });
   if (!user) throw ApiError.notFound(messages.USER_NOT_FOUND);
@@ -168,21 +166,9 @@ export const createInvite = async (email, role_id) => {
   await sendEmail({
     to: email,
     subject: "Welcome to Our App 🎉",
-    html: templates.generateTeamInviteTemplate(invite?.token, role_id),
+    html: templates.generateTeamInviteTemplate(invite?.token),
   });
-  // console.log(transporter?.auth?.pass, "password")
-  // console.log(transporter, "transporter")
 
-
-  // const emailContent = templates.generateTeamInviteTemplate(invite?.token, role_id)
-
-  // console.log(emailContent)
-  // await transporter.sendMail({
-  //   from: `Onu Team ${config?.USER_EMAIL}`,
-  //   to: cleanEmail,
-  //   subject: "📩 You’re Invited to Join Onu",
-  //   html: emailContent
-  // });
   console.log("check 12",);
 
 
