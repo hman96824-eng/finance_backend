@@ -16,7 +16,8 @@ export const config = {
     frontEndUrl: process.env.CLIENT_URL,
     smtpUser: process.env.SMTP_USER,
     smtpPass: process.env.SMTP_PASS,
-    JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN
+    JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN,
+    SENDGRID_API_KEY: process.env.SENDGRID_API_KEY
 };
 
 console.log(config);

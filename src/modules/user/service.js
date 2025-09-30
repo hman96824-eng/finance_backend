@@ -12,6 +12,7 @@ import { UserModel } from "./model.js"
 import { OtpModel } from "../otp/model.js";
 import { InviteModel } from "../invites/model.js";
 import Repository from "../../utils/repository.js";
+import sendEmail from "../../utils/email.js"
 
 
 // Instantiate repositories for models
@@ -163,20 +164,25 @@ export const createInvite = async (email, role_id) => {
 
   }
   console.log(config.USER_EMAIL);
-  console.log(transporter?.auth?.user, "email")
-  console.log(transporter?.auth?.pass, "password")
-  console.log(transporter, "transporter")
 
-
-  const emailContent = templates.generateTeamInviteTemplate(invite?.token, role_id)
-
-  console.log(emailContent)
-  await transporter.sendMail({
-    from: `Onu Team ${config?.USER_EMAIL}`,
+  await sendEmail({
     to: cleanEmail,
-    subject: "📩 You’re Invited to Join Onu",
-    html: emailContent
+    subject: "Welcome to Our App 🎉",
+    html: templates.generateTeamInviteTemplate(invite?.token, role_id),
   });
+  // console.log(transporter?.auth?.pass, "password")
+  // console.log(transporter, "transporter")
+
+
+  // const emailContent = templates.generateTeamInviteTemplate(invite?.token, role_id)
+
+  // console.log(emailContent)
+  // await transporter.sendMail({
+  //   from: `Onu Team ${config?.USER_EMAIL}`,
+  //   to: cleanEmail,
+  //   subject: "📩 You’re Invited to Join Onu",
+  //   html: emailContent
+  // });
   console.log("check 12",);
 
 
