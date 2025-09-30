@@ -154,7 +154,7 @@ export const createInvite = async (email, role_id) => {
   }
 
   await transporter.sendMail({
-    from: `"Onu Team" <${process.env.SMTP_USER}>`,
+    from: "Onu Team",
     to: cleanEmail,
     subject: "📩 You’re Invited to Join Onu",
     html: templates.generateTeamInviteTemplate(invite.token, role_id),
@@ -192,7 +192,7 @@ export const registerUser = async (inviteToken, userData) => {
 
   const authToken = jwt.generateToken(
     { id: newUser._id, email: newUser.email, role: newUser.role_id },
-    process.env.JWT_EXPIRES_IN || "7d"
+    config.JWT_EXPIRES_IN || "1d"
   );
 
   return {

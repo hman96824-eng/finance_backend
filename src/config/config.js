@@ -7,7 +7,6 @@ export const config = {
     NODE_ENV: process.env.NODE_ENV,
     EMAIL_USER: process.env.USER_EMAIL,
     EMAIL_PASS: process.env.USER_PASS,
-    EMAIL_PORT: process.env.EMAIL_PORT,
     EMAIL_SERVICE: process.env.EMAIL_SERVICE,
     EMAIL_HOST: process.env.EMAIL_HOST,
     ACCESS_EXPIRES_IN: process.env.ACCESS_EXPIRES_IN,
@@ -16,6 +15,7 @@ export const config = {
     frontEndUrl: process.env.CLIENT_URL,
     smtpUser: process.env.SMTP_USER,
     smtpPass: process.env.SMTP_PASS,
+    JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN
 };
 
 export default config;
