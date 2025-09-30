@@ -9,8 +9,7 @@ export const transporter = nodemailer.createTransport({
   },
 });
 
-console.log(transporter?.auth?.user, "email")
-console.log(transporter?.auth?.pass, "password")
+
 
 console.log(config?.USER_EMAIL, "email2");
 console.log(config?.USER_PASS, "pass");
