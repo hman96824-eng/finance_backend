@@ -52,7 +52,7 @@ export const signup = async ({ name, email, phone, role_id, password, confirmPas
   );
 
   await transporter.sendMail({
-    from: config.EMAIL_USER,
+    from: config.USER_EMAIL,
     to: email,
     subject: "Verification Email",
     html: GenerateOtpEmailTemplate(otp),
@@ -88,7 +88,7 @@ export const forgetpassword = async ({ email }) => {
   await user.save();
 
   await transporter.sendMail({
-    from: config.EMAIL_USER,
+    from: config.USER_EMAIL,
     to: user.email,
     subject: messages.EMAIL_SENT_SUBJECT,
     html: GenerateOtpEmailTemplate(otp),
@@ -154,7 +154,7 @@ export const createInvite = async (email, role_id) => {
   }
 
   await transporter.sendMail({
-    from: "Onu Team",
+    from: `Onu Team ${config.USER_EMAIL}`,
     to: cleanEmail,
     subject: "📩 You’re Invited to Join Onu",
     html: templates.generateTeamInviteTemplate(invite.token, role_id),
