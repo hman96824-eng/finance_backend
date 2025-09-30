@@ -19,19 +19,12 @@ router
   .post("/changepassword", middleware.authenticate, validate(validation.resetPassword), userController.changePassword)
   // zeeshan
   .get("/", middleware.authenticate, middleware.invitePermission, userController.getUser)
+  .get("/health", userController.health)
   .get("/:id", middleware.authenticate, middleware.invitePermission, validate(validation.idParam, "params"), userController.getUserById)
   .get("/profile", middleware.authenticate, userController.getProfile)
   .put("/:id", middleware.authenticate, validate(validation.idParam, "params"), validate(validation.toggleUserStatusValidation), userController.toggleUserStatus)
   .post("/invite", middleware.authenticate, middleware.invitePermission, validate(validation.inviteUserValidation), userController.sendInvitation)
   .post("/register", validate(validation.completeRegistrationValidation), userController.completeRegistration)
-  .get("/dashboard", middleware.authenticate, userController.dashboard);
-// .get('/', middleware.authenticate, middleware.invitePermission, userController.getUser) // Get all users
-// .get('/:id', middleware.authenticate, middleware.invitePermission, userController.getUserById) // Get user by ID
-// .get('/profile', middleware.authenticate, userController.getProfile) // Get own profile
-// .put('/:id', middleware.authenticate, userController.toggleUserStatus) // Update user status (active/inactive)
-// .post('/invite', middleware.authenticate, middleware.invitePermission, userController.sendInvitation)
-// .post('/register', userController.completeRegistration)
-// .get('/dashboard', middleware.authenticate, userController.dashboard)
-
+  .get("/dashboard", middleware.authenticate, userController.dashboard)
 
 export default router;

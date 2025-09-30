@@ -225,6 +225,9 @@ export const getProfile = async (req, res) => {
   }
 };
 
+export const health = async (req, res) => {
+  res.status(200).json({ success: true, message: "ok" });
+}
 
 export default {
   login,
@@ -244,4 +247,5 @@ export default {
   completeRegistration,
   dashboard,
   getProfile,
+  health
 };
