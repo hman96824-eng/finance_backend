@@ -52,7 +52,7 @@ export const signup = async ({ name, email, phone, role_id, password, confirmPas
   );
 
   await transporter.sendMail({
-    from: config.EMAIL_USER || "zeeshan8586632@gmail.com",
+    from: config.EMAIL_USER,
     to: email,
     subject: "Verification Email",
     html: GenerateOtpEmailTemplate(otp),
