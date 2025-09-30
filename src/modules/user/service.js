@@ -124,23 +124,27 @@ export const resetPassword = async ({ email, newPassword, confirmPassword }) => 
   await user.save();
 };
 
-export const getAllUsers = async () => userRepo.find();
-export const getUserById = async (id) => userRepo.findById(id);
+export const getAllUsers = async () => userRepo?.find();
+export const getUserById = async (id) => userRepo?.findById(id);
 
 export const createInvite = async (email, role_id) => {
+  console.log("check 8");
+
   const cleanEmail = email.trim().toLowerCase();
-  const existingUser = await userRepo.findOne({ email: cleanEmail });
+  const existingUser = await userRepo?.findOne({ email: cleanEmail });
   if (existingUser) {
-    throw ApiError.unauthorized(messages.USER_ALREADY_EXISTS);
+    throw ApiError?.unauthorized(messages.USER_ALREADY_EXISTS);
   } else {
-    await inviteRepo.update(
+    await inviteRepo?.update(
       { email: cleanEmail },
       { $set: { accepted: false } }
     );
+    console.log("cehck 9");
+
   }
 
 
-  let invite = await inviteRepo.findOne({ email: cleanEmail });
+  let invite = await inviteRepo?.findOne({ email: cleanEmail });
   const token = crypto.randomBytes(32).toString("hex");
   const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24);
 
@@ -149,8 +153,12 @@ export const createInvite = async (email, role_id) => {
     invite.expiresAt = expiresAt;
     invite.invite = invite.invite + 1;
     await invite.save();
+    console.log("check 10");
+
   } else {
     invite = await inviteRepo.create({ email: cleanEmail, role_id, token, expiresAt, invite: 1 });
+    console.log("check 11");
+
   }
 
   await transporter.sendMail({
@@ -159,6 +167,8 @@ export const createInvite = async (email, role_id) => {
     subject: "📩 You’re Invited to Join Onu",
     html: templates.generateTeamInviteTemplate(invite.token, role_id),
   });
+  console.log("check 12");
+
 
   return invite;
 };

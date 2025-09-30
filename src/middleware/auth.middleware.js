@@ -38,7 +38,11 @@ export const invitePermission = (req, res, next) => {
 
         if (!req?.user?.role_id || req?.user?.role_id?.toLowerCase() !== 'admin') {
             return res.status(403).json({ message: messages.UNAUTHORIZED });
+            console.log("check 2");
+
         }
+        console.log("check 3 ispresission");
+
 
         next();
     }

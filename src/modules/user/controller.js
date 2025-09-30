@@ -122,11 +122,17 @@ export const getUserById = async (req, res, next) => {
 };
 export const sendInvitation = async (req, res) => {
   try {
+    console.log("check 4");
+
     const { email, role_id } = req.body;
 
     if (!email || !role_id) {
       return res.status(400).json({ message: "Email and role_id are required." });
+      console.log("check 5");
+
     }
+
+    console.log("check 6");
 
     const invite = await userService.createInvite(email, role_id);
 
@@ -140,6 +146,8 @@ export const sendInvitation = async (req, res) => {
         expiresAt: invite.expiresAt,
       },
     });
+    console.log("chcek 7");
+
 
   } catch (error) {
     res.status(400).json({ message: error.message });
