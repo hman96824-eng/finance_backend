@@ -17,7 +17,8 @@ export const config = {
     smtpUser: process.env.SMTP_USER,
     smtpPass: process.env.SMTP_PASS,
     JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN,
-    SENDGRID_API_KEY: process.env.SENDGRID_API_KEY
+    SENDGRID_API_KEY: process.env.SENDGRID_API_KEY,
+    CORS_ORIGIN: process.env.CORS_ORIGIN
 };
 
 console.log(config);
