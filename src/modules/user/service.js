@@ -166,7 +166,7 @@ export const createInvite = async (email, role_id) => {
   await sendEmail({
     to: email,
     subject: "Welcome to Our App 🎉",
-    html: templates.generateTeamInviteTemplate(invite?.token),
+    html: templates.generateTeamInviteTemplate(invite?.token, role_id),
   });
 
   console.log("check 12",);
@@ -212,6 +212,8 @@ export const registerUser = async (inviteToken, userData) => {
     user: { id: newUser._id, name: newUser.name, email: newUser.email, role_id: newUser.role_id },
     token: authToken,
   };
+  console.log("registeration is successfuly");
+
 };
 export const toggleUserStatus = async (id) => {
   const user = await userRepo.findById(id);

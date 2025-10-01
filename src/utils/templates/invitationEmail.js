@@ -6,6 +6,8 @@ import config from "../../config/index.js";
  * @param {string} role - role of invited user (e.g., ADMIN, MANAGER)
  */
 export const generateTeamInviteTemplate = (token, role) => {
+    const inviteUrl = `${config.frontEndUrl}auth/register?token=${token}`;
+
     return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -13,15 +15,15 @@ export const generateTeamInviteTemplate = (token, role) => {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Invitation</title>
 </head>
-<body>
+<body style="margin:0;padding:0;background-color:#f9f9f9;">
   <center>
     <table border="0" cellspacing="0" cellpadding="0" align="center" width="100%" 
-      style="max-width:768px;margin:auto;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif">
+      style="max-width:768px;margin:auto;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;background-color:#ffffff;">
       <tbody>
         <tr>
           <td align="center" style="padding:16px">
             <img src="https://onu.ai/wp-content/uploads/2024/03/onu-logo-blue-300-min.png" 
-              alt="OnuTeam" width="100" style="border-style:none">
+              alt="Onu Team Logo" width="100" style="border-style:none">
             <h2 style="margin:8px 0 0;font-size:24px;font-weight:400;line-height:1.25;">
               You’re Invited!
             </h2>
@@ -29,8 +31,8 @@ export const generateTeamInviteTemplate = (token, role) => {
         </tr>
         <tr>
           <td align="center" style="padding:0;">
-            <table border="0" cellspacing="0" cellpadding="0" width="70%" 
-              style="border:1px solid #e2e4e8; color:#242930">
+            <table border="0" cellspacing="0" cellpadding="0" width="90%" 
+              style="border:1px solid #e2e4e8; color:#242930;">
               <tbody>
                 <tr>
                   <td style="padding:24px">
@@ -49,16 +51,21 @@ export const generateTeamInviteTemplate = (token, role) => {
                       <tbody>
                         <tr>
                           <td align="center">
-                            <a href="${config.frontEndUrl}auth/register?token=${token}" 
+                            <a href="${inviteUrl}" 
                               style="background-color:#07131C;color:#fff;text-decoration:none;display:inline-block;
                               font-size:16px;font-weight:500;border-radius:.5em;padding:.75em 1.5em;" 
-                              target="_blank">
+                              target="_blank" rel="noopener noreferrer">
                               Accept Invitation
                             </a>
                           </td>
                         </tr>
                       </tbody>
                     </table>
+
+                    <p style="margin:10px 0;color:#555;">
+                      If the button above doesn’t work, copy and paste this URL into your browser:<br>
+                      <a href="${inviteUrl}" target="_blank" rel="noopener noreferrer">${inviteUrl}</a>
+                    </p>
 
                     <p style="margin:10px 0;color:#555;">
                       If you fail to register within the given time, the link will expire. Please reach out to your administrator for a new invitation.
@@ -88,6 +95,7 @@ export const generateTeamInviteTemplate = (token, role) => {
 </body>
 </html>`;
 };
+
 
 
 export const generateEmailVerificationTemplate = (token) => {
