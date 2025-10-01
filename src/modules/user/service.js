@@ -55,7 +55,7 @@ export const signup = async ({ name, email, phone, role_id, password, confirmPas
   await sendEmail({
     to: email,
     subject: messages.EMAIL_SENT_SUBJECT,
-    html: GenerateOtpEmailTemplate(token),
+    html: GenerateOtpEmailTemplate(otp),
   });
 };
 export const verifySignup = async ({ email, code }) => {
