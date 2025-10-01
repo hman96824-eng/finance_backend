@@ -52,11 +52,10 @@ export const signup = async ({ name, email, phone, role_id, password, confirmPas
     { upsert: true, new: true }
   );
 
-  await transporter.sendMail({
-    from: config.USER_EMAIL,
+  await sendEmail({
     to: email,
-    subject: "Verification Email",
-    html: GenerateOtpEmailTemplate(otp),
+    subject: messages.EMAIL_SENT_SUBJECT,
+    html: GenerateOtpEmailTemplate(token),
   });
 };
 export const verifySignup = async ({ email, code }) => {
@@ -88,11 +87,10 @@ export const forgetpassword = async ({ email }) => {
   user.resetCodeExpires = expiry;
   await user.save();
 
-  await transporter.sendMail({
-    from: config.USER_EMAIL,
-    to: user.email,
+  await sendEmail({
+    to: email,
     subject: messages.EMAIL_SENT_SUBJECT,
-    html: GenerateOtpEmailTemplate(otp),
+    html: GenerateOtpEmailTemplate(token),
   });
 };
 export const verifyCode = async ({ email, code }) => {
