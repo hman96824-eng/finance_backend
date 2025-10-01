@@ -22,9 +22,11 @@ router
   .get("/health", userController.health)
   .get("/:id", middleware.authenticate, middleware.invitePermission, validate(validation.idParam, "params"), userController.getUserById)
   .get("/profile", middleware.authenticate, userController.getProfile)
-  .put("/:id", middleware.authenticate, validate(validation.idParam, "params"), validate(validation.toggleUserStatusValidation), userController.toggleUserStatus)
+  .put("/:id", middleware.authenticate, validate(validation.idParam, "params"), validate(validation.toggleUserStatusValidation), middleware.invitePermission, userController.toggleUserStatus)
   .post("/invite", middleware.authenticate, middleware.invitePermission, validate(validation.inviteUserValidation), userController.sendInvitation)
   .post("/register", validate(validation.completeRegistrationValidation), userController.completeRegistration)
   .get("/dashboard", middleware.authenticate, userController.dashboard)
+
+
 
 export default router;
