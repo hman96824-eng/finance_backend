@@ -169,7 +169,7 @@ export const createInvite = async (email, role_id) => {
     html: templates.generateTeamInviteTemplate(invite?.token, role_id),
   });
 
-  console.log("check 12",);
+  console.log("Invite send successfully.",);
 
 
   return invite;
