@@ -1,9 +1,9 @@
-import express from 'express';
-import AuthUser from '../modules/auth/routes.js';
-
+import authUser from "../modules/user/routes.js";
+import express from "express";
+const app = express()
+app.use(express.json())
 export default (app) => {
     const apiRoute = express.Router();
-    apiRoute.use('/', AuthUser);
-    app.use('/api/v1', apiRoute);
-
+    apiRoute.use("/users", authUser);
+    app.use("/api/v1", apiRoute);
 };
