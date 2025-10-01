@@ -43,20 +43,15 @@ export const signup = async ({ name, email, phone, role_id, password, confirmPas
   if (password !== confirmPassword) throw ApiError.unauthorized(messages.PASSWORD_UNMATCH);
 
   const hashpassword = await hashPassword(password);
-  const otp = Math.floor(Math.random() * 10000).toString().padStart(4, "0");
-  const expiry = new Date(Date.now() + 15 * 60 * 1000);
-
-  await otpRepo.update(
-    { email },
-    { email, otp, expiry, userData: { name, email, password: hashpassword, phone, role_id } },
-    { upsert: true, new: true }
-  );
-
-  await sendEmail({
-    to: email,
-    subject: messages.EMAIL_SENT_SUBJECT,
-    html: GenerateOtpEmailTemplate(otp),
+  const newUser = await userRepo.create({
+    name: name,
+    email: email,
+    password: hashpassword,
+    phone: phone,
+    role_id: role_id,
+    status: "inactive",
   });
+  return newUser
 };
 export const refreshAccessToken = async ({ refreshToken }) => {
   if (!refreshToken) throw ApiError.badRequest(messages.REFRESH_TOKEN);
@@ -82,25 +77,24 @@ export const refreshAccessToken = async ({ refreshToken }) => {
     throw ApiError.unauthorized(messages.TOKEN_EXPIRED);
   }
 };
+// export const verifySignup = async ({ email, code }) => {
+//   const otpRecord = await otpRepo.findOne({ email });
+//   if (!otpRecord) throw ApiError.unauthorized(messages.USER_NOT_FOUND);
+//   if (otpRecord.expiry < new Date()) throw ApiError.unauthorized(messages.OTP_EXPIRED);
+//   if (otpRecord.otp !== code) throw ApiError.badRequest(messages.INCORRECT_OTP);
 
-export const verifySignup = async ({ email, code }) => {
-  const otpRecord = await otpRepo.findOne({ email });
-  if (!otpRecord) throw ApiError.unauthorized(messages.USER_NOT_FOUND);
-  if (otpRecord.expiry < new Date()) throw ApiError.unauthorized(messages.OTP_EXPIRED);
-  if (otpRecord.otp !== code) throw ApiError.badRequest(messages.INCORRECT_OTP);
+//   const newUser = await userRepo.create({
+//     name: otpRecord.userData.name,
+//     email: otpRecord.userData.email,
+//     password: otpRecord.userData.password,
+//     phone: otpRecord.userData.phone,
+//     role_id: otpRecord.userData.role_id,
+//     status: "inactive",
+//   });
 
-  const newUser = await userRepo.create({
-    name: otpRecord.userData.name,
-    email: otpRecord.userData.email,
-    password: otpRecord.userData.password,
-    phone: otpRecord.userData.phone,
-    role_id: otpRecord.userData.role_id,
-    status: "inactive",
-  });
-
-  await otpRepo.delete({ email });
-  return newUser;
-};
+//   await otpRepo.delete({ email });
+//   return newUser;
+// };
 export const forgetpassword = async ({ email }) => {
   const user = await userRepo.findOne({ email });
   if (!user) throw ApiError.unauthorized(messages.USER_NOT_FOUND);
@@ -278,7 +272,7 @@ export default {
   login,
   signup,
   refreshAccessToken,
-  verifySignup,
+  // verifySignup,
   forgetpassword,
   verifyCode,
   resetPassword,

@@ -18,15 +18,18 @@ router
   .post("/changePasswordOtp", middleware.authenticate, validate(validation.requestOTP), userController.requestOtp)
   .post("/chnageVerifyOtp", middleware.authenticate, validate(validation.verifyOTP), userController.verifyOtp)
   .post("/changepassword", middleware.authenticate, validate(validation.resetPassword), userController.changePassword)
-  // zeeshan
+
+  // Profile
   .get("/", middleware.authenticate, middleware.AdminPermission, userController.getUser)
   .get("/health", userController.health)
   .get("/:id", middleware.authenticate, middleware.AdminPermission, validate(validation.idParam, "params"), userController.getUserById)
   .get("/profile", middleware.authenticate, userController.getProfile)
+
   // User's Status 
   .get("/inactive", middleware.authenticate, middleware.AdminPermission, userController.InactiveUserStatus)
   .delete("/remove/:id", middleware.authenticate, middleware.AdminPermission, userController.RemoveUnacceptedUser)
   .put("/:id", middleware.authenticate, validate(validation.idParam, "params"), validate(validation.toggleUserStatusValidation), middleware.AdminPermission, userController.toggleUserStatus)
+
   // Send Invitation 
   .post("/invite", middleware.authenticate, middleware.AdminPermission, validate(validation.inviteUserValidation), userController.sendInvitation)
   .post("/register", validate(validation.completeRegistrationValidation), userController.completeRegistration)
