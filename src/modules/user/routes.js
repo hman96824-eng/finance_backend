@@ -10,6 +10,7 @@ router
   // asim
   .post("/signup", validate(validation.registerValidation), userController.signup)
   .post("/login", validate(validation.loginValidation), userController.login)
+  .post("/refresh-token", userController.refreshToken)
   .post("/verifysignup", validate(validation.verifyOTP), userController.verifySignup)
   .post("/forgetPasswordOtp", validate(validation.requestOTP), userController.forgetpassword)
   .post("/ForgetVerifyOtp", validate(validation.verifyOTP), userController.verifyCode)
@@ -18,13 +19,16 @@ router
   .post("/chnageVerifyOtp", middleware.authenticate, validate(validation.verifyOTP), userController.verifyOtp)
   .post("/changepassword", middleware.authenticate, validate(validation.resetPassword), userController.changePassword)
   // zeeshan
-  .get("/", middleware.authenticate, middleware.invitePermission, userController.getUser)
+  .get("/", middleware.authenticate, middleware.AdminPermission, userController.getUser)
   .get("/health", userController.health)
-  .get("/:id", middleware.authenticate, middleware.invitePermission, validate(validation.idParam, "params"), userController.getUserById)
+  .get("/:id", middleware.authenticate, middleware.AdminPermission, validate(validation.idParam, "params"), userController.getUserById)
   .get("/profile", middleware.authenticate, userController.getProfile)
-  .put("/:id", middleware.authenticate, validate(validation.idParam, "params"), validate(validation.toggleUserStatusValidation), middleware.invitePermission, userController.toggleUserStatus)
-  .post("/invite", userController.sendInvitation)
-  // .post("/invite", middleware.authenticate, middleware.invitePermission, validate(validation.inviteUserValidation), userController.sendInvitation)
+  // User's Status 
+  .get("/inactive", middleware.authenticate, middleware.AdminPermission, userController.InactiveUserStatus)
+  .delete("/remove/:id", middleware.authenticate, middleware.AdminPermission, userController.RemoveUnacceptedUser)
+  .put("/:id", middleware.authenticate, validate(validation.idParam, "params"), validate(validation.toggleUserStatusValidation), middleware.AdminPermission, userController.toggleUserStatus)
+  // Send Invitation 
+  .post("/invite", middleware.authenticate, middleware.AdminPermission, validate(validation.inviteUserValidation), userController.sendInvitation)
   .post("/register", validate(validation.completeRegistrationValidation), userController.completeRegistration)
   .get("/dashboard", middleware.authenticate, userController.dashboard)
 

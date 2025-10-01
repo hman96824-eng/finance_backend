@@ -25,6 +25,7 @@ export const login = async ({ email, password }) => {
 
   const isMatch = await comparePassword(password, user.password);
   if (!isMatch) throw ApiError.unauthorized(messages.INVALID_CREDENTIALS);
+  if (user.status.toLowerCase() === "inactive") throw ApiError.unauthorized(messages.IsActive)
 
   const payload = { id: user._id, role: user.role_id, email: user.email };
   const accessToken = jwt.generateToken(payload);
@@ -57,6 +58,31 @@ export const signup = async ({ name, email, phone, role_id, password, confirmPas
     html: GenerateOtpEmailTemplate(otp),
   });
 };
+export const refreshAccessToken = async ({ refreshToken }) => {
+  if (!refreshToken) throw ApiError.badRequest(messages.REFRESH_TOKEN);
+
+  try {
+    // verify refresh token with its secret
+    const decoded = jwtHelper.verifyToken(
+      refreshToken,
+      config.JWT_REFRESH_SECRET
+    );
+
+    const payload = {
+      id: decoded.id,
+      role: decoded.role,
+      email: decoded.email,
+    };
+
+    // issue new access token
+    const newAccessToken = jwtHelper.generateToken(payload);
+
+    return { accessToken: newAccessToken };
+  } catch (err) {
+    throw ApiError.unauthorized(messages.TOKEN_EXPIRED);
+  }
+};
+
 export const verifySignup = async ({ email, code }) => {
   const otpRecord = await otpRepo.findOne({ email });
   if (!otpRecord) throw ApiError.unauthorized(messages.USER_NOT_FOUND);
@@ -69,7 +95,7 @@ export const verifySignup = async ({ email, code }) => {
     password: otpRecord.userData.password,
     phone: otpRecord.userData.phone,
     role_id: otpRecord.userData.role_id,
-    status: "active",
+    status: "inactive",
   });
 
   await otpRepo.delete({ email });
@@ -224,9 +250,34 @@ export const toggleUserStatus = async (id) => {
     user: { id: user._id, name: user.name, email: user.email, status: user.status },
   };
 };
+export const getInactiveUsers = async () => {
+  try {
+    const inactiveUsers = await userRepo.find({ status: "inactive" });
+    return inactiveUsers;
+  } catch (error) {
+    throw new Error("Failed to fetch inactive users: " + error.message);
+  }
+};
+export const removeUnacceptedUser = async (userId) => {
+  try {
+    const user = await userRepo.findOne({ _id: userId, status: "inactive" });
+    if (!user) {
+      throw new Error("User not found or already accepted");
+    }
+
+    await userRepo.deleteOne({ _id: userId });
+    return { message: "User removed successfully" };
+  } catch (error) {
+    throw new Error("Failed to remove user: " + error.message);
+  }
+};
+
+
+
 export default {
   login,
   signup,
+  refreshAccessToken,
   verifySignup,
   forgetpassword,
   verifyCode,
@@ -236,4 +287,6 @@ export default {
   createInvite,
   registerUser,
   toggleUserStatus,
+  getInactiveUsers,
+  removeUnacceptedUser,
 };

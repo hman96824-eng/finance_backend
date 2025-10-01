@@ -20,7 +20,9 @@ export const messages = {
   TOKEN_MISSING: "Unauthorized: Token missing.",
   TOKEN_INVALID: "Forbidden: Invalid token.",
   TOKEN_EXPIRED: "Invalid or expired token.",
-
+  REFRESH_TOKEN: "Refresh token required",
+  ACCESS_TOKEN: "New access token generated",
+  IsActive: "Your status is not Active",
   // ========================
   // PASSWORD & OTP
   // ========================

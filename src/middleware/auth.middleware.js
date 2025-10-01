@@ -25,7 +25,7 @@ export const authenticate = (req, res, next) => {
     }
 };
 // ==================== Invite Permission Middleware ====================
-export const invitePermission = (req, res, next) => {
+export const AdminPermission = (req, res, next) => {
     try {
 
 
@@ -54,5 +54,5 @@ export const invitePermission = (req, res, next) => {
 
 export default {
     authenticate,
-    invitePermission,
+    AdminPermission,
 };

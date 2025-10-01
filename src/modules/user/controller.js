@@ -2,6 +2,7 @@ import { successResponse } from "../../utils/response.helper.js";
 import userService from "./service.js";
 import { messages } from "../../constants/messages.js";
 import ApiError from "../../utils/ApiError.js";
+import { tr } from "zod/locales";
 
 // login
 export const login = async (req, res, next) => {
@@ -13,6 +14,16 @@ export const login = async (req, res, next) => {
   } catch (err) {
     next(err);
 
+  }
+};
+
+// refresh token  
+export const refreshToken = async (req, res, next) => {
+  try {
+    const data = await userService.refreshAccessToken(req.body);
+    return successResponse(res, data, messages.ACCESS_TOKEN);
+  } catch (err) {
+    next(err);
   }
 };
 // signup
@@ -157,6 +168,8 @@ export const sendInvitation = async (req, res) => {
 // ---------------- USER REGISTRATION ----------------
 export const completeRegistration = async (req, res) => {
   const { token } = req.query;
+  const { email } = req.query;
+  const { role } = req.query
 
   if (!token) {
     return res.status(400).json({ message: messages.TOKEN_MISSING });
@@ -233,7 +246,37 @@ export const getProfile = async (req, res) => {
     });
   }
 };
+export const InactiveUserStatus = async (req, res) => {
+  try {
+    const inactiveUsers = await userService.getInactiveUsers();
+    res.status(200).json({
+      success: true,
+      count: inactiveUsers.length,
+      users: inactiveUsers,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+export const RemoveUnacceptedUser = async (req, res) => {
+  try {
+    const { id } = req.params; // user ID from URL
+    const result = await userService.removeUnacceptedUser(id);
 
+    res.status(200).json({
+      success: true,
+      message: result.message,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
 export const health = async (req, res) => {
   res.status(200).json({ success: true, message: "ok" });
 }
@@ -241,6 +284,7 @@ export const health = async (req, res) => {
 export default {
   login,
   signup,
+  refreshToken,
   verifySignup,
   forgetpassword,
   verifyCode,
@@ -256,5 +300,7 @@ export default {
   completeRegistration,
   dashboard,
   getProfile,
+  InactiveUserStatus,
+  RemoveUnacceptedUser,
   health
 };
