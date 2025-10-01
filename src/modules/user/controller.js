@@ -30,7 +30,7 @@ export const refreshToken = async (req, res, next) => {
 export const signup = async (req, res, next) => {
   try {
     const data = await userService.signup(req.body);
-    return successResponse(res, data, messages.CONFIRM_EMAIL);
+    return successResponse(res, data, messages.USER_CREATED);
   } catch (err) {
     next(err);
   }
