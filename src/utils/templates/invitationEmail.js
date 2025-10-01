@@ -4,9 +4,12 @@ import config from "../../config/index.js";
  * Invitation Email Template
  * @param {string} token - invitation token
  * @param {string} role - role of invited user (e.g., ADMIN, MANAGER)
+ * @param {string} email - email of invited user
  */
-export const generateTeamInviteTemplate = (token, role) => {
-    const inviteUrl = `${config.frontEndUrl}auth/register?token=${token}`;
+export const generateTeamInviteTemplate = (token, role, email) => {
+    const inviteUrl = `${config.frontEndUrl}/api/v1/user/register?token=${encodeURIComponent(
+        token
+    )}&email=${encodeURIComponent(email)}&role=${encodeURIComponent(role)}`;
 
     return `<!DOCTYPE html>
 <html lang="en">
@@ -15,45 +18,45 @@ export const generateTeamInviteTemplate = (token, role) => {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Invitation</title>
 </head>
-<body style="margin:0;padding:0;background-color:#f9f9f9;">
+<body style="margin:0;padding:0;background-color:#f4f6f8;font-family:Arial, sans-serif;">
   <center>
     <table border="0" cellspacing="0" cellpadding="0" align="center" width="100%" 
-      style="max-width:768px;margin:auto;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;background-color:#ffffff;">
+      style="max-width:768px;margin:auto;background-color:#ffffff;border-radius:8px;box-shadow:0 4px 8px rgba(0,0,0,0.05);">
       <tbody>
         <tr>
-          <td align="center" style="padding:16px">
+          <td align="center" style="padding:24px 16px">
             <img src="https://onu.ai/wp-content/uploads/2024/03/onu-logo-blue-300-min.png" 
-              alt="Onu Team Logo" width="100" style="border-style:none">
-            <h2 style="margin:8px 0 0;font-size:24px;font-weight:400;line-height:1.25;">
+              alt="Onu Team Logo" width="120" style="border-style:none;margin-bottom:12px;">
+            <h2 style="margin:8px 0 0;font-size:24px;font-weight:600;line-height:1.25;color:#003366;">
               You’re Invited!
             </h2>
           </td>
         </tr>
         <tr>
-          <td align="center" style="padding:0;">
-            <table border="0" cellspacing="0" cellpadding="0" width="90%" 
-              style="border:1px solid #e2e4e8; color:#242930;">
+          <td align="center" style="padding:0 24px 32px;">
+            <table border="0" cellspacing="0" cellpadding="0" width="100%" 
+              style="border:1px solid #e2e4e8; border-radius:6px; overflow:hidden;">
               <tbody>
                 <tr>
-                  <td style="padding:24px">
-                    <h3 style="text-align:center;font-size:20px;font-weight:600;color:#24292f">
-                      Invitation to join as <span style="color:#07131C">${role}</span>
+                  <td style="padding:32px;">
+                    <h3 style="text-align:center;font-size:20px;font-weight:600;color:#003366;margin-bottom:16px;">
+                      Invitation to join as <span style="color:#0070f3">${role}</span>
                     </h3>
-                    <p style="margin:10px 0;color:#555;">
+                    <p style="margin:10px 0;color:#555;text-align:center;">
                       You're just a step away from exploring all the amazing features Onu has to offer.
                     </p>
-                    <p style="margin:10px 0;color:#555;">
+                    <p style="margin:10px 0;color:#555;text-align:center;">
                       Simply click the button below to accept your invitation. The link will expire in <b>24 hours</b>.
                     </p>
                     
                     <table border="0" cellspacing="0" cellpadding="0" align="center" 
-                      style="margin:20px 0 33px;">
+                      style="margin:24px auto 32px;">
                       <tbody>
                         <tr>
                           <td align="center">
                             <a href="${inviteUrl}" 
-                              style="background-color:#07131C;color:#fff;text-decoration:none;display:inline-block;
-                              font-size:16px;font-weight:500;border-radius:.5em;padding:.75em 1.5em;" 
+                              style="background-color:#003366;color:#fff;text-decoration:none;display:inline-block;
+                              font-size:16px;font-weight:600;border-radius:6px;padding:.85em 1.8em;" 
                               target="_blank" rel="noopener noreferrer">
                               Accept Invitation
                             </a>
@@ -62,15 +65,16 @@ export const generateTeamInviteTemplate = (token, role) => {
                       </tbody>
                     </table>
 
-                    <p style="margin:10px 0;color:#555;">
+                    <p style="margin:10px 0;color:#777;font-size:14px;text-align:center;">
                       If the button above doesn’t work, copy and paste this URL into your browser:<br>
-                      <a href="${inviteUrl}" target="_blank" rel="noopener noreferrer">${inviteUrl}</a>
+                      <a href="${inviteUrl}" target="_blank" rel="noopener noreferrer" 
+                        style="color:#003366;word-break:break-all;">${inviteUrl}</a>
                     </p>
 
-                    <p style="margin:10px 0;color:#555;">
+                    <p style="margin:16px 0;color:#555;text-align:center;font-size:14px;">
                       If you fail to register within the given time, the link will expire. Please reach out to your administrator for a new invitation.
                     </p>
-                    <p style="margin:10px 0;color:#555;">Thanks,<br>The Onu Team</p>
+                    <p style="margin:10px 0;color:#555;text-align:center;">Thanks,<br>The Onu Team</p>
                   </td>
                 </tr>
               </tbody>
@@ -79,23 +83,13 @@ export const generateTeamInviteTemplate = (token, role) => {
         </tr>
       </tbody>
     </table>
-
-    <table border="0" cellspacing="0" cellpadding="0" align="center" width="100%" style="text-align:center">
-      <tbody>
-        <tr>
-          <td style="padding:16px">
-            <p style="margin:10px 0;color:#6a737d;font-size:14px;">
-              You're receiving this email because an invitation to join Onu has been sent to you.
-            </p>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+    <p style="margin:16px 0;color:#6a737d;font-size:13px;text-align:center;">
+      You're receiving this email because an invitation to join Onu has been sent to you.
+    </p>
   </center>
 </body>
 </html>`;
 };
-
 
 
 export const generateEmailVerificationTemplate = (token) => {
@@ -131,7 +125,7 @@ export const generateEmailVerificationTemplate = (token) => {
                                             <tbody>
                                                 <tr>
                                                     <td align="center">
-                                                        <a href="${config.frontEndUrl}/api/v1/users/register?token=${token}" style="background-color:#07131C;color:#fff;text-decoration:none !important;display:inline-block;font-size:inherit;font-weight:500;line-height:1.5;white-space:nowrap;vertical-align:middle;border-radius:.5em;padding:.75em 1.5em;" target="_blank">Verify your account</a>
+                                                        <a href="${config.frontEndUrl}/api/v1/users/register?token=${token}=${email}=${role}" style="background-color:#07131C;color:#fff;text-decoration:none !important;display:inline-block;font-size:inherit;font-weight:500;line-height:1.5;white-space:nowrap;vertical-align:middle;border-radius:.5em;padding:.75em 1.5em;" target="_blank">Verify your account</a>
                                                     </td>
                                                 </tr>
                                             </tbody>

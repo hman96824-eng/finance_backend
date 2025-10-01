@@ -2,7 +2,6 @@ import jwt from "../../utils/jwt.helper.js";
 import ApiError from "../../utils/ApiError.js";
 import { messages } from "../../constants/messages.js";
 import { config } from "../../config/config.js";
-import transporter from "../../utils/email.js";
 import { comparePassword, hashPassword } from "../../utils/bcrypt.helper.js";
 import GenerateOtpEmailTemplate from "../../utils/templates/OtpGenerator.js";
 import bcrypt from "bcrypt";
@@ -90,7 +89,7 @@ export const forgetpassword = async ({ email }) => {
   await sendEmail({
     to: email,
     subject: messages.EMAIL_SENT_SUBJECT,
-    html: GenerateOtpEmailTemplate(token),
+    html: GenerateOtpEmailTemplate(otp),
   });
 };
 export const verifyCode = async ({ email, code }) => {
@@ -164,7 +163,7 @@ export const createInvite = async (email, role_id) => {
   await sendEmail({
     to: email,
     subject: "Welcome to Our App 🎉",
-    html: templates.generateTeamInviteTemplate(invite?.token, role_id),
+    html: templates.generateTeamInviteTemplate(invite?.token, role_id, email),
   });
 
   console.log("Invite send successfully.",);
