@@ -8,8 +8,8 @@ const router = express.Router();
 
 router
   // asim
-  .post("/login", validate(validation.loginValidation), userController.login)
   .post("/signup", validate(validation.registerValidation), userController.signup)
+  .post("/login", validate(validation.loginValidation), userController.login)
   .post("/verifysignup", validate(validation.verifyOTP), userController.verifySignup)
   .post("/forgetPasswordOtp", validate(validation.requestOTP), userController.forgetpassword)
   .post("/ForgetVerifyOtp", validate(validation.verifyOTP), userController.verifyCode)
