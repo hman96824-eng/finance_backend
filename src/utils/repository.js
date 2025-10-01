@@ -1,3 +1,5 @@
+import { RoleModel } from "../modules/role/role.js";
+
 export default class Repository {
   constructor(model) {
     if (!model) throw new Error("Model must be provided");

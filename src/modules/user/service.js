@@ -8,11 +8,11 @@ import GenerateOtpEmailTemplate from "../../utils/templates/OtpGenerator.js";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
 import templates from "../../utils/templates/invitationEmail.js";
-import { UserModel } from "./model.js"
+import { UserModel } from "./model.js";
+import { RoleModel } from "../role/role.js";
 import { OtpModel } from "../otp/model.js";
 import { InviteModel } from "../invites/model.js";
 import Repository from "../../utils/repository.js";
-
 
 // Instantiate repositories for models
 const userRepo = new Repository(UserModel);
@@ -36,32 +36,64 @@ export const login = async ({ email, password }) => {
     user: { id: user._id, email: user.email, role: user.role_id },
   };
 };
-export const signup = async ({ name, email, phone, role_id, password, confirmPassword }) => {
+export const refreshAccessToken = async (refreshToken) => {
+  if (!refreshToken) throw ApiError.badRequest(messages.REFRESH_TOKEN);
+
+  try {
+    // verify refresh token with its secret
+    const decoded = jwtHelper.verifyToken(
+      refreshToken,
+      config.JWT_REFRESH_SECRET
+    );
+
+    const payload = {
+      id: decoded.id,
+      role: decoded.role,
+      email: decoded.email,
+    };
+
+    // issue new access token
+    const newAccessToken = jwtHelper.generateToken(payload);
+
+    return { accessToken: newAccessToken };
+  } catch (err) {
+    throw ApiError.unauthorized(messages.TOKEN_EXPIRED);
+  }
+};
+export const signup = async ({
+  name,
+  email,
+  phone,
+  roleName,
+  password,
+  confirmPassword,
+}) => {
   const user = await userRepo.findOne({ email });
+
   if (user) throw ApiError.unauthorized(messages.USER_EXISTS);
-  if (password !== confirmPassword) throw ApiError.unauthorized(messages.PASSWORD_UNMATCH);
+
+  const role = await RoleModel.findOne({ name: roleName });
+  if (!role) throw ApiError.badRequest(messages.ROLE_NOT_DEFINE);
+
+  if (password !== confirmPassword)
+    throw ApiError.unauthorized(messages.PASSWORD_UNMATCH);
 
   const hashpassword = await hashPassword(password);
-  const otp = Math.floor(Math.random() * 10000).toString().padStart(4, "0");
-  const expiry = new Date(Date.now() + 15 * 60 * 1000);
-
-  await otpRepo.update(
-    { email },
-    { email, otp, expiry, userData: { name, email, password: hashpassword, phone, role_id } },
-    { upsert: true, new: true }
-  );
-
-  await transporter.sendMail({
-    from: config.EMAIL_USER,
-    to: email,
-    subject: "Verification Email",
-    html: GenerateOtpEmailTemplate(otp),
+  const newUser = await userRepo.create({
+    name: name,
+    email: email,
+    password: hashpassword,
+    phone: phone,
+    role_id: role._id,
+    status: "inactive",
   });
+  return newUser;
 };
 export const verifySignup = async ({ email, code }) => {
   const otpRecord = await otpRepo.findOne({ email });
   if (!otpRecord) throw ApiError.unauthorized(messages.USER_NOT_FOUND);
-  if (otpRecord.expiry < new Date()) throw ApiError.unauthorized(messages.OTP_EXPIRED);
+  if (otpRecord.expiry < new Date())
+    throw ApiError.unauthorized(messages.OTP_EXPIRED);
   if (otpRecord.otp !== code) throw ApiError.badRequest(messages.INCORRECT_OTP);
 
   const newUser = await userRepo.create({
@@ -80,7 +112,9 @@ export const forgetpassword = async ({ email }) => {
   const user = await userRepo.findOne({ email });
   if (!user) throw ApiError.unauthorized(messages.USER_NOT_FOUND);
 
-  const otp = Math.floor(Math.random() * 10000).toString().padStart(4, "0");
+  const otp = Math.floor(Math.random() * 10000)
+    .toString()
+    .padStart(4, "0");
   const expiry = new Date(Date.now() + 15 * 60 * 1000);
 
   user.resetCode = otp;
@@ -102,15 +136,18 @@ export const verifyCode = async ({ email, code }) => {
     throw ApiError.notFound(messages.OTP_REQUEST_NOT_FOUND);
   if (user.resetCodeExpires < new Date())
     throw ApiError.unauthorized(messages.OTP_EXPIRED);
-  if (user.resetCode !== code)
-    throw ApiError.badRequest(messages.INVALID_OTP);
+  if (user.resetCode !== code) throw ApiError.badRequest(messages.INVALID_OTP);
   user.resetCode = null;
   user.resetCodeExpires = null;
   await user.save();
   return { message: messages.VERIFIED_OTP };
 };
 
-export const resetPassword = async ({ email, newPassword, confirmPassword }) => {
+export const resetPassword = async ({
+  email,
+  newPassword,
+  confirmPassword,
+}) => {
   const user = await userRepo.findOne({ email });
   if (!user) throw ApiError.notFound(messages.USER_NOT_FOUND);
 
@@ -139,7 +176,6 @@ export const createInvite = async (email, role_id) => {
     );
   }
 
-
   let invite = await inviteRepo.findOne({ email: cleanEmail });
   const token = crypto.randomBytes(32).toString("hex");
   const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24);
@@ -150,7 +186,13 @@ export const createInvite = async (email, role_id) => {
     invite.invite = invite.invite + 1;
     await invite.save();
   } else {
-    invite = await inviteRepo.create({ email: cleanEmail, role_id, token, expiresAt, invite: 1 });
+    invite = await inviteRepo.create({
+      email: cleanEmail,
+      role_id,
+      token,
+      expiresAt,
+      invite: 1,
+    });
   }
 
   await transporter.sendMail({
@@ -164,7 +206,8 @@ export const createInvite = async (email, role_id) => {
 };
 export const registerUser = async (inviteToken, userData) => {
   const { name, phone, password, confirmPassword } = userData;
-  if (!password || password !== confirmPassword) throw ApiError.unauthorized(messages.PASSWORD_INVALID);
+  if (!password || password !== confirmPassword)
+    throw ApiError.unauthorized(messages.PASSWORD_INVALID);
 
   const invite = await inviteRepo.findOne({ token: inviteToken });
   if (!invite) throw ApiError.unauthorized(messages.TOKEN_INVALID);
@@ -173,7 +216,8 @@ export const registerUser = async (inviteToken, userData) => {
   // if (invite.accepted && ) throw new Error("Invitation already used.");
 
   const existingUser = await userRepo.findOne({ email: invite.email });
-  if (existingUser && invite.accepted) throw ApiError.unauthorized(messages.USER_ALREADY_EXISTS);
+  if (existingUser && invite.accepted)
+    throw ApiError.unauthorized(messages.USER_ALREADY_EXISTS);
 
   const hashedPassword = await bcrypt.hash(password, 10);
   const newUser = await userRepo.create({
@@ -197,7 +241,12 @@ export const registerUser = async (inviteToken, userData) => {
 
   return {
     message: messages.SIGNUP_SUCCESS,
-    user: { id: newUser._id, name: newUser.name, email: newUser.email, role_id: newUser.role_id },
+    user: {
+      id: newUser._id,
+      name: newUser.name,
+      email: newUser.email,
+      role_id: newUser.role_id,
+    },
     token: authToken,
   };
 };
@@ -210,11 +259,17 @@ export const toggleUserStatus = async (id) => {
 
   return {
     message: messages.USER_STATUS_UPDATED,
-    user: { id: user._id, name: user.name, email: user.email, status: user.status },
+    user: {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      status: user.status,
+    },
   };
 };
 export default {
   login,
+  refreshAccessToken,
   signup,
   verifySignup,
   forgetpassword,

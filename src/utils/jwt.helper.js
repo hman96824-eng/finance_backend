@@ -14,8 +14,8 @@ export const generateRefreshToken = (payload) => {
   }); // long lived
 };
 // verifyToken
-export const verifyToken = (token) => {
-  return jwt.verify(token, config.JWT_SECRET);
+export const verifyToken = (token, secret = config.JWT_SECRET) => {
+  return jwt.verify(token, secret);
 };
 
 export default {

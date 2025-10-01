@@ -12,14 +12,24 @@ export const login = async (req, res, next) => {
     return successResponse(res, data, messages.LOGIN_MESSAGE);
   } catch (err) {
     next(err);
-
   }
 };
+
+// refresh token
+export const refreshToken = async (req, res, next) => {
+  try {
+    const data = await userService.refreshAccessToken(req.body);
+    return successResponse(res, data, messages.ACCESS_TOKEN);
+  } catch (err) {
+    next(err);
+  }
+};
+
 // signup
 export const signup = async (req, res, next) => {
   try {
     const data = await userService.signup(req.body);
-    return successResponse(res, data, messages.CONFIRM_EMAIL);
+    return successResponse(res, data);
   } catch (err) {
     next(err);
   }
@@ -113,7 +123,9 @@ export const getUserById = async (req, res, next) => {
   try {
     const user = await userService.getUserById(req.params.id);
     if (!user) {
-      return res.status(404).json({ success: false, message: messages.USER_NOT_FOUND });
+      return res
+        .status(404)
+        .json({ success: false, message: messages.USER_NOT_FOUND });
     }
     res.json({ success: true, data: user });
   } catch (err) {
@@ -125,7 +137,9 @@ export const sendInvitation = async (req, res) => {
     const { email, role_id } = req.body;
 
     if (!email || !role_id) {
-      return res.status(400).json({ message: "Email and role_id are required." });
+      return res
+        .status(400)
+        .json({ message: "Email and role_id are required." });
     }
 
     const invite = await userService.createInvite(email, role_id);
@@ -140,7 +154,6 @@ export const sendInvitation = async (req, res) => {
         expiresAt: invite.expiresAt,
       },
     });
-
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
@@ -160,22 +173,19 @@ export const completeRegistration = async (req, res) => {
       message: messages.SIGNUP_SUCCESS,
       ...result,
     });
-
-
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
-
 };
 // ---------------- USER STATUS ----------------
 export const toggleUserStatus = async (req, res) => {
   try {
     const result = await userService.toggleUserStatus(req.params.id);
     res.json({ success: true, ...result });
-
-
   } catch (err) {
-    res.status(400).json({ message: err.message || messages.USER_STATUS_UPDATE_FAILED });
+    res
+      .status(400)
+      .json({ message: err.message || messages.USER_STATUS_UPDATE_FAILED });
   }
 };
 // ---------------- DASHBOARD ----------------
@@ -184,7 +194,7 @@ export const dashboard = (req, res) => {
     message: `Welcome, ${req.user.email}!`,
     role: req.user.role_id,
   });
-}
+};
 // ---------------- DASHBOARD ----------------
 export const getProfile = async (req, res) => {
   try {
@@ -192,14 +202,14 @@ export const getProfile = async (req, res) => {
     if (!req.user || !req.user.id) {
       return res.status(401).json({
         success: false,
-        message: messages.LOGIN_REQUIRED
+        message: messages.LOGIN_REQUIRED,
       });
     }
     const user = await userService.getUserById(req.user.id);
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: messages.USER_NOT_FOUND
+        message: messages.USER_NOT_FOUND,
       });
     }
     res.json({
@@ -212,23 +222,21 @@ export const getProfile = async (req, res) => {
         role_id: user.role_id,
         status: user.status,
         created_at: user.createdAt, // mongoose usually stores as createdAt
-        updated_at: user.updatedAt
-      }
+        updated_at: user.updatedAt,
+      },
     });
-
-
   } catch (err) {
     res.status(500).json({
       success: false,
-      message: err.message
+      message: err.message,
     });
   }
 };
 
-
 export default {
   login,
   signup,
+  refreshToken,
   verifySignup,
   forgetpassword,
   verifyCode,

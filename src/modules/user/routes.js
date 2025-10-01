@@ -1,37 +1,93 @@
 import express from "express";
 import userController from "./controller.js";
-import { validate } from "../../middleware/validation.middleware.js"
+import { validate } from "../../middleware/validation.middleware.js";
 import validation from "../../validation/validation.js";
-import middleware from '../../middleware/auth.middleware.js';
+import middleware from "../../middleware/auth.middleware.js";
+import { checkPermission } from "../../middleware/permissons.js";
 
 const router = express.Router();
 
 router
   // asim
   .post("/login", validate(validation.loginValidation), userController.login)
-  .post("/signup", validate(validation.registerValidation), userController.signup)
-  .post("/verifysignup", validate(validation.verifyOTP), userController.verifySignup)
-  .post("/forgetPasswordOtp", validate(validation.requestOTP), userController.forgetpassword)
-  .post("/ForgetVerifyOtp", validate(validation.verifyOTP), userController.verifyCode)
-  .post("/forgetPassword", validate(validation.resetPassword), userController.resetPassword)
-  .post("/changePasswordOtp", middleware.authenticate, validate(validation.requestOTP), userController.requestOtp)
-  .post("/chnageVerifyOtp", middleware.authenticate, validate(validation.verifyOTP), userController.verifyOtp)
-  .post("/changepassword", middleware.authenticate, validate(validation.resetPassword), userController.changePassword)
+  .post(
+    "/signup",
+    validate(validation.registerValidation),
+    userController.signup
+  )
+  .post("/refresh-token", userController.refreshToken)
+  .post(
+    "/verifysignup",
+    validate(validation.verifyOTP),
+    userController.verifySignup
+  )
+  .post(
+    "/forgetPasswordOtp",
+    validate(validation.requestOTP),
+    userController.forgetpassword
+  )
+  .post(
+    "/ForgetVerifyOtp",
+    validate(validation.verifyOTP),
+    userController.verifyCode
+  )
+  .post(
+    "/forgetPassword",
+    validate(validation.resetPassword),
+    userController.resetPassword
+  )
+  .post(
+    "/changePasswordOtp",
+    middleware.authenticate,
+    validate(validation.requestOTP),
+    userController.requestOtp
+  )
+  .post(
+    "/chnageVerifyOtp",
+    middleware.authenticate,
+    validate(validation.verifyOTP),
+    userController.verifyOtp
+  )
+  .post(
+    "/changepassword",
+    middleware.authenticate,
+    validate(validation.resetPassword),
+    userController.changePassword
+  )
   // zeeshan
-  .get("/", middleware.authenticate, middleware.invitePermission, userController.getUser)
-  .get("/:id", middleware.authenticate, middleware.invitePermission, validate(validation.idParam, "params"), userController.getUserById)
+  .get(
+    "/",
+    middleware.authenticate,
+    checkPermission(["view_users"]),
+    userController.getUser
+  )
+  .get(
+    "/:id",
+    middleware.authenticate,
+    middleware.invitePermission,
+    validate(validation.idParam, "params"),
+    userController.getUserById
+  )
   .get("/profile", middleware.authenticate, userController.getProfile)
-  .put("/:id", middleware.authenticate, validate(validation.idParam, "params"), validate(validation.toggleUserStatusValidation), userController.toggleUserStatus)
-  .post("/invite", middleware.authenticate, middleware.invitePermission, validate(validation.inviteUserValidation), userController.sendInvitation)
-  .post("/register", validate(validation.completeRegistrationValidation), userController.completeRegistration)
+  .put(
+    "/:id",
+    middleware.authenticate,
+    validate(validation.idParam, "params"),
+    validate(validation.toggleUserStatusValidation),
+    userController.toggleUserStatus
+  )
+  .post(
+    "/invite",
+    middleware.authenticate,
+    middleware.invitePermission,
+    validate(validation.inviteUserValidation),
+    userController.sendInvitation
+  )
+  .post(
+    "/register",
+    validate(validation.completeRegistrationValidation),
+    userController.completeRegistration
+  )
   .get("/dashboard", middleware.authenticate, userController.dashboard);
-// .get('/', middleware.authenticate, middleware.invitePermission, userController.getUser) // Get all users
-// .get('/:id', middleware.authenticate, middleware.invitePermission, userController.getUserById) // Get user by ID
-// .get('/profile', middleware.authenticate, userController.getProfile) // Get own profile
-// .put('/:id', middleware.authenticate, userController.toggleUserStatus) // Update user status (active/inactive)
-// .post('/invite', middleware.authenticate, middleware.invitePermission, userController.sendInvitation)
-// .post('/register', userController.completeRegistration)
-// .get('/dashboard', middleware.authenticate, userController.dashboard)
-
 
 export default router;

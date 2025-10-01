@@ -23,7 +23,7 @@ export const registerValidation = z
     phone: z
       .string()
       .regex(/^\+?[1-9]\d{1,14}$/, { message: messages.PHONE_CHECK }),
-    role_id: z.enum(["ADMIN", "MANAGER"], {
+    roleName: z.enum(["ADMIN", "MANAGER", "EMPLOYEE"], {
       message: messages.ROLE_CHECK,
     }),
     email: emailSchema,
