@@ -15,8 +15,6 @@ export const login = async (req, res, next) => {
     next(err);
   }
 };
-
-// refresh token
 export const refreshToken = async (req, res, next) => {
   try {
     const data = await userService.refreshAccessToken(req.body);
@@ -25,8 +23,6 @@ export const refreshToken = async (req, res, next) => {
     next(err);
   }
 };
-
-// signup
 export const signup = async (req, res, next) => {
   try {
     const data = await userService.signup(req.body);
@@ -266,7 +262,6 @@ export const RemoveUnacceptedUser = async (req, res) => {
 export const health = async (req, res) => {
   res.status(200).json({ success: true, message: "ok" });
 };
-
 export const googleSignup = async (req, res, next) => {
   try {
     const { email, name } = req.user; // from passport after Google login

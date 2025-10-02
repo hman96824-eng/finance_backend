@@ -91,42 +91,6 @@ export const signup = async ({
   });
   return newUser;
 };
-export const verifySignup = async ({ email, code }) => {
-  const otpRecord = await otpRepo.findOne({ email });
-  if (!otpRecord) throw ApiError.unauthorized(messages.USER_NOT_FOUND);
-  if (otpRecord.expiry < new Date())
-    throw ApiError.unauthorized(messages.OTP_EXPIRED);
-  if (otpRecord.otp !== code) throw ApiError.badRequest(messages.INCORRECT_OTP);
-
-  const newUser = await userRepo.create({
-    name: name,
-    email: email,
-    password: hashpassword,
-    phone: phone,
-    role_id: role_id,
-    status: "inactive",
-  });
-  return newUser;
-};
-
-// export const verifySignup = async ({ email, code }) => {
-//   const otpRecord = await otpRepo.findOne({ email });
-//   if (!otpRecord) throw ApiError.unauthorized(messages.USER_NOT_FOUND);
-//   if (otpRecord.expiry < new Date()) throw ApiError.unauthorized(messages.OTP_EXPIRED);
-//   if (otpRecord.otp !== code) throw ApiError.badRequest(messages.INCORRECT_OTP);
-
-//   const newUser = await userRepo.create({
-//     name: otpRecord.userData.name,
-//     email: otpRecord.userData.email,
-//     password: otpRecord.userData.password,
-//     phone: otpRecord.userData.phone,
-//     role_id: otpRecord.userData.role_id,
-//     status: "inactive",
-//   });
-
-//   await otpRepo.delete({ email });
-//   return newUser;
-// };
 export const forgetpassword = async ({ email }) => {
   const user = await userRepo.findOne({ email });
   if (!user) throw ApiError.unauthorized(messages.USER_NOT_FOUND);
@@ -308,7 +272,6 @@ export const removeUnacceptedUser = async (userId) => {
     throw new Error("Failed to remove user: " + error.message);
   }
 };
-
 export const googleSignup = async ({
   email,
   name,
