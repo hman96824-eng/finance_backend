@@ -143,7 +143,44 @@ export const resetPassword = async ({
 
 export const getAllUsers = async () => userRepo?.find();
 export const getUserById = async (id) => userRepo?.findById(id);
+export const updateProfile = async (userId, updateData) => {
+  const allowedFields = [
+    "name",
+    "phone",
+    "address",
+    "gender",
+    "nationality",
+    "maritalStatus",
+    "department",
+    "salary",
+    "description",
+    "avatar",
+  ];
 
+  // Filter only allowed fields
+  const filteredData = Object.keys(updateData)
+    .filter((key) => allowedFields.includes(key))
+    .reduce((obj, key) => {
+      obj[key] = updateData[key];
+      return obj;
+    }, {});
+
+  // Auto-generate default_letter if name updated but no avatar
+  if (filteredData.name && !filteredData.avatar) {
+    filteredData.avatar = {
+      default_letter: filteredData.name.charAt(0).toUpperCase(),
+    };
+  }
+
+  // Update user
+  const updatedUser = await userRepo.updateProfile(userId, filteredData);
+
+  if (!updatedUser) {
+    throw new Error("User not found");
+  }
+
+  return updatedUser;
+};
 export const createInvite = async (email, role_id) => {
   const cleanEmail = email.trim().toLowerCase();
   const existingUser = await userRepo?.findOne({ email: cleanEmail });
@@ -272,6 +309,7 @@ export const removeUnacceptedUser = async (userId) => {
     throw new Error("Failed to remove user: " + error.message);
   }
 };
+
 // export const googleSignup = async ({
 //   email,
 //   name,
@@ -315,5 +353,6 @@ export default {
   toggleUserStatus,
   getInactiveUsers,
   removeUnacceptedUser,
+  updateProfile,
   // googleSignup,
 };

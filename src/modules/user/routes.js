@@ -9,10 +9,11 @@ import { checkPermission } from "../../middleware/permissons.js";
 const router = express.Router();
 
 router
+  .put("/profile", middleware.authenticate, userController.updateProfile)
+  .post("/signup", validate(validation.registerValidation), userController.signup)
   // .get("/google", passport.authenticate("google", { scope: ["profile", "email"] }))
   .get("/inactive", middleware.authenticate, middleware.AdminPermission, userController.InactiveUserStatus)
   // asim
-  .post("/signup", validate(validation.registerValidation), userController.signup)
   .post("/login", validate(validation.loginValidation), userController.login)
   .post("/refresh-token", userController.refreshToken)
   .post("/forgetPasswordOtp", validate(validation.requestOTP), userController.forgetpassword)
@@ -24,14 +25,13 @@ router
 
   // Profile
   .get("/", middleware.authenticate, checkPermission(["view_users"]), userController.getUser)
+  .get("/:id", middleware.authenticate, checkPermission(["view_users"]), userController.getUserById)
   .get("/health", userController.health)
-  .get("/:id", middleware.authenticate, middleware.AdminPermission, validate(validation.idParam, "params"), userController.getUserById)
-  .get("/profile", middleware.authenticate, userController.getProfile)
 
   // User's Status
   .delete("/remove/:id", middleware.authenticate, middleware.AdminPermission, userController.RemoveUnacceptedUser)
-  .put("/:id", middleware.authenticate, validate(validation.idParam, "params"), validate(validation.toggleUserStatusValidation), middleware.AdminPermission, userController.toggleUserStatus)
-
+  .put("/:id", middleware.authenticate, checkPermission(["view_users"]), userController.toggleUserStatus)
+  .get("/profile", middleware.authenticate, userController.getProfile)
   // Send Invitation
   .post("/invite", middleware.authenticate, middleware.AdminPermission, validate(validation.inviteUserValidation), userController.sendInvitation)
   .post("/register", validate(validation.completeRegistrationValidation), userController.completeRegistration)

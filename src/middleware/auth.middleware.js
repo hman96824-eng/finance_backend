@@ -14,6 +14,7 @@ export const authenticate = (req, res, next) => {
 
 
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
         req.user = {
             id: decoded.id,
             email: decoded.email,
@@ -27,13 +28,17 @@ export const authenticate = (req, res, next) => {
 // ==================== Invite Permission Middleware ====================
 export const AdminPermission = (req, res, next) => {
     try {
+
         if (!req.user) {
             return res.status(401).json({ message: messages.LOGIN_REQUIRED });
         }
 
+
         if (!req?.user?.role_id || req?.user?.role_id?.toLowerCase() !== 'admin') {
             return res.status(403).json({ message: messages.UNAUTHORIZED });
+
         }
+
         next();
     }
     catch (error) {

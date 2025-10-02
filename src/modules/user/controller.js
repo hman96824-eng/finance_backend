@@ -119,6 +119,63 @@ export const getUserById = async (req, res, next) => {
     next(err);
   }
 };
+export const getProfile = async (req, res) => {
+  try {
+    // Make sure req.user is set by the authenticate middleware
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({
+        success: false,
+        message: messages.LOGIN_REQUIRED,
+      });
+    }
+    const user = await userService.getUserById(req.user.id);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: messages.USER_NOT_FOUND,
+      });
+    }
+    res.json({
+      success: true,
+      data: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        role_id: user.role_id,
+        status: user.status,
+        created_at: user.createdAt, // mongoose usually stores as createdAt
+        updated_at: user.updatedAt,
+      },
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+};
+export const updateProfile = async (req, res, next) => {
+  try {
+    console.log("check 1");
+    console.log();
+
+    // 🔥 get userId from logged-in user
+    const userId = req?.user?.id;
+    console.log(userId, "check 2");
+    const updatedUser = await userService.updateProfile(userId, req.body);
+    console.log("check 3");
+    if (!updatedUser) {
+      return res
+        .status(404)
+        .json({ success: false, message: messages.USER_NOT_FOUND });
+    }
+    console.log("check 4");
+    res.json({ success: true, data: updatedUser });
+  } catch (err) {
+    next(err);
+  }
+};
 export const sendInvitation = async (req, res) => {
   try {
     console.log("check 4");
@@ -191,42 +248,6 @@ export const dashboard = (req, res) => {
   });
 };
 // ---------------- DASHBOARD ----------------
-export const getProfile = async (req, res) => {
-  try {
-    // Make sure req.user is set by the authenticate middleware
-    if (!req.user || !req.user.id) {
-      return res.status(401).json({
-        success: false,
-        message: messages.LOGIN_REQUIRED,
-      });
-    }
-    const user = await userService.getUserById(req.user.id);
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: messages.USER_NOT_FOUND,
-      });
-    }
-    res.json({
-      success: true,
-      data: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        role_id: user.role_id,
-        status: user.status,
-        created_at: user.createdAt, // mongoose usually stores as createdAt
-        updated_at: user.updatedAt,
-      },
-    });
-  } catch (err) {
-    res.status(500).json({
-      success: false,
-      message: err.message,
-    });
-  }
-};
 export const InactiveUserStatus = async (req, res) => {
   try {
     const inactiveUsers = await userService.getInactiveUsers();
@@ -261,6 +282,7 @@ export const RemoveUnacceptedUser = async (req, res) => {
 export const health = async (req, res) => {
   res.status(200).json({ success: true, message: "ok" });
 };
+
 // export const googleSignup = async (req, res, next) => {
 //   try {
 //     const { email, name } = req.user; // from passport after Google login
@@ -302,5 +324,6 @@ export default {
   InactiveUserStatus,
   RemoveUnacceptedUser,
   health,
+  updateProfile,
   // googleSignup,
 };
