@@ -144,8 +144,6 @@ export const getAllUsers = async () => userRepo?.find();
 export const getUserById = async (id) => userRepo?.findById(id);
 
 export const createInvite = async (email, role_id) => {
-  console.log("check 8");
-
   const cleanEmail = email.trim().toLowerCase();
   const existingUser = await userRepo?.findOne({ email: cleanEmail });
   if (existingUser) {
@@ -155,10 +153,7 @@ export const createInvite = async (email, role_id) => {
       { email: cleanEmail },
       { $set: { accepted: false } }
     );
-    console.log("cehck 9");
-
   }
-
 
   let invite = await inviteRepo?.findOne({ email: cleanEmail });
   const token = crypto.randomBytes(32).toString("hex");
@@ -169,20 +164,15 @@ export const createInvite = async (email, role_id) => {
     invite.expiresAt = expiresAt;
     invite.invite = invite.invite + 1;
     await invite.save();
-    console.log("check 10");
-
   } else {
     invite = await inviteRepo.create({ email: cleanEmail, role_id, token, expiresAt, invite: 1 });
-    console.log("check 11");
-
-
-
   }
   console.log(config.USER_EMAIL);
 
   await sendEmail({
     to: email,
-    subject: "Welcome to Our App 🎉",
+    subject: "Accept Your Manager Position",
+    text: "You’re invited to join Onu. Click the link to register.",
     html: templates.generateTeamInviteTemplate(invite?.token, role_id, email),
   });
 
@@ -246,8 +236,8 @@ export const toggleUserStatus = async (id) => {
 };
 export const getInactiveUsers = async () => {
   try {
-    const inactiveUsers = await userRepo.find({ status: "inactive" });
-    return inactiveUsers;
+    const users = await userRepo.find({ status: "inactive" });
+    return users || [];
   } catch (error) {
     throw new Error("Failed to fetch inactive users: " + error.message);
   }

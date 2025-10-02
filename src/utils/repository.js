@@ -13,6 +13,9 @@ export default class Repository {
   }
 
   async find(query = {}, projection = {}, options = {}) {
+    if (!query || typeof query !== "object") {
+      throw new Error(`Invalid input: expected object, received ${typeof query}`);
+    }
     return this.model.find(query, projection, options);
   }
 
@@ -24,9 +27,10 @@ export default class Repository {
     return this.model.findOneAndUpdate(query, updateData, options);
   }
 
-  async delete(query) {
-    return this.model.findOneAndDelete(query);
+  async deleteOne(query) {
+    return this.model.deleteOne(query);
   }
+
 
   async count(query = {}) {
     return this.model.countDocuments(query);

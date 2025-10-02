@@ -21,7 +21,6 @@ export const config = {
     CORS_ORIGIN: process.env.CORS_ORIGIN
 };
 
-console.log(config);
 
 
 export default config;

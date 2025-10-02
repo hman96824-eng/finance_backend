@@ -27,23 +27,13 @@ export const authenticate = (req, res, next) => {
 // ==================== Invite Permission Middleware ====================
 export const AdminPermission = (req, res, next) => {
     try {
-
-
         if (!req.user) {
             return res.status(401).json({ message: messages.LOGIN_REQUIRED });
         }
-        console.log("check 1");
-        console.log(req.user.role_id, "cdsbuivbi");
-
 
         if (!req?.user?.role_id || req?.user?.role_id?.toLowerCase() !== 'admin') {
             return res.status(403).json({ message: messages.UNAUTHORIZED });
-            console.log("check 2");
-
         }
-        console.log("check 3 ispresission");
-
-
         next();
     }
     catch (error) {

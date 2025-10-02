@@ -7,6 +7,7 @@ import middleware from '../../middleware/auth.middleware.js';
 const router = express.Router();
 
 router
+  .get("/inactive", middleware.authenticate, middleware.AdminPermission, userController.InactiveUserStatus)
   // asim
   .post("/signup", validate(validation.registerValidation), userController.signup)
   .post("/login", validate(validation.loginValidation), userController.login)
@@ -26,7 +27,6 @@ router
   .get("/profile", middleware.authenticate, userController.getProfile)
 
   // User's Status 
-  .get("/inactive", middleware.authenticate, middleware.AdminPermission, userController.InactiveUserStatus)
   .delete("/remove/:id", middleware.authenticate, middleware.AdminPermission, userController.RemoveUnacceptedUser)
   .put("/:id", middleware.authenticate, validate(validation.idParam, "params"), validate(validation.toggleUserStatusValidation), middleware.AdminPermission, userController.toggleUserStatus)
 
