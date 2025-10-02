@@ -256,13 +256,33 @@ export const removeUnacceptedUser = async (userId) => {
   }
 };
 
+export const googleSignup = async ({ email, name, phone, role_id, password, confirmPassword }) => {
+  const existingUser = await userRepo.findOne({ email });
+  if (existingUser) throw ApiError.unauthorized(messages.USER_EXISTS);
+
+  if (password !== confirmPassword) {
+    throw ApiError.unauthorized(messages.PASSWORD_UNMATCH);
+  }
+
+  const hashpassword = await hashPassword(password);
+
+  const newUser = await userRepo.create({
+    name,
+    email,
+    password: hashpassword,
+    phone,
+    role_id,
+    status: "inactive",
+  });
+
+  return newUser;
+};
 
 
 export default {
   login,
   signup,
   refreshAccessToken,
-  // verifySignup,
   forgetpassword,
   verifyCode,
   resetPassword,
@@ -273,4 +293,5 @@ export default {
   toggleUserStatus,
   getInactiveUsers,
   removeUnacceptedUser,
+  googleSignup,
 };

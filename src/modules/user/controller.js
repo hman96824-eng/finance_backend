@@ -35,15 +35,6 @@ export const signup = async (req, res, next) => {
     next(err);
   }
 };
-// verifySignup
-export const verifySignup = async (req, res, next) => {
-  try {
-    const data = await userService.verifySignup(req.body);
-    return successResponse(res, data, messages.REGISTER_MESSAGE);
-  } catch (err) {
-    next(err);
-  }
-};
 //  forgetpassword request otp
 export const forgetpassword = async (req, res, next) => {
   try {
@@ -281,11 +272,30 @@ export const health = async (req, res) => {
   res.status(200).json({ success: true, message: "ok" });
 }
 
+export const googleSignup = async (req, res, next) => {
+  try {
+    const { email, name } = req.user; // from passport after Google login
+    const { phone, role_id, password, confirmPassword } = req.body; // frontend form
+
+    const newUser = await userService.googleSignup({
+      email,
+      name,
+      phone,
+      role_id,
+      password,
+      confirmPassword,
+    });
+
+    return successResponse(res, newUser, messages.USER_CREATED);
+  } catch (err) {
+    next(err);
+  }
+};
+
 export default {
   login,
   signup,
   refreshToken,
-  verifySignup,
   forgetpassword,
   verifyCode,
   resetPassword,
@@ -302,5 +312,6 @@ export default {
   getProfile,
   InactiveUserStatus,
   RemoveUnacceptedUser,
-  health
+  health,
+  googleSignup,
 };
