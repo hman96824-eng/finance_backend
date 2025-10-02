@@ -2,7 +2,6 @@ import { successResponse } from "../../utils/response.helper.js";
 import userService from "./service.js";
 import { messages } from "../../constants/messages.js";
 import ApiError from "../../utils/ApiError.js";
-import { tr } from "zod/locales";
 
 // login
 export const login = async (req, res, next) => {
@@ -262,25 +261,25 @@ export const RemoveUnacceptedUser = async (req, res) => {
 export const health = async (req, res) => {
   res.status(200).json({ success: true, message: "ok" });
 };
-export const googleSignup = async (req, res, next) => {
-  try {
-    const { email, name } = req.user; // from passport after Google login
-    const { phone, role_id, password, confirmPassword } = req.body; // frontend form
+// export const googleSignup = async (req, res, next) => {
+//   try {
+//     const { email, name } = req.user; // from passport after Google login
+//     const { phone, role_id, password, confirmPassword } = req.body; // frontend form
 
-    const newUser = await userService.googleSignup({
-      email,
-      name,
-      phone,
-      role_id,
-      password,
-      confirmPassword,
-    });
+//     const newUser = await userService.googleSignup({
+//       email,
+//       name,
+//       phone,
+//       role_id,
+//       password,
+//       confirmPassword,
+//     });
 
-    return successResponse(res, newUser, messages.USER_CREATED);
-  } catch (err) {
-    next(err);
-  }
-};
+//     return successResponse(res, newUser, messages.USER_CREATED);
+//   } catch (err) {
+//     next(err);
+//   }
+// };
 
 export default {
   login,
@@ -303,5 +302,5 @@ export default {
   InactiveUserStatus,
   RemoveUnacceptedUser,
   health,
-  googleSignup,
+  // googleSignup,
 };

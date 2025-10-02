@@ -272,34 +272,34 @@ export const removeUnacceptedUser = async (userId) => {
     throw new Error("Failed to remove user: " + error.message);
   }
 };
-export const googleSignup = async ({
-  email,
-  name,
-  phone,
-  role_id,
-  password,
-  confirmPassword,
-}) => {
-  const existingUser = await userRepo.findOne({ email });
-  if (existingUser) throw ApiError.unauthorized(messages.USER_EXISTS);
+// export const googleSignup = async ({
+//   email,
+//   name,
+//   phone,
+//   role_id,
+//   password,
+//   confirmPassword,
+// }) => {
+//   const existingUser = await userRepo.findOne({ email });
+//   if (existingUser) throw ApiError.unauthorized(messages.USER_EXISTS);
 
-  if (password !== confirmPassword) {
-    throw ApiError.unauthorized(messages.PASSWORD_UNMATCH);
-  }
+//   if (password !== confirmPassword) {
+//     throw ApiError.unauthorized(messages.PASSWORD_UNMATCH);
+//   }
 
-  const hashpassword = await hashPassword(password);
+//   const hashpassword = await hashPassword(password);
 
-  const newUser = await userRepo.create({
-    name,
-    email,
-    password: hashpassword,
-    phone,
-    role_id,
-    status: "inactive",
-  });
+//   const newUser = await userRepo.create({
+//     name,
+//     email,
+//     password: hashpassword,
+//     phone,
+//     role_id,
+//     status: "inactive",
+//   });
 
-  return newUser;
-};
+//   return newUser;
+// };
 
 export default {
   login,
@@ -315,5 +315,5 @@ export default {
   toggleUserStatus,
   getInactiveUsers,
   removeUnacceptedUser,
-  googleSignup,
+  // googleSignup,
 };

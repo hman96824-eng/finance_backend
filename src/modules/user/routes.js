@@ -3,13 +3,13 @@ import userController from "./controller.js";
 import { validate } from "../../middleware/validation.middleware.js";
 import validation from "../../validation/validation.js";
 import middleware from "../../middleware/auth.middleware.js";
-import passport from "../../utils/passport.js";
+// import passport from "../../utils/passport.js";
 import { checkPermission } from "../../middleware/permissons.js";
 
 const router = express.Router();
 
 router
-  .get("/google", passport.authenticate("google", { scope: ["profile", "email"] }))
+  // .get("/google", passport.authenticate("google", { scope: ["profile", "email"] }))
   .get("/inactive", middleware.authenticate, middleware.AdminPermission, userController.InactiveUserStatus)
   // asim
   .post("/signup", validate(validation.registerValidation), userController.signup)
@@ -37,8 +37,8 @@ router
   .post("/register", validate(validation.completeRegistrationValidation), userController.completeRegistration)
   .get("/dashboard", middleware.authenticate, userController.dashboard)
 
-  // Step 1 - redirect to Google
-  // Step 2 - callback
-  .get("/google/callback", passport.authenticate("google", { session: false }), userController.googleSignup);
+// Step 1 - redirect to Google
+// Step 2 - callback
+// .get("/google/callback", passport.authenticate("google", { session: false }), userController.googleSignup);
 
 export default router;
