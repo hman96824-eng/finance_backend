@@ -6,9 +6,8 @@ const userSchema = new mongoose.Schema(
     email: { type: String, required: true, unique: true, lowercase: true },
     password: { type: String, required: true },
     role_id: {
-      type: String,
-      enum: ["ADMIN", "MANAGER"],
-      default: "ADMIN",
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Role",
       required: true,
     },
     phone: { type: String, trim: true },
@@ -26,7 +25,3 @@ const userSchema = new mongoose.Schema(
 );
 
 export const UserModel = mongoose.model("User", userSchema);
-
-
-
-

@@ -23,6 +23,7 @@ export const messages = {
   REFRESH_TOKEN: "Refresh token required",
   ACCESS_TOKEN: "New access token generated",
   IsActive: "Your status is not Active",
+  PERMISSON_NOT_GRANTED: "Forbidden: insufficient permissions",
   // ========================
   // PASSWORD & OTP
   // ========================
@@ -56,7 +57,7 @@ export const messages = {
   ROLE_CHECK: "Role must be either ADMIN or MANAGER",
   STATUS_CHECK: "Invalid status value",
   CONFIRM_EMAIL: "Verify your email",
-
+  ROLE_NOT_DEFINE: "This role is not defined",
 
   // ========================
   // USER ACTIONS
@@ -80,7 +81,8 @@ export const messages = {
   // ========================
   MESSAGE_SENT_SUCCESS: "Your message has been sent",
   MESSAGE_SEND_FAILED: "Failed to send the message",
-
+  REFRESH_TOKEN: "Refresh token required",
+  ACCESS_TOKEN: "New access token generated",
   // ========================
   // SERVER & SYSTEM
   // ========================
