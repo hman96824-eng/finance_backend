@@ -108,30 +108,7 @@ export const verifySignup = async ({ email, code }) => {
   });
   return newUser;
 };
-// export const refreshAccessToken = async ({ refreshToken }) => {
-//   if (!refreshToken) throw ApiError.badRequest(messages.REFRESH_TOKEN);
 
-//   try {
-//     // verify refresh token with its secret
-//     const decoded = jwtHelper.verifyToken(
-//       refreshToken,
-//       config.JWT_REFRESH_SECRET
-//     );
-
-//     const payload = {
-//       id: decoded.id,
-//       role: decoded.role,
-//       email: decoded.email,
-//     };
-
-//     // issue new access token
-//     const newAccessToken = jwtHelper.generateToken(payload);
-
-//     return { accessToken: newAccessToken };
-//   } catch (err) {
-//     throw ApiError.unauthorized(messages.TOKEN_EXPIRED);
-//   }
-// };
 // export const verifySignup = async ({ email, code }) => {
 //   const otpRecord = await otpRepo.findOne({ email });
 //   if (!otpRecord) throw ApiError.unauthorized(messages.USER_NOT_FOUND);
@@ -365,7 +342,6 @@ export default {
   login,
   refreshAccessToken,
   signup,
-  refreshAccessToken,
   forgetpassword,
   verifyCode,
   resetPassword,

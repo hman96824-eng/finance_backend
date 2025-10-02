@@ -291,7 +291,6 @@ export default {
   login,
   signup,
   refreshToken,
-  verifySignup,
   forgetpassword,
   verifyCode,
   resetPassword,

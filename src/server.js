@@ -11,6 +11,14 @@ const port = 5000;
 
 const app = express();
 app.use(express.json());
+
+// Check required configurations
+if (!config.GOOGLE_CLIENT_ID || !config.GOOGLE_CLIENT_SECRET) {
+  console.warn(
+    "Warning: Google OAuth credentials are not configured. Google login will not work."
+  );
+}
+
 app.use(
   cors({
     origin: config.CORS_ORIGIN, // Default to localhost if not set
