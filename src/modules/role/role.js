@@ -30,6 +30,7 @@ const roleSchema = new mongoose.Schema(
           "view_own_payslip",
           "view_own_profile",
           "update_own_profile",
+          "toggle_status",
         ],
       },
     ],
