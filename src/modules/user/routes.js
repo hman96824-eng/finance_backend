@@ -36,7 +36,7 @@ router
   .get(
     "/inactive",
     middleware.authenticate,
-    middleware.AdminPermission,
+    checkPermission(["manage_users"]),
     userController.InactiveUserStatus
   )
   // asim
@@ -77,6 +77,7 @@ router
     userController.changePassword
   )
   // Profile
+  // get only can admin and manager
   .get(
     "/",
     middleware.authenticate,

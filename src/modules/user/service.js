@@ -366,7 +366,7 @@ export const uploadProfileImage = async (req, res, next) => {
     user.avatar = {
       url: result.secure_url,
       public_id: result.public_id,
-      default_letter: user.name[0].toUpperCase(),
+      default_letter: null,
     };
     await user.save();
 
