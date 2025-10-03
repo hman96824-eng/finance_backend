@@ -181,6 +181,8 @@ export const getProfile = async (req, res) => {
 export const updateProfile = async (req, res, next) => {
   try {
     const userId = req?.user?.id;
+    console.log("check 1--", userId);
+
     const updatedUser = await userService.updateProfile(userId, req.body);
     if (!updatedUser) {
       return res
@@ -235,7 +237,7 @@ export const completeRegistration = async (req, res) => {
   }
 
   try {
-    const result = await userService.registerUser(token, req.body);
+    const result = await userService.registerUser(token, role, req.body);
     res.status(201).json({
       success: true,
       message: messages.SIGNUP_SUCCESS,

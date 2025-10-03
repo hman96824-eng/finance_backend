@@ -19,6 +19,7 @@ import { io } from "../../server.js";
 // Instantiate repositories for models
 const userRepo = new Repository(UserModel);
 const inviteRepo = new Repository(InviteModel);
+const roleRepo = new Repository(RoleModel)
 
 export const login = async ({ email, password }) => {
   const user = await userRepo.findOne({ email });
@@ -246,10 +247,13 @@ export const createInvite = async (email, role_id) => {
 
   return invite;
 };
-export const registerUser = async (inviteToken, userData) => {
+export const registerUser = async (inviteToken, newRole, userData) => {
   const { name, phone, password, confirmPassword } = userData;
   if (!password || password !== confirmPassword)
     throw ApiError.unauthorized(messages.PASSWORD_INVALID);
+
+  const NewRole = await roleRepo.findOne({ name: newRole })
+  if (!NewRole) throw ApiError.unauthorized(messages.ROLE_NOT_FOUND)
 
   const invite = await inviteRepo.findOne({ token: inviteToken });
   if (!invite) throw ApiError.unauthorized(messages.TOKEN_INVALID);
@@ -267,7 +271,7 @@ export const registerUser = async (inviteToken, userData) => {
     email: invite.email,
     phone,
     password: hashedPassword,
-    role_id: invite.role_id,
+    role_id: NewRole._id,
     status: "active",
   });
 
@@ -276,10 +280,6 @@ export const registerUser = async (inviteToken, userData) => {
   invite.expiresAt = null;
   await invite.save();
 
-  const authToken = jwt.generateToken(
-    { id: newUser._id, email: newUser.email, role: newUser.role_id },
-    config.JWT_EXPIRES_IN || "1d"
-  );
 
   return {
     message: messages.SIGNUP_SUCCESS,
@@ -289,7 +289,6 @@ export const registerUser = async (inviteToken, userData) => {
       email: newUser.email,
       role_id: newUser.role_id,
     },
-    token: authToken,
   };
   console.log("registeration is successfuly");
 };
@@ -401,10 +400,17 @@ export const assignRole = async (id, newRoleName) => {
   if (!user) throw ApiError.notFound(messages.USER_NOT_FOUND);
   if (!newRoleName) throw ApiError.badRequest(messages.ROLE_NOT_DEFINE);
 
-  user.role_id = newRoleName;
+  // 🔑 Find role by name
+  const role = await roleRepo.findOne({ name: newRoleName });
+  if (!role) throw ApiError.notFound(messages.ROLE_NOT_FOUND);
+
+  // ✅ Assign role ObjectId
+  user.role_id = role._id;
+
   await user.save();
   return user;
 };
+
 
 export default {
   login,

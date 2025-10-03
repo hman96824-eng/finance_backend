@@ -12,17 +12,16 @@ const router = express.Router();
 const upload = multer({ dest: "uploads/" });
 
 router
-  .put("/:id", middleware.authenticate, checkPermission(["manage_users"]), userController.toggleUserStatus)
-  .get("/profile", middleware.authenticate, userController.getProfile)
-  .put("/profile", middleware.authenticate, userController.updateProfile)
-  .post("/signup", validate(validation.registerValidation), userController.signup)
-  // .get("/google", passport.authenticate("google", { scope: ["profile", "email"] }))
   .put("/upload-avatar", middleware.authenticate, upload.single("avatar"), service.uploadProfileImage)
   .delete("/remove-avatar", middleware.authenticate, service.removeProfileImage)
+  .put("/profile", middleware.authenticate, userController.updateProfile)
+  .put("/:id", middleware.authenticate, checkPermission(["manage_users"]), userController.toggleUserStatus)
+  .get("/profile", middleware.authenticate, userController.getProfile)
+  .post("/signup", validate(validation.registerValidation), userController.signup)
+  // .get("/google", passport.authenticate("google", { scope: ["profile", "email"] }))
   .get("/inactive", middleware.authenticate, checkPermission(["manage_users"]), userController.InactiveUserStatus)
   // asim
   .post("/login", validate(validation.loginValidation), userController.login)
-  .post("/refresh-token", userController.refreshToken)
 
   .post("/forgetPasswordOtp", validate(validation.requestOTP), userController.forgetpassword)
   .post("/ForgetVerifyOtp", validate(validation.verifyOTP), userController.verifyCode)
@@ -33,8 +32,7 @@ router
   // Profile
   // get only can admin and manager
   .get("/", middleware.authenticate, checkPermission(["view_users"]), userController.getUser)
-  .get("/:id", middleware.authenticate, checkPermission(["view_users"]),
-    userController.getUserById)
+  .get("/:id", middleware.authenticate, checkPermission(["view_users"]), userController.getUserById)
   .get("/health", userController.health)
 
   // User's Status
