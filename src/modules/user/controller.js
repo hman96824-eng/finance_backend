@@ -124,21 +124,25 @@ export const getProfile = async (req, res) => {
   try {
     const userId = req?.user?.id;
     console.log("check 1", userId);
+
     // Make sure req.user is set by the authenticate middleware
     if (!req?.user || !userId) {
-      console.log("check 2",);
+      console.log("check 2");
       return res.status(401).json({
         success: false,
         message: messages.LOGIN_REQUIRED,
       });
     }
-    const user = await userService.getUserById(req.user.id);
+
+    const user = await userService.getUserById(userId);
     if (!user) {
       return res.status(404).json({
         success: false,
         message: messages.USER_NOT_FOUND,
       });
     }
+
+    // ✅ Return full profile
     res.json({
       success: true,
       data: {
@@ -148,7 +152,25 @@ export const getProfile = async (req, res) => {
         phone: user.phone,
         role_id: user.role_id,
         status: user.status,
-        created_at: user.createdAt, // mongoose usually stores as createdAt
+
+        // Optional profile details
+        salary: user.salary,
+        address: user.address,
+        gender: user.gender,
+        nationality: user.nationality,
+        maritalStatus: user.maritalStatus,
+        department: user.department,
+        description: user.description,
+
+        // Avatar object
+        avatar: {
+          url: user.avatar?.url,
+          public_id: user.avatar?.public_id,
+          default_letter: user.avatar?.default_letter,
+        },
+
+        // System timestamps
+        created_at: user.createdAt,
         updated_at: user.updatedAt,
       },
     });
@@ -230,7 +252,10 @@ export const completeRegistration = async (req, res) => {
 // ---------------- USER STATUS ----------------
 export const toggleUserStatus = async (req, res) => {
   try {
-    const result = await userService.toggleUserStatus(req.params.id);
+    const userID = req?.params?.id
+    console.log(("check 1-- ", userID));
+
+    const result = await userService.toggleUserStatus(userID);
     res.json({ success: true, ...result });
   } catch (err) {
     res

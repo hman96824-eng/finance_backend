@@ -9,6 +9,7 @@ import { checkPermission } from "../../middleware/permissons.js";
 const router = express.Router();
 
 router
+  .put("/:id", middleware.authenticate, validate(validation.idParam, "params"), validate(validation.toggleUserStatusValidation), checkPermission(["manage_users"]), userController.toggleUserStatus)
   .get("/profile", middleware.authenticate, userController.getProfile)
   .put("/profile", middleware.authenticate, userController.updateProfile)
   .post("/signup", validate(validation.registerValidation), userController.signup)
@@ -23,7 +24,6 @@ router
   .post("/changePasswordOtp", middleware.authenticate, validate(validation.requestOTP), userController.requestOtp)
   .post("/chnageVerifyOtp", middleware.authenticate, validate(validation.verifyOTP), userController.verifyOtp)
   .post("/changepassword", middleware.authenticate, validate(validation.resetPassword), userController.changePassword)
-
   // Profile
   .get("/", middleware.authenticate, checkPermission(["view_users"]), userController.getUser)
   .get("/:id", middleware.authenticate, checkPermission(["view_users"]), userController.getUserById)
@@ -31,7 +31,6 @@ router
 
   // User's Status
   .delete("/remove/:id", middleware.authenticate, middleware.AdminPermission, userController.RemoveUnacceptedUser)
-  .put("/:id", middleware.authenticate, checkPermission(["view_users"]), userController.toggleUserStatus)
   // Send Invitation
   .post("/invite", middleware.authenticate, middleware.AdminPermission, validate(validation.inviteUserValidation), userController.sendInvitation)
   .post("/register", validate(validation.completeRegistrationValidation), userController.completeRegistration)
