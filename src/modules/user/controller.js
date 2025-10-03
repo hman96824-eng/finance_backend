@@ -122,11 +122,11 @@ export const getUserById = async (req, res, next) => {
 };
 export const getProfile = async (req, res) => {
   try {
-    console.log("check 1");
+    const userId = req?.user?.id;
+    console.log("check 1", userId);
     // Make sure req.user is set by the authenticate middleware
-    if (!req?.user || !req?.user?.id) {
+    if (!req?.user || !userId) {
       console.log("check 2",);
-
       return res.status(401).json({
         success: false,
         message: messages.LOGIN_REQUIRED,
@@ -161,14 +161,8 @@ export const getProfile = async (req, res) => {
 };
 export const updateProfile = async (req, res, next) => {
   try {
-    console.log("check 1");
-    console.log();
-
-    // 🔥 get userId from logged-in user
     const userId = req?.user?.id;
-    console.log(userId, "check 2");
     const updatedUser = await userService.updateProfile(userId, req.body);
-    console.log("check 3");
     if (!updatedUser) {
       return res
         .status(404)

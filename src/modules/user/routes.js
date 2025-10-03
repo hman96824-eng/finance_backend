@@ -9,6 +9,7 @@ import { checkPermission } from "../../middleware/permissons.js";
 const router = express.Router();
 
 router
+  .get("/profile", middleware.authenticate, userController.getProfile)
   .put("/profile", middleware.authenticate, userController.updateProfile)
   .post("/signup", validate(validation.registerValidation), userController.signup)
   // .get("/google", passport.authenticate("google", { scope: ["profile", "email"] }))
@@ -31,7 +32,6 @@ router
   // User's Status
   .delete("/remove/:id", middleware.authenticate, middleware.AdminPermission, userController.RemoveUnacceptedUser)
   .put("/:id", middleware.authenticate, checkPermission(["view_users"]), userController.toggleUserStatus)
-  .get("/profile", middleware.authenticate, userController.getProfile)
   // Send Invitation
   .post("/invite", middleware.authenticate, middleware.AdminPermission, validate(validation.inviteUserValidation), userController.sendInvitation)
   .post("/register", validate(validation.completeRegistrationValidation), userController.completeRegistration)
