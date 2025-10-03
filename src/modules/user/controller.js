@@ -259,8 +259,8 @@ export const completeRegistration = async (req, res) => {
 // ---------------- USER STATUS ----------------
 export const toggleUserStatus = async (req, res) => {
   try {
-    const userID = req?.params?.id
-    console.log(("check 1-- ", userID));
+    const userID = req?.params?.id;
+    console.log("check 1-- ");
 
     const result = await userService.toggleUserStatus(userID);
     res.json({ success: true, ...result });

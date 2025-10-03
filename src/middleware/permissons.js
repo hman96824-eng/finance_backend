@@ -23,15 +23,8 @@ export const checkPermission = (requiredPermissions) => {
         userPermissions.includes(perm)
       );
 
-      if (!hasPermission) {
-        console.log(
-          "Permission denied. User permissions:",
-          userPermissions,
-          "Required:",
-          requiredPermissions
-        );
+      if (!hasPermission)
         throw ApiError.unauthorized(messages.PERMISSON_NOT_GRANTED);
-      }
 
       next();
     } catch (err) {

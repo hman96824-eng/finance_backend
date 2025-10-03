@@ -9,23 +9,27 @@ const passwordSchema = z.string().min(6, { message: messages.PASSWORD_CHECK });
 const idParam = z.object({
   id: z.string().regex(/^[a-f\d]{24}$/i, { message: messages.INVALID_USER_ID }),
 });
-
 // ========================
 // AUTH SCHEMAS
 // ========================
 
-
-export const registerValidation = z.object({
-  name: z.string().trim().min(3, { message: messages.NAME_CHECK }),
-  phone: z.string().regex(/^\+?[1-9]\d{1,14}$/, { message: messages.PHONE_CHECK }),
-  roleName: z.enum(["ADMIN", "MANAGER", "EMPLOYEE"], { message: messages.ROLE_CHECK }),
-  email: emailSchema,
-  password: passwordSchema,
-  confirmPassword: z.string({ message: messages.CONFIRM_PASSWORD_REQUIRED })
-}).refine((data) => data.password === data.confirmPassword, {
-  path: ["confirmPassword"],
-  message: messages.CONFIRM_PASSWORD,
-});
+export const registerValidation = z
+  .object({
+    name: z.string().trim().min(3, { message: messages.NAME_CHECK }),
+    phone: z
+      .string()
+      .regex(/^\+?[1-9]\d{1,14}$/, { message: messages.PHONE_CHECK }),
+    roleName: z.enum(["ADMIN", "MANAGER", "EMPLOYEE"], {
+      message: messages.ROLE_CHECK,
+    }),
+    email: emailSchema,
+    password: passwordSchema,
+    confirmPassword: z.string({ message: messages.CONFIRM_PASSWORD_REQUIRED }),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    path: ["confirmPassword"],
+    message: messages.CONFIRM_PASSWORD,
+  });
 
 export const loginValidation = z.object({
   email: emailSchema,
@@ -74,7 +78,10 @@ export const toggleUserStatusValidation = z.object({
 });
 export const updateProfileValidation = z.object({
   name: z.string().min(3, { message: messages.NAME_CHECK }).optional(),
-  phone: z.string().regex(/^\+?[1-9]\d{1,14}$/, { message: messages.PHONE_CHECK }).optional(),
+  phone: z
+    .string()
+    .regex(/^\+?[1-9]\d{1,14}$/, { message: messages.PHONE_CHECK })
+    .optional(),
   address: z.string().optional(),
   gender: z.enum(["male", "female", "other"]).optional(),
   nationality: z.string().optional(),
@@ -84,7 +91,6 @@ export const updateProfileValidation = z.object({
   description: z.string().optional(),
   avatar: z.string().url({ message: "Invalid image URL" }).optional(),
 });
-
 
 // ========================
 // EXPORT
