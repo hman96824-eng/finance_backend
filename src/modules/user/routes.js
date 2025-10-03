@@ -12,26 +12,12 @@ const router = express.Router();
 const upload = multer({ dest: "uploads/" });
 
 router
-  .put(
-    "/:id",
-    middleware.authenticate,
-    checkPermission(["manage_users"]),
-    userController.toggleUserStatus
-  )
-  .get("/profile", middleware.authenticate, userController.getProfile) // user profile
-  .put("/profile", middleware.authenticate, userController.updateProfile) // user profile update
-  .post(
-    "/signup",
-    validate(validation.registerValidation),
-    userController.signup
-  )
+  .put("/:id", middleware.authenticate, checkPermission(["manage_users"]), userController.toggleUserStatus)
+  .get("/profile", middleware.authenticate, userController.getProfile)
+  .put("/profile", middleware.authenticate, userController.updateProfile)
+  .post("/signup", validate(validation.registerValidation), userController.signup)
   // .get("/google", passport.authenticate("google", { scope: ["profile", "email"] }))
-  .put(
-    "/upload-avatar",
-    middleware.authenticate,
-    upload.single("avatar"),
-    service.uploadProfileImage
-  )
+  .put("/upload-avatar", middleware.authenticate, upload.single("avatar"), service.uploadProfileImage)
   .delete("/remove-avatar", middleware.authenticate, service.removeProfileImage)
   .get(
     "/inactive",
@@ -100,22 +86,11 @@ router
     userController.RemoveUnacceptedUser
   )
   // Send Invitation
-  .post(
-    "/invite",
-    middleware.authenticate,
-    checkPermission(["view_users"]),
-    validate(validation.inviteUserValidation),
-    userController.sendInvitation
-  )
-  .post(
-    "/register",
-    validate(validation.completeRegistrationValidation),
-    userController.completeRegistration
-  )
-  .get("/dashboard", middleware.authenticate, userController.dashboard);
+  .post("/invite", middleware.authenticate, checkPermission(["view_users"]), validate(validation.inviteUserValidation), userController.sendInvitation)
+  .post("/register", validate(validation.completeRegistrationValidation), userController.completeRegistration)
+  .get("/dashboard", middleware.authenticate, userController.dashboard)
+  .put("/change-role/:id", middleware.authenticate, checkPermission(["assign_roles"]), userController.changeRole);
 
-// Step 1 - redirect to Google
-// Step 2 - callback
-// .get("/google/callback", passport.authenticate("google", { session: false }), userController.googleSignup);
+
 
 export default router;

@@ -3,10 +3,7 @@ import ApiError from "../../utils/ApiError.js";
 import { messages } from "../../constants/messages.js";
 import { config } from "../../config/config.js";
 import { comparePassword, hashPassword } from "../../utils/bcrypt.helper.js";
-import {
-  uploadToCloudinary,
-  deleteFromCloudinary,
-} from "../../config/cloud.js";
+import { uploadToCloudinary, deleteFromCloudinary, } from "../../config/cloud.js";
 import GenerateOtpEmailTemplate from "../../utils/templates/OtpGenerator.js";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
@@ -17,6 +14,7 @@ import { InviteModel } from "../invites/model.js";
 import Repository from "../../utils/repository.js";
 import sendEmail from "../../utils/email.js";
 import fs from "fs";
+import { io } from "../../server.js";
 
 // Instantiate repositories for models
 const userRepo = new Repository(UserModel);
@@ -73,7 +71,6 @@ export const signup = async ({
   confirmPassword,
 }) => {
   const user = await userRepo.findOne({ email });
-
   if (user) throw ApiError.unauthorized(messages.USER_EXISTS);
 
   const role = await RoleModel.findOne({ name: roleName });
@@ -83,14 +80,37 @@ export const signup = async ({
     throw ApiError.unauthorized(messages.PASSWORD_UNMATCH);
 
   const hashpassword = await hashPassword(password);
+
+  // ✅ Get first letter (uppercase)
+  const firstLetter = name.charAt(0).toUpperCase();
+
+  // ✅ Generate avatar URL using UI Avatars (optional)
+  const avatarUrl = `https://ui-avatars.com/api/?name=${firstLetter}&background=random&color=fff&size=128`;
+
   const newUser = await userRepo.create({
-    name: name,
-    email: email,
+    name,
+    email,
     password: hashpassword,
-    phone: phone,
+    phone,
     role_id: role._id,
     status: "inactive",
+    avatar: {
+      url: avatarUrl,         // placeholder image
+      public_id: null,        // will be filled when user uploads
+      default_letter: firstLetter, // fallback letter
+    },
   });
+
+  // 🔔 Send socket notification
+  io.emit("new_user_registered", {
+    id: newUser._id,
+    name: newUser.name,
+    email: newUser.email,
+    role: role.name,
+    status: newUser.status,
+    avatar: newUser.avatar,
+  });
+
   return newUser;
 };
 export const forgetpassword = async ({ email }) => {
@@ -311,38 +331,6 @@ export const removeUnacceptedUser = async (userId) => {
     throw new Error("Failed to remove user: " + error.message);
   }
 };
-
-// export const googleSignup = async ({
-//   email,
-//   name,
-//   phone,
-//   role_id,
-//   password,
-//   confirmPassword,
-// }) => {
-//   const existingUser = await userRepo.findOne({ email });
-//   if (existingUser) throw ApiError.unauthorized(messages.USER_EXISTS);
-
-//   if (password !== confirmPassword) {
-//     throw ApiError.unauthorized(messages.PASSWORD_UNMATCH);
-//   }
-
-//   const hashpassword = await hashPassword(password);
-
-//   const newUser = await userRepo.create({
-//     name,
-//     email,
-//     password: hashpassword,
-//     phone,
-//     role_id,
-//     status: "inactive",
-//   });
-
-//   return newUser;
-// };
-
-// cloudinary image upload
-
 export const uploadProfileImage = async (req, res, next) => {
   try {
     const userId = req.user.id; // get from JWT middleware
@@ -378,9 +366,6 @@ export const uploadProfileImage = async (req, res, next) => {
     next(err);
   }
 };
-
-// delete image from cloudinary
-
 export const removeProfileImage = async (req, res, next) => {
   try {
     const userId = req.user.id;
@@ -391,11 +376,17 @@ export const removeProfileImage = async (req, res, next) => {
       await deleteFromCloudinary(user.avatar.public_id);
     }
 
+
+    const firstLetter = user.name.charAt(0).toUpperCase();
+
+    // ✅ Generate avatar URL using UI Avatars (optional)
+    const avatarUrl = `https://ui-avatars.com/api/?name=${firstLetter}&background=random&color=fff&size=128`;
+
     // Reset to default letter avatar
     user.avatar = {
-      url: null,
+      url: avatarUrl,
       public_id: null,
-      default_letter: user.name[0].toUpperCase(),
+      default_letter: firstLetter,
     };
 
     await user.save();
@@ -404,6 +395,15 @@ export const removeProfileImage = async (req, res, next) => {
   } catch (err) {
     next(err);
   }
+};
+export const assignRole = async (id, newRoleName) => {
+  const user = await userRepo.findById(id);
+  if (!user) throw ApiError.notFound(messages.USER_NOT_FOUND);
+  if (!newRoleName) throw ApiError.badRequest(messages.ROLE_NOT_DEFINE);
+
+  user.role_id = newRoleName;
+  await user.save();
+  return user;
 };
 
 export default {
@@ -423,5 +423,6 @@ export default {
   getInactiveUsers,
   removeUnacceptedUser,
   updateProfile,
+  assignRole,
   // googleSignup,
 };
