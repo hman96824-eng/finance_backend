@@ -2,6 +2,7 @@ import { successResponse } from "../../utils/response.helper.js";
 import userService from "./service.js";
 import { messages } from "../../constants/messages.js";
 import ApiError from "../../utils/ApiError.js";
+import { check } from "zod";
 
 // login
 export const login = async (req, res, next) => {
@@ -121,8 +122,11 @@ export const getUserById = async (req, res, next) => {
 };
 export const getProfile = async (req, res) => {
   try {
+    console.log("check 1");
     // Make sure req.user is set by the authenticate middleware
-    if (!req.user || !req.user.id) {
+    if (!req?.user || !req?.user?.id) {
+      console.log("check 2",);
+
       return res.status(401).json({
         success: false,
         message: messages.LOGIN_REQUIRED,
