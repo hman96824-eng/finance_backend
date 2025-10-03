@@ -78,8 +78,8 @@ const userSchema = new mongoose.Schema(
     },
 
     avatar: {
-      url: { type: String, default: null },
-      public_id: { type: String, default: null },
+      url: { type: String },
+      public_id: { type: String },
       default_letter: { type: String }, // store first letter of name
     },
 

@@ -363,7 +363,7 @@ export const uploadProfileImage = async (req, res, next) => {
     const result = await uploadToCloudinary(req.file.path, "user_avatars");
 
     // Update DB
-    userRepo.avatar = {
+    user.avatar = {
       url: result.secure_url,
       public_id: result.public_id,
       default_letter: user.name[0].toUpperCase(),
