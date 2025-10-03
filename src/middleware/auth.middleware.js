@@ -1,53 +1,45 @@
-import jwt from 'jsonwebtoken';
-import messages from '../constants/messages.js';
+import jwtHelper from "../utils/jwt.helper.js";
+import messages from "../constants/messages.js";
+import ApiError from "../utils/ApiError.js";
 
 // ==================== AUTHENTICATE Middleware ====================
 export const authenticate = (req, res, next) => {
-    try {
-        const authHeader = req.headers.authorization;
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith("Bearer"))
+      throw ApiError.unauthorized(messages.TOKEN_INVALID);
 
-        if (!authHeader || !authHeader.startsWith('Bearer')) {
-            return res.status(401).json({ message: messages.TOKEN_MISSING });
-        }
+    const token = authHeader.split(" ")[1];
 
-        const token = authHeader.split(' ')[1];
+    const decoded = jwtHelper.verifyToken(token, process.env.JWT_SECRET);
+    console.log(decoded, "decodededede");
+    if (!decoded.id || !decoded.role)
+      throw ApiError.unauthorized(messages.TOKEN_INVALID);
 
-
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-        req.user = {
-            id: decoded.id,
-            email: decoded.email,
-            role_id: decoded.role,
-        };
-        next();
-    } catch (err) {
-        return res.status(403).json({ message: messages.TOKEN_INVALID });
-    }
+    req.user = {
+      id: decoded.id,
+      email: decoded.email,
+      role_id: decoded.role_id,
+    };
+    next();
+  } catch (err) {
+    next(err);
+  }
 };
 // ==================== Invite Permission Middleware ====================
 export const AdminPermission = (req, res, next) => {
-    try {
+  try {
+    if (!req.user) throw ApiError.notFound(messages.USER_NOT_FOUND);
 
-        if (!req.user) {
-            return res.status(401).json({ message: messages.LOGIN_REQUIRED });
-        }
-
-
-        if (!req?.user?.role_id || req?.user?.role_id?.toLowerCase() !== 'admin') {
-            return res.status(403).json({ message: messages.UNAUTHORIZED });
-
-        }
-
-        next();
-    }
-    catch (error) {
-        return res.status(403).json({ message: messages.TOKEN_INVALID });
-
-    }
+    if (!req?.user?.role_id || req?.user?.role_id?.toLowerCase() !== "admin")
+      throw ApiError.unauthorized(messages.UNAUTHORIZED);
+    next();
+  } catch (error) {
+    next(err);
+  }
 };
 
 export default {
-    authenticate,
-    AdminPermission,
+  authenticate,
+  AdminPermission,
 };

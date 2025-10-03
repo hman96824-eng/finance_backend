@@ -3,20 +3,23 @@ import ApiError from "../../utils/ApiError.js";
 import { messages } from "../../constants/messages.js";
 import { config } from "../../config/config.js";
 import { comparePassword, hashPassword } from "../../utils/bcrypt.helper.js";
+import {
+  uploadToCloudinary,
+  deleteFromCloudinary,
+} from "../../config/cloud.js";
 import GenerateOtpEmailTemplate from "../../utils/templates/OtpGenerator.js";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
 import templates from "../../utils/templates/invitationEmail.js";
 import { UserModel } from "./model.js";
 import { RoleModel } from "../role/role.js";
-import { OtpModel } from "../otp/model.js";
 import { InviteModel } from "../invites/model.js";
 import Repository from "../../utils/repository.js";
 import sendEmail from "../../utils/email.js";
+import fs from "fs";
 
 // Instantiate repositories for models
 const userRepo = new Repository(UserModel);
-const otpRepo = new Repository(OtpModel);
 const inviteRepo = new Repository(InviteModel);
 
 export const login = async ({ email, password }) => {
@@ -27,7 +30,6 @@ export const login = async ({ email, password }) => {
   if (!isMatch) throw ApiError.unauthorized(messages.INVALID_CREDENTIALS);
   if (user.status.toLowerCase() === "inactive")
     throw ApiError.unauthorized(messages.IsActive);
-
   const payload = { id: user._id, role: user.role_id, email: user.email };
   const accessToken = jwt.generateToken(payload);
   const refreshToken = jwt.generateRefreshToken(payload);
@@ -339,9 +341,76 @@ export const removeUnacceptedUser = async (userId) => {
 //   return newUser;
 // };
 
+// cloudinary image upload
+
+export const uploadProfileImage = async (req, res, next) => {
+  try {
+    const userId = req.user.id; // get from JWT middleware
+    const user = await userRepo.findById(userId);
+
+    console.log(req, "req");
+    console.log(req.file, "req file");
+    console.log(user, "user");
+    console.log(userId, "user id ");
+    if (!req.file) throw ApiError.badRequest(messages.FILE_NOT_UPLOADED);
+
+    // If user already has an image, remove old one
+    if (user.avatar.public_id) {
+      await deleteFromCloudinary(user.avatar.public_id);
+    }
+
+    // Upload new image to cloudinary
+    const result = await uploadToCloudinary(req.file.path, "user_avatars");
+
+    // Update DB
+    userRepo.avatar = {
+      url: result.secure_url,
+      public_id: result.public_id,
+      default_letter: user.name[0].toUpperCase(),
+    };
+    await user.save();
+
+    // Remove temp file
+    fs.unlinkSync(req.file.path);
+
+    res.json({ message: "Profile image updated", avatar: user.avatar });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// delete image from cloudinary
+
+export const removeProfileImage = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const user = await userRepo.findById(userId);
+
+    // Delete image from Cloudinary if exists
+    if (user.avatar.public_id) {
+      await deleteFromCloudinary(user.avatar.public_id);
+    }
+
+    // Reset to default letter avatar
+    user.avatar = {
+      url: null,
+      public_id: null,
+      default_letter: user.name[0].toUpperCase(),
+    };
+
+    await user.save();
+
+    res.json({ message: "Profile image removed", avatar: user.avatar });
+  } catch (err) {
+    next(err);
+  }
+};
+
 export default {
   login,
   refreshAccessToken,
+  uploadProfileImage,
+  removeProfileImage,
   signup,
   forgetpassword,
   verifyCode,

@@ -23,6 +23,9 @@ export const config = {
   // GOOGLE_CALLBACK_URL:
   //   process.env.GOOGLE_CALLBACK_URL || "/api/v1/auth/google/callback",
   CORS_ORIGIN: process.env.CORS_ORIGIN,
+  CLOUDINARY_CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME,
+  CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY,
+  CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET,
 };
 
 export default config;
