@@ -18,8 +18,8 @@ router
     checkPermission(["manage_users"]),
     userController.toggleUserStatus
   )
-  .get("/profile", middleware.authenticate, userController.getProfile)
-  .put("/profile", middleware.authenticate, userController.updateProfile)
+  .get("/profile", middleware.authenticate, userController.getProfile) // user profile
+  .put("/profile", middleware.authenticate, userController.updateProfile) // user profile update
   .post(
     "/signup",
     validate(validation.registerValidation),

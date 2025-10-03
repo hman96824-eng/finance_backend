@@ -28,19 +28,7 @@ export const authenticate = (req, res, next) => {
   }
 };
 // ==================== Invite Permission Middleware ====================
-export const AdminPermission = (req, res, next) => {
-  try {
-    if (!req.user) throw ApiError.notFound(messages.USER_NOT_FOUND);
-
-    if (!req?.user?.role_id || req?.user?.role_id?.toLowerCase() !== "admin")
-      throw ApiError.unauthorized(messages.UNAUTHORIZED);
-    next();
-  } catch (error) {
-    next(err);
-  }
-};
 
 export default {
   authenticate,
-  AdminPermission,
 };

@@ -18,7 +18,8 @@ export const registerValidation = z
     name: z.string().trim().min(3, { message: messages.NAME_CHECK }),
     phone: z
       .string()
-      .regex(/^\+?[1-9]\d{1,14}$/, { message: messages.PHONE_CHECK }),
+      .regex(/^\+?[1-9]\d{1,14}$/, { message: messages.PHONE_CHECK })
+      .optional(),
     roleName: z.enum(["ADMIN", "MANAGER", "EMPLOYEE"], {
       message: messages.ROLE_CHECK,
     }),
