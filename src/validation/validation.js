@@ -1,7 +1,6 @@
 // validations.js
 import { z } from "zod";
 import { messages } from "../constants/messages.js";
-import { Schema } from "zod/v3";
 
 // Common schemas
 const emailSchema = z.string().email({ message: messages.EMAIL_CHECK });
@@ -75,7 +74,7 @@ export const completeRegistrationValidation = z
   });
 
 export const toggleUserStatusValidation = z.object({
-  status: z.enum(["ACTIVE", "INACTIVE"], { message: messages.STATUS_CHECK }),
+  status: z.enum(["active", "inactive"], { message: messages.STATUS_CHECK }),
 });
 export const updateProfileValidation = z.object({
   name: z.string().min(3, { message: messages.NAME_CHECK }).optional(),

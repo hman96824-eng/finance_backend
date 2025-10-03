@@ -13,7 +13,7 @@ const upload = multer({ dest: "uploads/" });
 
 router
   .put(
-    "/:id/toggle-status",
+    "/:id",
     middleware.authenticate,
     checkPermission(["manage_users"]),
     userController.toggleUserStatus
