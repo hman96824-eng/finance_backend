@@ -98,7 +98,7 @@ router
     middleware.authenticate,
     validate(validation.idParam, "params"),
     validate(validation.toggleUserStatusValidation),
-    middleware.AdminPermission,
+    checkPermission(["manage_users"]),
     userController.toggleUserStatus
   )
 

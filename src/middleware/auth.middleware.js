@@ -6,9 +6,8 @@ import ApiError from "../utils/ApiError.js";
 export const authenticate = (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith("Bearer")) {
-      return res.status(401).json({ message: messages.TOKEN_MISSING });
-    }
+    if (!authHeader || !authHeader.startsWith("Bearer"))
+      throw ApiError.unauthorized(messages.TOKEN_INVALID);
 
     const token = authHeader.split(" ")[1];
 
@@ -24,22 +23,19 @@ export const authenticate = (req, res, next) => {
     };
     next();
   } catch (err) {
-    return res.status(403).json({ message: messages.TOKEN_INVALID });
+    next(err);
   }
 };
 // ==================== Invite Permission Middleware ====================
 export const AdminPermission = (req, res, next) => {
   try {
-    if (!req.user) {
-      return res.status(401).json({ message: messages.LOGIN_REQUIRED });
-    }
+    if (!req.user) throw ApiError.notFound(messages.USER_NOT_FOUND);
 
-    if (!req?.user?.role_id || req?.user?.role_id?.toLowerCase() !== "admin") {
-      return res.status(403).json({ message: messages.UNAUTHORIZED });
-    }
+    if (!req?.user?.role_id || req?.user?.role_id?.toLowerCase() !== "admin")
+      throw ApiError.unauthorized(messages.UNAUTHORIZED);
     next();
   } catch (error) {
-    return res.status(403).json({ message: messages.TOKEN_INVALID });
+    next(err);
   }
 };
 
