@@ -25,7 +25,7 @@ const userSchema = new mongoose.Schema(
     role_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Role",
-      require: true
+      require: true,
     },
     status: {
       type: String,
@@ -80,7 +80,7 @@ const userSchema = new mongoose.Schema(
     avatar: {
       url: { type: String, default: null },
       public_id: { type: String, default: null },
-      default_letter: { type: String, default: null }, // store first letter of name
+      default_letter: { type: String }, // store first letter of name
     },
 
     // For password reset (optional)
@@ -89,6 +89,5 @@ const userSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
-
 
 export const UserModel = mongoose.model("User", userSchema);

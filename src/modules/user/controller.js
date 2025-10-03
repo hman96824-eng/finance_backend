@@ -101,8 +101,15 @@ export const changePassword = async (req, res, next) => {
 export const getUser = async (req, res, next) => {
   try {
     const users = await userService.getAllUsers();
+    if (!users) {
+      return res.status(404).json({
+        success: false,
+        message: "No users found",
+      });
+    }
     res.json({ success: true, data: users });
   } catch (err) {
+    console.error("Error in getUser:", err);
     next(err);
   }
 };
@@ -300,6 +307,8 @@ export const health = async (req, res) => {
 //     next(err);
 //   }
 // };
+
+// cloudinary image uploader
 
 export default {
   login,

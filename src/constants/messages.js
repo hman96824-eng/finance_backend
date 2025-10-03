@@ -24,6 +24,7 @@ export const messages = {
   ACCESS_TOKEN: "New access token generated",
   IsActive: "Your status is not Active",
   PERMISSON_NOT_GRANTED: "Forbidden: insufficient permissions",
+  FILE_NOT_UPLOADED: "file not uploaded",
   // ========================
   // PASSWORD & OTP
   // ========================

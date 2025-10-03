@@ -9,15 +9,29 @@ export const checkPermission = (requiredPermissions) => {
 
       if (!user) throw ApiError.unauthorized(messages.USER_NOT_FOUND);
 
-      const userPermissions = user?.role_id?.permissions;
+      if (!user.role_id || !Array.isArray(user.role_id.permissions)) {
+        console.log("Role or permissions not found:", {
+          role: user.role_id?._id,
+        });
+        throw ApiError.unauthorized(messages.PERMISSON_NOT_GRANTED);
+      }
+
+      const userPermissions = user.role_id.permissions;
 
       // check if user has ALL required permissions
       const hasPermission = requiredPermissions.every((perm) =>
         userPermissions.includes(perm)
       );
 
-      if (!hasPermission)
+      if (!hasPermission) {
+        console.log(
+          "Permission denied. User permissions:",
+          userPermissions,
+          "Required:",
+          requiredPermissions
+        );
         throw ApiError.unauthorized(messages.PERMISSON_NOT_GRANTED);
+      }
 
       next();
     } catch (err) {
