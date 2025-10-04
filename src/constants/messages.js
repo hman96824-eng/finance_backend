@@ -36,11 +36,11 @@ export const messages = {
   VERIFIED_OTP: "OTP verified successfully",
   OTP_CHECK: "Invalid OTP code",
 
-  NEW_PASSWORD: "Choose a different password",
+  NEW_PASSWORD: "New password can not be the old password",
   PASSWORD_RESET: "Your password has been reset. You can now login again.",
   PASSWORD_CHANGED: "Password changed successfully",
   PASSWORD_UNMATCH: "Passwords do not match",
-
+  INCORRECT_PASSWORD: "old password is incorrect",
   // ========================
   // VALIDATIONS
   // ========================

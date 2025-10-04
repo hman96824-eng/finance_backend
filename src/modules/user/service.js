@@ -59,31 +59,28 @@ export const login = async ({ email, password }) => {
 
   // ✅ Step 7: Return full user data + role
   return {
-    success: true,
-    message: "Login successful",
-    data: {
-      accessToken,
-      refreshToken,
-      user: {
-        id: userObj._id,
-        name: userObj.name,
-        email: userObj.email,
-        phone: userObj.phone,
-        status: userObj.status,
-        role: userObj.role_id?.name || null,
-        description: userObj?.description || null,
+    accessToken,
+    refreshToken,
+    user: {
+      id: userObj._id,
+      name: userObj.name,
+      email: userObj.email,
+      phone: userObj.phone,
+      status: userObj.status,
+      role: userObj.role_id?.name || null,
+      description: userObj?.description || null,
 
-        // ✅ Optional profile fields
-        salary: userObj.salary,
-        address: userObj.address,
-        gender: userObj.gender,
-        nationality: userObj.nationality,
-        maritalStatus: userObj.maritalStatus,
-        department: userObj.department,
-        avatar: userObj.avatar,
-        created_at: userObj.createdAt,
-        updated_at: userObj.updatedAt,
-      },
+      // ✅ Optional profile fields
+      salary: userObj.salary,
+      address: userObj.address,
+      gender: userObj.gender,
+      nationality: userObj.nationality,
+      maritalStatus: userObj.maritalStatus,
+      department: userObj.department,
+      avatar: userObj.avatar,
+      created_at: userObj.createdAt,
+      updated_at: userObj.updatedAt,
+
     },
   };
 };
@@ -209,6 +206,28 @@ export const resetPassword = async ({
 
   const hashpassword = await hashPassword(newPassword);
   user.password = hashpassword;
+  await user.save();
+};
+export const passowrdChange = async (
+  userId,
+  currentPassword,
+  newPassword,
+  confirmNewPassword
+) => {
+  const user = await userRepo.findById(userId);
+  if (!user) throw ApiError.notFound(messages.USER_NOT_FOUND);
+
+  const isMatch = await comparePassword(currentPassword, user.password);
+  if (!isMatch) throw ApiError.badRequest(messages.PASSWORD_UNMATCH);
+
+  if (newPassword === currentPassword)
+    throw ApiError.badRequest(messages.NEW_PASSWORD);
+
+  if (newPassword !== confirmNewPassword)
+    throw ApiError.badRequest(messages.CONFIRM_PASSWORD);
+
+  const passwordhash = await hashPassword(newPassword);
+  user.password = passwordhash;
   await user.save();
 };
 
@@ -529,6 +548,7 @@ export default {
   forgetpassword,
   verifyCode,
   resetPassword,
+  passowrdChange,
   getAllUsers,
   getUserById,
   createInvite,

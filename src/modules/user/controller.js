@@ -8,7 +8,7 @@ export const login = async (req, res, next) => {
     const data = await userService.login(req.body);
     res.setHeader("Authorization", `Bearer ${data.accessToken}`);
 
-    return successResponse(res, data, messages.LOGIN_MESSAGE);
+    return successResponse(res, messages.LOGIN_MESSAGE, data,);
   } catch (err) {
     next(err);
   }
@@ -53,34 +53,17 @@ export const resetPassword = async (req, res, next) => {
     next(err);
   }
 };
-export const requestOtp = async (req, res, next) => {
+export const passowrdChange = async (req, res, next) => {
   try {
-    if (req.body.email !== req.user.email) {
-      throw ApiError.unauthorized(messages.AUTH_INVALID_EMAIL);
-    }
-    const data = await userService.forgetpassword(req.body);
-    return successResponse(res, data, messages.OTP_SENT_MESSAGE);
-  } catch (err) {
-    next(err);
-  }
-};
-export const verifyOtp = async (req, res, next) => {
-  try {
-    if (req.body.email !== req.user.email) {
-      throw ApiError.unauthorized(messages.AUTH_INVALID_EMAIL);
-    }
-    const data = await userService.verifyCode(req.body);
-    return successResponse(res, data, messages.OTP_VERIFIED);
-  } catch (err) {
-    next(err);
-  }
-};
-export const changePassword = async (req, res, next) => {
-  try {
-    if (req.body.email !== req.user.email) {
-      throw ApiError.unauthorized(messages.AUTH_INVALID_EMAIL);
-    }
-    const data = await userService.resetPassword(req.body);
+    const { currentPassword, newPassword, confirmNewPassword } = req.body;
+    const userId = req.user.id;
+    if (!userId) throw ApiError.notFound(messages.USER_NOT_FOUND);
+    const data = await userService.passowrdChange(
+      userId,
+      currentPassword,
+      newPassword,
+      confirmNewPassword
+    );
     return successResponse(res, data, messages.PASSWORD_RESET_SUCCESS);
   } catch (err) {
     next(err);
@@ -351,9 +334,7 @@ export default {
   forgetpassword,
   verifyCode,
   resetPassword,
-  requestOtp,
-  verifyOtp,
-  changePassword,
+  passowrdChange,
   // zeeshan
   getUser,
   getUserById,
