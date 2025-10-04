@@ -18,10 +18,9 @@ export const config = {
   smtpPass: process.env.SMTP_PASS,
   JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN,
   SENDGRID_API_KEY: process.env.SENDGRID_API_KEY, //
-  // GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
-  // GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
-  // GOOGLE_CALLBACK_URL:
-  //   process.env.GOOGLE_CALLBACK_URL || "/api/v1/auth/google/callback",
+  CLOUDINARY_CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME,
+  CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY,
+  CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET,
   CORS_ORIGIN: process.env.CORS_ORIGIN,
 };
 

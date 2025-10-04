@@ -112,10 +112,26 @@ router
     validate(validation.completeRegistrationValidation),
     userController.completeRegistration
   )
+  .get("/dashboard", middleware.authenticate, userController.dashboard)
+  // User's Status
+  .delete(
+    "/remove/:id",
+    middleware.authenticate,
+    checkPermission(["view_users"]),
+    userController.RemoveUnacceptedUser
+  )
+  // Send Invitation
+  .post(
+    "/invite",
+    middleware.authenticate,
+    checkPermission(["view_users"]),
+    validate(validation.inviteUserValidation),
+    userController.sendInvitation
+  )
+  .post(
+    "/register",
+    validate(validation.completeRegistrationValidation),
+    userController.completeRegistration
+  )
   .get("/dashboard", middleware.authenticate, userController.dashboard);
-
-// Step 1 - redirect to Google
-// Step 2 - callback
-// .get("/google/callback", passport.authenticate("google", { session: false }), userController.googleSignup);
-
 export default router;
