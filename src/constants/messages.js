@@ -7,7 +7,7 @@ export const messages = {
   SIGNUP_SUCCESS: "Signed up successfully.",
   SIGNIN_SUCCESS: "Signed in successfully.",
   LOGOUT_SUCCESS: "Logged out successfully.",
-
+  INCORRECT_PASSWORD: "old password is incorrect",
   USER_NOT_FOUND: "User not found",
   USER_EXISTS: "This email is already registered",
   USER_ALREADY_EXISTS: "User already exists.",
@@ -36,7 +36,7 @@ export const messages = {
   VERIFIED_OTP: "OTP verified successfully",
   OTP_CHECK: "Invalid OTP code",
 
-  NEW_PASSWORD: "Choose a different password",
+  NEW_PASSWORD: "New password can not be the old password",
   PASSWORD_RESET: "Your password has been reset. You can now login again.",
   PASSWORD_CHANGED: "Password changed successfully",
   PASSWORD_UNMATCH: "Passwords do not match",

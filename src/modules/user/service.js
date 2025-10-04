@@ -3,7 +3,10 @@ import ApiError from "../../utils/ApiError.js";
 import { messages } from "../../constants/messages.js";
 import { config } from "../../config/config.js";
 import { comparePassword, hashPassword } from "../../utils/bcrypt.helper.js";
-import { uploadToCloudinary, deleteFromCloudinary, } from "../../config/cloud.js";
+import {
+  uploadToCloudinary,
+  deleteFromCloudinary,
+} from "../../config/cloud.js";
 import GenerateOtpEmailTemplate from "../../utils/templates/OtpGenerator.js";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
@@ -19,7 +22,7 @@ import { io } from "../../server.js";
 // Instantiate repositories for models
 const userRepo = new Repository(UserModel);
 const inviteRepo = new Repository(InviteModel);
-const roleRepo = new Repository(RoleModel)
+const roleRepo = new Repository(RoleModel);
 
 export const login = async ({ email, password }) => {
   const user = await userRepo.findOne({ email });
@@ -36,7 +39,7 @@ export const login = async ({ email, password }) => {
   return {
     accessToken,
     refreshToken,
-    user: { id: user._id, email: user.email, role: user.role_id },
+    user,
   };
 };
 export const refreshAccessToken = async (refreshToken) => {
@@ -96,8 +99,8 @@ export const signup = async ({
     role_id: role._id,
     status: "inactive",
     avatar: {
-      url: avatarUrl,         // placeholder image
-      public_id: null,        // will be filled when user uploads
+      url: avatarUrl, // placeholder image
+      public_id: null, // will be filled when user uploads
       default_letter: firstLetter, // fallback letter
     },
   });
@@ -161,6 +164,29 @@ export const resetPassword = async ({
 
   const hashpassword = await hashPassword(newPassword);
   user.password = hashpassword;
+  await user.save();
+};
+
+export const passowrdChange = async (
+  userId,
+  currentPassword,
+  newPassword,
+  confirmNewPassword
+) => {
+  const user = await userRepo.findById(userId);
+  if (!user) throw ApiError.notFound(messages.USER_NOT_FOUND);
+
+  const isMatch = await comparePassword(currentPassword, user.password);
+  if (!isMatch) throw ApiError.badRequest(messages.PASSWORD_UNMATCH);
+
+  if (newPassword === currentPassword)
+    throw ApiError.badRequest(messages.NEW_PASSWORD);
+
+  if (newPassword !== confirmNewPassword)
+    throw ApiError.badRequest(messages.CONFIRM_PASSWORD);
+
+  const passwordhash = await hashPassword(newPassword);
+  user.password = passwordhash;
   await user.save();
 };
 
@@ -252,8 +278,8 @@ export const registerUser = async (inviteToken, newRole, userData) => {
   if (!password || password !== confirmPassword)
     throw ApiError.unauthorized(messages.PASSWORD_INVALID);
 
-  const NewRole = await roleRepo.findOne({ name: newRole })
-  if (!NewRole) throw ApiError.unauthorized(messages.ROLE_NOT_FOUND)
+  const NewRole = await roleRepo.findOne({ name: newRole });
+  if (!NewRole) throw ApiError.unauthorized(messages.ROLE_NOT_FOUND);
 
   const invite = await inviteRepo.findOne({ token: inviteToken });
   if (!invite) throw ApiError.unauthorized(messages.TOKEN_INVALID);
@@ -279,7 +305,6 @@ export const registerUser = async (inviteToken, newRole, userData) => {
   invite.token = null;
   invite.expiresAt = null;
   await invite.save();
-
 
   return {
     message: messages.SIGNUP_SUCCESS,
@@ -375,7 +400,6 @@ export const removeProfileImage = async (req, res, next) => {
       await deleteFromCloudinary(user.avatar.public_id);
     }
 
-
     const firstLetter = user.name.charAt(0).toUpperCase();
 
     // ✅ Generate avatar URL using UI Avatars (optional)
@@ -411,7 +435,6 @@ export const assignRole = async (id, newRoleName) => {
   return user;
 };
 
-
 export default {
   login,
   refreshAccessToken,
@@ -430,5 +453,6 @@ export default {
   removeUnacceptedUser,
   updateProfile,
   assignRole,
+  passowrdChange,
   // googleSignup,
 };

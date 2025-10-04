@@ -91,6 +91,18 @@ export const updateProfileValidation = z.object({
   description: z.string().optional(),
   avatar: z.string().url({ message: "Invalid image URL" }).optional(),
 });
+export const changePassword = z
+  .object({
+    currentPassword: passwordSchema,
+    newPassword: passwordSchema,
+    confirmNewPassword: z.string({
+      required_error: messages.CONFIRM_PASSWORD_REQUIRED,
+    }),
+  })
+  .refine((data) => data.newPassword === data.confirmNewPassword, {
+    path: ["confirmNewPassword"],
+    message: messages.CONFIRM_PASSWORD,
+  });
 
 // ========================
 // EXPORT
@@ -98,6 +110,7 @@ export const updateProfileValidation = z.object({
 export default {
   // Auth
   loginValidation,
+  changePassword,
   registerValidation,
   requestOTP,
   verifyOTP,

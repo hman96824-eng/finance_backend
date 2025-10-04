@@ -7,6 +7,7 @@ import validation from "../../validation/validation.js";
 import middleware from "../../middleware/auth.middleware.js";
 // import passport from "../../utils/passport.js";
 import { checkPermission } from "../../middleware/permissons.js";
+import { exportUsersExcel } from "../../config/excel.js";
 
 const router = express.Router();
 const upload = multer({ dest: "uploads/" });
@@ -19,7 +20,7 @@ router
     service.uploadProfileImage
   )
   .delete("/remove-avatar", middleware.authenticate, service.removeProfileImage)
-  .put("/profile", middleware.authenticate, userController.updateProfile)
+  .put("/ ", middleware.authenticate, userController.updateProfile)
   .put(
     "/:id",
     middleware.authenticate,
@@ -57,23 +58,12 @@ router
     validate(validation.resetPassword),
     userController.resetPassword
   )
+  // password change
   .post(
-    "/changePasswordOtp",
+    "/changePassword",
     middleware.authenticate,
-    validate(validation.requestOTP),
-    userController.requestOtp
-  )
-  .post(
-    "/chnageVerifyOtp",
-    middleware.authenticate,
-    validate(validation.verifyOTP),
-    userController.verifyOtp
-  )
-  .post(
-    "/changepassword",
-    middleware.authenticate,
-    validate(validation.resetPassword),
-    userController.changePassword
+    validate(validation.changePassword),
+    userController.passowrdChange
   )
   // Profile
   // get only can admin and manager
@@ -82,6 +72,13 @@ router
     middleware.authenticate,
     checkPermission(["view_users"]),
     userController.getUser
+  )
+  // excel file of users
+  .get(
+    "/export/excel",
+    middleware.authenticate,
+    checkPermission(["view_users"]),
+    exportUsersExcel
   )
   .get(
     "/:id",
