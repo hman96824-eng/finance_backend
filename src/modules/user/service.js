@@ -22,21 +22,42 @@ const inviteRepo = new Repository(InviteModel);
 const roleRepo = new Repository(RoleModel)
 
 export const login = async ({ email, password }) => {
-  const user = await userRepo.findOne({ email });
+  // ✅ Step 1: Fetch user with role populated
+  const user = await userRepo.findOneWithPopulate({ email }, "role_id", "name description");
   if (!user) throw ApiError.unauthorized(messages.USER_NOT_FOUND);
 
+  // ✅ Step 2: Verify password
   const isMatch = await comparePassword(password, user.password);
   if (!isMatch) throw ApiError.unauthorized(messages.INVALID_CREDENTIALS);
-  if (user.status.toLowerCase() === "inactive")
+
+  // ✅ Step 3: Check user status
+  if (user.status?.toLowerCase() === "inactive") {
     throw ApiError.unauthorized(messages.IsActive);
-  const payload = { id: user._id, role: user.role_id, email: user.email };
+  }
+
+  // ✅ Step 4: Prepare JWT payload
+  const payload = {
+    id: user._id,
+    role: user.role_id?.name || "UNKNOWN",
+    email: user.email,
+  };
+
+  // ✅ Step 5: Generate tokens
   const accessToken = jwt.generateToken(payload);
   const refreshToken = jwt.generateRefreshToken(payload);
 
+  // ✅ Step 6: Return clean user data
   return {
+    success: true,
     accessToken,
     refreshToken,
-    user: { id: user._id, email: user.email, role: user.role_id },
+    user: {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      status: user.status,
+      role: user.role_id?.name || null,
+    },
   };
 };
 export const refreshAccessToken = async (refreshToken) => {
@@ -164,8 +185,33 @@ export const resetPassword = async ({
   await user.save();
 };
 
-export const getAllUsers = async () => userRepo?.find();
-export const getUserById = async (id) => userRepo?.findById(id);
+export const getUserById = async (id) => {
+  // ✅ Populate role_id but exclude permissions field
+  const user = await userRepo.findByIdWithPopulate(id, "role_id", "-permissions");
+
+  if (!user) {
+    throw ApiError.notFound(messages.USER_NOT_FOUND);
+  }
+
+  const userObj = user.toObject();
+
+  // ✅ Remove sensitive fields
+  delete userObj.password;
+  delete userObj.resetCode;
+  delete userObj.resetCodeExpires;
+
+  return userObj;
+};
+
+export const getAllUsers = async () => {
+  const users = await userRepo.findWithPopulate({}, "role_id", "name");
+
+  return users.map(user => ({
+    ...user._doc,
+    role: user.role_id?.name || null, // extract name
+    role_id: undefined, // hide ObjectId
+  }));
+};
 export const updateProfile = async (userId, updateData) => {
   const allowedFields = [
     "name",
@@ -410,6 +456,30 @@ export const assignRole = async (id, newRoleName) => {
   await user.save();
   return user;
 };
+export const deleteStatus = async (id) => {
+  try {
+    const user = await userRepo.findById(id);
+
+    if (!user) throw ApiError.unauthorized(messages.USER_NOT_FOUND)
+
+    // Update status to "deleted"
+    user.status = "deleted";
+    await user.save();
+
+    return {
+      success: true,
+      message: "User status updated to deleted successfully",
+      data: user,
+    };
+  } catch (error) {
+    console.error("Service deleteUserStatus Error:", error);
+    return {
+      success: false,
+      message: "Error deleting user status",
+      error: error.message,
+    };
+  }
+};
 
 
 export default {
@@ -430,5 +500,6 @@ export default {
   removeUnacceptedUser,
   updateProfile,
   assignRole,
+  deleteStatus,
   // googleSignup,
 };

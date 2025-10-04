@@ -136,5 +136,19 @@ export default class Repository {
       )
       .select("-password -resetCode -resetCodeExpires")
   }
+
+  async findWithPopulate(query = {}, populateField, selectFields = "") {
+    return this.model.find(query).populate(populateField, selectFields);
+  }
+
+  async findOneWithPopulate(query = {}, populateField, selectFields = "") {
+    return this.model.findOne(query).populate(populateField, selectFields);
+  }
+
+  async findByIdWithPopulate(id, populateField, selectFields = "") {
+    return this.model.findById(id).populate(populateField, selectFields);
+  }
+
+
 }
 

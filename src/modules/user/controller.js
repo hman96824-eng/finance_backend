@@ -120,11 +120,8 @@ export const getUserById = async (req, res, next) => {
 export const getProfile = async (req, res) => {
   try {
     const userId = req?.user?.id;
-    console.log("check 1", userId);
 
-    // Make sure req.user is set by the authenticate middleware
     if (!req?.user || !userId) {
-      console.log("check 2");
       return res.status(401).json({
         success: false,
         message: messages.LOGIN_REQUIRED,
@@ -139,7 +136,7 @@ export const getProfile = async (req, res) => {
       });
     }
 
-    // ✅ Return full profile
+    // ✅ Return user with populated role (no permissions)
     res.json({
       success: true,
       data: {
@@ -147,10 +144,8 @@ export const getProfile = async (req, res) => {
         name: user.name,
         email: user.email,
         phone: user.phone,
-        role_id: user.role_id,
+        role_id: user.role_id, // populated without permissions
         status: user.status,
-
-        // Optional profile details
         salary: user.salary,
         address: user.address,
         gender: user.gender,
@@ -158,15 +153,7 @@ export const getProfile = async (req, res) => {
         maritalStatus: user.maritalStatus,
         department: user.department,
         description: user.description,
-
-        // Avatar object
-        avatar: {
-          url: user.avatar?.url,
-          public_id: user.avatar?.public_id,
-          default_letter: user.avatar?.default_letter,
-        },
-
-        // System timestamps
+        avatar: user.avatar,
         created_at: user.createdAt,
         updated_at: user.updatedAt,
       },
@@ -178,6 +165,7 @@ export const getProfile = async (req, res) => {
     });
   }
 };
+
 export const updateProfile = async (req, res, next) => {
   try {
     const userId = req?.user?.id;
@@ -311,6 +299,25 @@ export const changeRole = async (req, res, next) => {
     next(error);
   }
 };
+export const deleteUserStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const result = await userService.deleteStatus(id);
+
+    if (!result.success) {
+      return res.status(404).json(result);
+    }
+
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error("Delete User Error:", error);
+    return res.status(500).json({
+      success: false,
+      message: messages.INTERNAL_SERVER_ERROR || "Internal Server Error",
+    });
+  }
+};
 export const health = async (req, res) => {
   res.status(200).json({ success: true, message: "ok" });
 };
@@ -339,5 +346,6 @@ export default {
   health,
   updateProfile,
   changeRole,
+  deleteUserStatus,
   // googleSignup,
 };
