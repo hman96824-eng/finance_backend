@@ -112,14 +112,14 @@ export const signup = async ({
   name,
   email,
   phone,
-  roleName,
+  role,
   password,
   confirmPassword,
 }) => {
   const user = await userRepo.findOne({ email });
   if (user) throw ApiError.unauthorized(messages.USER_EXISTS);
 
-  const role = await RoleModel.findOne({ name: roleName });
+  const role = await RoleModel.findOne({ name: role });
   if (!role) throw ApiError.badRequest(messages.ROLE_NOT_DEFINE);
 
   if (password !== confirmPassword)
