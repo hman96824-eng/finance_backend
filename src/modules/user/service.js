@@ -71,7 +71,7 @@ export const login = async ({ email, password }) => {
         phone: userObj.phone,
         status: userObj.status,
         role: userObj.role_id?.name || null,
-        description: userObj.role_id?.description || null,
+        description: userObj?.description || null,
 
         // ✅ Optional profile fields
         salary: userObj.salary,
