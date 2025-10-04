@@ -165,20 +165,41 @@ export const getProfile = async (req, res) => {
     });
   }
 };
-
 export const updateProfile = async (req, res, next) => {
   try {
     const userId = req?.user?.id;
-    console.log("check 1--", userId);
 
     const updatedUser = await userService.updateProfile(userId, req.body);
     if (!updatedUser) {
-      return res
-        .status(404)
-        .json({ success: false, message: messages.USER_NOT_FOUND });
+      return res.status(404).json({
+        success: false,
+        message: messages.USER_NOT_FOUND,
+      });
     }
-    console.log("check 4");
-    res.json({ success: true, data: updatedUser });
+
+    // ✅ Return response in same structure (just role populated)
+    res.json({
+      success: true,
+      data: {
+        _id: updatedUser._id,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        phone: updatedUser.phone,
+        status: updatedUser.status,
+        role: updatedUser.role_id?.name || null,
+        role_description: updatedUser.role_id?.description || null,
+        address: updatedUser.address,
+        gender: updatedUser.gender,
+        nationality: updatedUser.nationality,
+        maritalStatus: updatedUser.maritalStatus,
+        department: updatedUser.department,
+        salary: updatedUser.salary,
+        description: updatedUser.description,
+        avatar: updatedUser.avatar,
+        created_at: updatedUser.createdAt,
+        updated_at: updatedUser.updatedAt,
+      },
+    });
   } catch (err) {
     next(err);
   }

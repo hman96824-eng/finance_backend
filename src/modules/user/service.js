@@ -252,7 +252,7 @@ export const updateProfile = async (userId, updateData) => {
     "avatar",
   ];
 
-  // Filter only allowed fields
+  // ✅ Filter allowed fields only
   const filteredData = Object.keys(updateData)
     .filter((key) => allowedFields.includes(key))
     .reduce((obj, key) => {
@@ -260,21 +260,33 @@ export const updateProfile = async (userId, updateData) => {
       return obj;
     }, {});
 
-  // Auto-generate default_letter if name updated but no avatar
+  // ✅ Auto generate avatar default letter
   if (filteredData.name && !filteredData.avatar) {
     filteredData.avatar = {
       default_letter: filteredData.name.charAt(0).toUpperCase(),
     };
   }
 
-  // Update user
+  // ✅ Update user profile
   const updatedUser = await userRepo.updateProfile(userId, filteredData);
+  if (!updatedUser) throw new Error("User not found");
 
-  if (!updatedUser) {
-    throw new Error("User not found");
-  }
+  // ✅ Fetch again with role populated (to include role name)
+  const userWithRole = await userRepo.findByIdWithPopulate(
+    userId,
+    "role_id",
+    "name description"
+  );
 
-  return updatedUser;
+  if (!userWithRole) throw new Error("User not found");
+
+  // ✅ Convert to plain object & remove sensitive fields
+  const userObj = userWithRole.toObject();
+  delete userObj.password;
+  delete userObj.resetCode;
+  delete userObj.resetCodeExpires;
+
+  return userObj;
 };
 export const createInvite = async (email, role_id) => {
   const cleanEmail = email.trim().toLowerCase();
