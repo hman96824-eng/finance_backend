@@ -13,26 +13,26 @@ const upload = multer({ dest: "uploads/" });
 
 router
   .put(
-    "/:id",
-    middleware.authenticate,
-    checkPermission(["manage_users"]),
-    userController.toggleUserStatus
-  )
-  .get("/profile", middleware.authenticate, userController.getProfile) // user profile
-  .put("/profile", middleware.authenticate, userController.updateProfile) // user profile update
-  .post(
-    "/signup",
-    validate(validation.registerValidation),
-    userController.signup
-  )
-  // .get("/google", passport.authenticate("google", { scope: ["profile", "email"] }))
-  .put(
     "/upload-avatar",
     middleware.authenticate,
     upload.single("avatar"),
     service.uploadProfileImage
   )
   .delete("/remove-avatar", middleware.authenticate, service.removeProfileImage)
+  .put("/profile", middleware.authenticate, userController.updateProfile)
+  .put(
+    "/:id",
+    middleware.authenticate,
+    checkPermission(["manage_users"]),
+    userController.toggleUserStatus
+  )
+  .get("/profile", middleware.authenticate, userController.getProfile)
+  .post(
+    "/signup",
+    validate(validation.registerValidation),
+    userController.signup
+  )
+  // .get("/google", passport.authenticate("google", { scope: ["profile", "email"] }))
   .get(
     "/inactive",
     middleware.authenticate,
@@ -41,7 +41,6 @@ router
   )
   // asim
   .post("/login", validate(validation.loginValidation), userController.login)
-  .post("/refresh-token", userController.refreshToken)
 
   .post(
     "/forgetPasswordOtp",
@@ -133,5 +132,11 @@ router
     validate(validation.completeRegistrationValidation),
     userController.completeRegistration
   )
-  .get("/dashboard", middleware.authenticate, userController.dashboard);
+  .get("/dashboard", middleware.authenticate, userController.dashboard)
+  .put(
+    "/change-role/:id",
+    middleware.authenticate,
+    checkPermission(["assign_roles"]),
+    userController.changeRole
+  );
 export default router;

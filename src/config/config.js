@@ -18,10 +18,10 @@ export const config = {
   smtpPass: process.env.SMTP_PASS,
   JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN,
   SENDGRID_API_KEY: process.env.SENDGRID_API_KEY, //
+  CORS_ORIGIN: process.env.CORS_ORIGIN,
   CLOUDINARY_CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME,
   CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY,
   CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET,
-  CORS_ORIGIN: process.env.CORS_ORIGIN,
 };
 
 export default config;

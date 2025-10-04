@@ -2,9 +2,7 @@ import { successResponse } from "../../utils/response.helper.js";
 import userService from "./service.js";
 import { messages } from "../../constants/messages.js";
 import ApiError from "../../utils/ApiError.js";
-import { check } from "zod";
 
-// login
 export const login = async (req, res, next) => {
   try {
     const data = await userService.login(req.body);
@@ -31,7 +29,6 @@ export const signup = async (req, res, next) => {
     next(err);
   }
 };
-//  forgetpassword request otp
 export const forgetpassword = async (req, res, next) => {
   try {
     const data = await userService.forgetpassword(req.body);
@@ -40,7 +37,6 @@ export const forgetpassword = async (req, res, next) => {
     next(err);
   }
 };
-// forgetpassword verifyOtp
 export const verifyCode = async (req, res, next) => {
   try {
     const data = await userService.verifyCode(req.body);
@@ -49,7 +45,6 @@ export const verifyCode = async (req, res, next) => {
     next(err);
   }
 };
-// reset password
 export const resetPassword = async (req, res, next) => {
   try {
     const data = await userService.resetPassword(req.body);
@@ -58,7 +53,6 @@ export const resetPassword = async (req, res, next) => {
     next(err);
   }
 };
-// changePassword requestOtp
 export const requestOtp = async (req, res, next) => {
   try {
     if (req.body.email !== req.user.email) {
@@ -70,7 +64,6 @@ export const requestOtp = async (req, res, next) => {
     next(err);
   }
 };
-// changePassword verifyOtp
 export const verifyOtp = async (req, res, next) => {
   try {
     if (req.body.email !== req.user.email) {
@@ -82,7 +75,6 @@ export const verifyOtp = async (req, res, next) => {
     next(err);
   }
 };
-// changePassword
 export const changePassword = async (req, res, next) => {
   try {
     if (req.body.email !== req.user.email) {
@@ -97,7 +89,6 @@ export const changePassword = async (req, res, next) => {
 
 // =============  zeeshan =================
 
-// ---------------- GET ALL USER  ----------------
 export const getUser = async (req, res, next) => {
   try {
     const users = await userService.getAllUsers();
@@ -113,7 +104,6 @@ export const getUser = async (req, res, next) => {
     next(err);
   }
 };
-// ---------------- GET USER BY ID  ----------------
 export const getUserById = async (req, res, next) => {
   try {
     const user = await userService.getUserById(req.params.id);
@@ -191,6 +181,8 @@ export const getProfile = async (req, res) => {
 export const updateProfile = async (req, res, next) => {
   try {
     const userId = req?.user?.id;
+    console.log("check 1--", userId);
+
     const updatedUser = await userService.updateProfile(userId, req.body);
     if (!updatedUser) {
       return res
@@ -235,7 +227,6 @@ export const sendInvitation = async (req, res) => {
     res.status(400).json({ message: error.message });
   }
 };
-// ---------------- USER REGISTRATION ----------------
 export const completeRegistration = async (req, res) => {
   const { token } = req.query;
   const { email } = req.query;
@@ -246,7 +237,7 @@ export const completeRegistration = async (req, res) => {
   }
 
   try {
-    const result = await userService.registerUser(token, req.body);
+    const result = await userService.registerUser(token, role, req.body);
     res.status(201).json({
       success: true,
       message: messages.SIGNUP_SUCCESS,
@@ -256,12 +247,9 @@ export const completeRegistration = async (req, res) => {
     res.status(400).json({ message: err.message });
   }
 };
-// ---------------- USER STATUS ----------------
 export const toggleUserStatus = async (req, res) => {
   try {
-    const userID = req?.params?.id;
-    console.log("check 1-- ");
-
+    const userID = req?.params?.id
     const result = await userService.toggleUserStatus(userID);
     res.json({ success: true, ...result });
   } catch (err) {
@@ -270,14 +258,12 @@ export const toggleUserStatus = async (req, res) => {
       .json({ message: err.message || messages.USER_STATUS_UPDATE_FAILED });
   }
 };
-// ---------------- DASHBOARD ----------------
 export const dashboard = (req, res) => {
   res.json({
     message: `Welcome, ${req.user.email}!`,
     role: req.user.role_id,
   });
 };
-// ---------------- DASHBOARD ----------------
 export const InactiveUserStatus = async (req, res) => {
   try {
     const inactiveUsers = await userService.getInactiveUsers();
@@ -309,31 +295,26 @@ export const RemoveUnacceptedUser = async (req, res) => {
     });
   }
 };
+export const changeRole = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { newRoleName } = req.body;
+
+    const updatedUser = await userService.assignRole(id, newRoleName);
+
+    return res.status(200).json({
+      success: true,
+      message: "User role updated successfully",
+      data: updatedUser,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 export const health = async (req, res) => {
   res.status(200).json({ success: true, message: "ok" });
 };
 
-// export const googleSignup = async (req, res, next) => {
-//   try {
-//     const { email, name } = req.user; // from passport after Google login
-//     const { phone, role_id, password, confirmPassword } = req.body; // frontend form
-
-//     const newUser = await userService.googleSignup({
-//       email,
-//       name,
-//       phone,
-//       role_id,
-//       password,
-//       confirmPassword,
-//     });
-
-//     return successResponse(res, newUser, messages.USER_CREATED);
-//   } catch (err) {
-//     next(err);
-//   }
-// };
-
-// cloudinary image uploader
 
 export default {
   login,
@@ -357,5 +338,6 @@ export default {
   RemoveUnacceptedUser,
   health,
   updateProfile,
+  changeRole,
   // googleSignup,
 };
