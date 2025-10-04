@@ -22,8 +22,13 @@ const inviteRepo = new Repository(InviteModel);
 const roleRepo = new Repository(RoleModel)
 
 export const login = async ({ email, password }) => {
-  // ✅ Step 1: Fetch user with role populated
-  const user = await userRepo.findOneWithPopulate({ email }, "role_id", "name description");
+  // ✅ Step 1: Fetch user with role populated (only role name/description)
+  const user = await userRepo.findOneWithPopulate(
+    { email },
+    "role_id",
+    "name description"
+  );
+
   if (!user) throw ApiError.unauthorized(messages.USER_NOT_FOUND);
 
   // ✅ Step 2: Verify password
@@ -46,17 +51,39 @@ export const login = async ({ email, password }) => {
   const accessToken = jwt.generateToken(payload);
   const refreshToken = jwt.generateRefreshToken(payload);
 
-  // ✅ Step 6: Return clean user data
+  // ✅ Step 6: Remove sensitive fields
+  const userObj = user.toObject();
+  delete userObj.password;
+  delete userObj.resetCode;
+  delete userObj.resetCodeExpires;
+
+  // ✅ Step 7: Return full user data + role
   return {
     success: true,
-    accessToken,
-    refreshToken,
-    user: {
-      id: user._id,
-      name: user.name,
-      email: user.email,
-      status: user.status,
-      role: user.role_id?.name || null,
+    message: "Login successful",
+    data: {
+      accessToken,
+      refreshToken,
+      user: {
+        id: userObj._id,
+        name: userObj.name,
+        email: userObj.email,
+        phone: userObj.phone,
+        status: userObj.status,
+        role: userObj.role_id?.name || null,
+        description: userObj.role_id?.description || null,
+
+        // ✅ Optional profile fields
+        salary: userObj.salary,
+        address: userObj.address,
+        gender: userObj.gender,
+        nationality: userObj.nationality,
+        maritalStatus: userObj.maritalStatus,
+        department: userObj.department,
+        avatar: userObj.avatar,
+        created_at: userObj.createdAt,
+        updated_at: userObj.updatedAt,
+      },
     },
   };
 };
@@ -202,7 +229,6 @@ export const getUserById = async (id) => {
 
   return userObj;
 };
-
 export const getAllUsers = async () => {
   const users = await userRepo.findWithPopulate({}, "role_id", "name");
 
