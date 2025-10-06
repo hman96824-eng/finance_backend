@@ -58,13 +58,17 @@ export const resetPassword = z
 // ========================
 export const inviteUserValidation = z.object({
   email: emailSchema,
-  role_id: z.enum(["ADMIN", "MANAGER"], {
+  role_id: z.enum(["ADMIN", "MANAGER", "EMPLOYEE"], {
     message: messages.ROLE_CHECK,
   }),
 });
 export const completeRegistrationValidation = z
   .object({
     name: z.string().trim().min(3, { message: messages.NAME_CHECK }),
+    phone: z
+      .string()
+      .regex(/^\+?[1-9]\d{1,14}$/, { message: messages.PHONE_CHECK })
+      .optional(),
     password: passwordSchema,
     confirmPassword: z.string({ message: messages.CONFIRM_PASSWORD_REQUIRED }),
   })

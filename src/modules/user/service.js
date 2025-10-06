@@ -28,39 +28,33 @@ export const login = async ({ email, password }) => {
     "role_id",
     "name description"
   );
-
   if (!user) throw ApiError.unauthorized(messages.USER_NOT_FOUND);
 
-  // ✅ Step 2: Verify password
   const isMatch = await comparePassword(password, user.password);
   if (!isMatch) throw ApiError.unauthorized(messages.INVALID_CREDENTIALS);
 
-  // ✅ Step 3: Check user status
   if (user.status?.toLowerCase() === "inactive") {
     throw ApiError.unauthorized(messages.IsActive);
   }
 
-  // ✅ Step 4: Prepare JWT payload
+  // Prepare JWT payload
   const payload = {
     id: user._id,
     role: user.role_id?.name || "UNKNOWN",
     email: user.email,
   };
 
-  // ✅ Step 5: Generate tokens
   const accessToken = jwt.generateToken(payload);
-  const refreshToken = jwt.generateRefreshToken(payload);
 
-  // ✅ Step 6: Remove sensitive fields
+  // Remove sensitive fields
   const userObj = user.toObject();
   delete userObj.password;
   delete userObj.resetCode;
   delete userObj.resetCodeExpires;
 
-  // ✅ Step 7: Return full user data + role
+  // Return full user data + role
   return {
     accessToken,
-    refreshToken,
     user: {
       id: userObj._id,
       name: userObj.name,
@@ -69,8 +63,6 @@ export const login = async ({ email, password }) => {
       status: userObj.status,
       role: userObj.role_id?.name || null,
       description: userObj?.description || null,
-
-      // ✅ Optional profile fields
       salary: userObj.salary,
       address: userObj.address,
       gender: userObj.gender,
@@ -84,30 +76,6 @@ export const login = async ({ email, password }) => {
     },
   };
 };
-export const refreshAccessToken = async (refreshToken) => {
-  if (!refreshToken) throw ApiError.badRequest(messages.REFRESH_TOKEN);
-
-  try {
-    // verify refresh token with its secret
-    const decoded = jwtHelper.verifyToken(
-      refreshToken,
-      config.JWT_REFRESH_SECRET
-    );
-
-    const payload = {
-      id: decoded.id,
-      role: decoded.role,
-      email: decoded.email,
-    };
-
-    // issue new access token
-    const newAccessToken = jwtHelper.generateToken(payload);
-
-    return { accessToken: newAccessToken };
-  } catch (err) {
-    throw ApiError.unauthorized(messages.TOKEN_EXPIRED);
-  }
-};
 export const signup = async ({
   name,
   email,
@@ -119,7 +87,7 @@ export const signup = async ({
   const user = await userRepo.findOne({ email });
   if (user) throw ApiError.unauthorized(messages.USER_EXISTS);
 
-  const rolecheck = await RoleModel.findOne({ name: role });
+  const rolecheck = await roleRepo.findOne({ name: role });
   if (!rolecheck) throw ApiError.badRequest(messages.ROLE_NOT_DEFINE);
 
   if (password !== confirmPassword)
@@ -127,10 +95,8 @@ export const signup = async ({
 
   const hashpassword = await hashPassword(password);
 
-  // ✅ Get first letter (uppercase)
-  const firstLetter = name.charAt(0).toUpperCase();
 
-  // ✅ Generate avatar URL using UI Avatars (optional)
+  const firstLetter = name.charAt(0).toUpperCase();
   const avatarUrl = `https://ui-avatars.com/api/?name=${firstLetter}&background=random&color=fff&size=128`;
 
   const newUser = await userRepo.create({
@@ -138,26 +104,29 @@ export const signup = async ({
     email,
     password: hashpassword,
     phone,
-    role_id: role._id,
+    role_id: rolecheck._id,
     status: "inactive",
     avatar: {
-      url: avatarUrl,         // placeholder image
-      public_id: null,        // will be filled when user uploads
-      default_letter: firstLetter, // fallback letter
+      url: avatarUrl,
+      public_id: null,
+      default_letter: firstLetter,
     },
   });
 
-  // 🔔 Send socket notification
-  io.emit("new_user_registered", {
+  // ✅ Build the notification data separately
+  const notification = {
     id: newUser._id,
     name: newUser.name,
     email: newUser.email,
-    role: role.name,
+    role: rolecheck.name,
     status: newUser.status,
     avatar: newUser.avatar,
-  });
+  };
 
-  return newUser;
+  // ✅ Emit event (no need to assign return)
+  io.emit("new_user_registered", notification);
+
+  return { newUser, notification };
 };
 export const forgetpassword = async ({ email }) => {
   const user = await userRepo.findOne({ email });
@@ -248,14 +217,21 @@ export const getUserById = async (id) => {
 
   return userObj;
 };
-export const getAllUsers = async () => {
-  const users = await userRepo.findWithPopulate({}, "role_id", "name");
+export const getAllUsers = async (filter = {}) => {
+  const baseFilter = {
+    status: { $in: ["active", "inactive"] },
+    ...filter,
+  };
+  const users = await userRepo.findWithPopulate(baseFilter, "role_id", "name");
 
-  return users.map(user => ({
+  return users.map((user) => ({
     ...user._doc,
     role: user.role_id?.name || null, // extract name
     role_id: undefined, // hide ObjectId
   }));
+};
+export const countUsersByStatus = async (status) => {
+  return userRepo.count({ status });
 };
 export const updateProfile = async (userId, updateData) => {
   const allowedFields = [
@@ -513,11 +489,14 @@ export const assignRole = async (id, newRoleName) => {
   await user.save();
   return user;
 };
-export const deleteStatus = async (id) => {
+export const deleteStatus = async (id, password) => {
   try {
     const user = await userRepo.findById(id);
 
     if (!user) throw ApiError.unauthorized(messages.USER_NOT_FOUND)
+
+    const isMatch = await comparePassword(password, user.password)
+    if (!isMatch) throw ApiError.unauthorized(messages.PASSWORD_UNMATCH)
 
     // Update status to "deleted"
     user.status = "deleted";
@@ -541,7 +520,6 @@ export const deleteStatus = async (id) => {
 
 export default {
   login,
-  refreshAccessToken,
   uploadProfileImage,
   removeProfileImage,
   signup,
@@ -550,6 +528,7 @@ export default {
   resetPassword,
   passowrdChange,
   getAllUsers,
+  countUsersByStatus,
   getUserById,
   createInvite,
   registerUser,
