@@ -25,6 +25,7 @@ export const messages = {
   IsActive: "you can not login because you are not a active user ",
   PERMISSON_NOT_GRANTED: "Forbidden: insufficient permissions",
   FILE_NOT_UPLOADED: "file not uploaded",
+  USER_ALREADY_DELETED: "user is already deleted",
   // ========================
   // PASSWORD & OTP
   // ========================

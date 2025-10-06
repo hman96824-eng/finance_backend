@@ -18,31 +18,34 @@ router
     middleware.authenticate,
     upload.single("avatar"),
     service.uploadProfileImage
-  )
-  .delete("/remove-avatar", middleware.authenticate, service.removeProfileImage)
-  .put("/ ", middleware.authenticate, userController.updateProfile)
+  ) // upload the dp photo
+  .delete("/remove-avatar", middleware.authenticate, service.removeProfileImage) // remove the dp photo
+  .put("/profile", middleware.authenticate, userController.updateProfile) // update owen profile
   .put(
-    "/:id",
+    "/toggle-status/:id",
     middleware.authenticate,
     checkPermission(["manage_users"]),
     userController.toggleUserStatus
-  )
-  .get("/profile", middleware.authenticate, userController.getProfile)
+  ) // toggle user status
+  .put(
+    "/delete-status/:id",
+    middleware.authenticate,
+    checkPermission(["manage_users"]),
+    userController.deleteUserStatus
+  ) // soft delete user
+  .get("/profile", middleware.authenticate, userController.getProfile) // get owen profile
   .post(
     "/signup",
     validate(validation.registerValidation),
     userController.signup
   )
-  // .get("/google", passport.authenticate("google", { scope: ["profile", "email"] }))
   .get(
     "/inactive",
     middleware.authenticate,
     checkPermission(["manage_users"]),
     userController.InactiveUserStatus
-  )
-  // asim
+  ) // all InActive user's
   .post("/login", validate(validation.loginValidation), userController.login)
-
   .post(
     "/forgetPasswordOtp",
     validate(validation.requestOTP),
@@ -58,43 +61,33 @@ router
     validate(validation.resetPassword),
     userController.resetPassword
   )
-  // password change
+
   .post(
-    "/changePassword",
+    "/passwordChange",
     middleware.authenticate,
-    validate(validation.changePassword),
+    validate(validation.passwordChange),
     userController.passowrdChange
   )
-  // Profile
-  // get only can admin and manager
   .get(
     "/",
     middleware.authenticate,
     checkPermission(["view_users"]),
     userController.getUser
-  )
-  // excel file of users
-  .get(
-    "/export/excel",
-    middleware.authenticate,
-    checkPermission(["view_users"]),
-    exportUsersExcel
-  )
+  ) // get all user
   .get(
     "/:id",
     middleware.authenticate,
     checkPermission(["view_users"]),
     userController.getUserById
-  )
+  ) // get user by ID
   .get("/health", userController.health)
-
   // User's Status
   .delete(
     "/remove/:id",
     middleware.authenticate,
     checkPermission(["view_users"]),
     userController.RemoveUnacceptedUser
-  )
+  ) // unaccepted user
   // Send Invitation
   .post(
     "/invite",
@@ -135,5 +128,19 @@ router
     middleware.authenticate,
     checkPermission(["assign_roles"]),
     userController.changeRole
-  );
+  )
+  .put(
+    "/change-role/:id",
+    middleware.authenticate,
+    checkPermission(["assign_roles"]),
+    userController.changeRole
+  ) // change the user role
+
+  // export data in excel file
+  .get(
+    "/export/excel",
+    middleware.authenticate,
+    checkPermission(["view_users"]),
+    exportUsersExcel
+  ); // export the all user data in excel file
 export default router;

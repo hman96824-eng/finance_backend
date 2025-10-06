@@ -13,20 +13,11 @@ export const login = async (req, res, next) => {
     next(err);
   }
 };
-export const refreshToken = async (req, res, next) => {
-  try {
-    const data = await userService.refreshAccessToken(req.body);
-    return successResponse(res, data, messages.ACCESS_TOKEN);
-  } catch (err) {
-    next(err);
-  }
-};
 export const signup = async (req, res, next) => {
   try {
     const data = await userService.signup(req.body);
-    return successResponse(res, messages.USER_CREATED, {
-      user: data,
-    });
+
+    return successResponse(res, data, data.notification, messages.USER_CREATED);
   } catch (err) {
     next(err);
   }
@@ -84,8 +75,7 @@ export const getUser = async (req, res, next) => {
     }
 
     const users = await userService.getAllUsers(filter);
-    if (!users) throw ApiError.notFound(messages.USER_NOT_FOUND);
-    console.log("👥 Users in controller:", users);
+    if (!users.length) throw ApiError.notFound(messages.USER_NOT_FOUND);
 
     const totalActive = await userService.countUsersByStatus("active");
     const totalInctive = await userService.countUsersByStatus("inactive");
@@ -319,7 +309,7 @@ export const changeRole = async (req, res, next) => {
     next(error);
   }
 };
-export const deleteUserStatus = async (req, res) => {
+export const deleteUserStatus = async (req, res, next) => {
   try {
     const { id } = req.params;
 
@@ -345,7 +335,6 @@ export const health = async (req, res) => {
 export default {
   login,
   signup,
-  refreshToken,
   forgetpassword,
   verifyCode,
   resetPassword,
