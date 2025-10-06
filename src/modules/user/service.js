@@ -489,18 +489,28 @@ export const assignRole = async (id, newRoleName) => {
   await user.save();
   return user;
 };
-export const deleteStatus = async (id, password) => {
+export const deleteStatus = async (id) => {
   try {
     const user = await userRepo.findById(id);
+    if (!user) throw ApiError.notFound(messages.USER_NOT_FOUND);
 
-    if (!user) throw ApiError.unauthorized(messages.USER_NOT_FOUND)
+    if (user.status === "deleted") throw ApiError.badRequest(messages.USER_ALREADY_DELETED)
 
-    const isMatch = await comparePassword(password, user.password)
-    if (!isMatch) throw ApiError.unauthorized(messages.PASSWORD_UNMATCH)
+    // Optional password check (if you uncomment later)
+    // const isMatch = await comparePassword(password, user.password)
+    // if (!isMatch) throw ApiError.unauthorized(messages.PASSWORD_UNMATCH)
 
-    // Update status to "deleted"
+    // ✅ Update status to "deleted"
     user.status = "deleted";
     await user.save();
+
+    // ✅ Optional socket notification (if you want to broadcast)
+    // io.emit("user_status_deleted", {
+    //   id: user._id,
+    //   name: user.name,
+    //   email: user.email,
+    //   status: user.status,
+    // });
 
     return {
       success: true,
@@ -511,11 +521,11 @@ export const deleteStatus = async (id, password) => {
     console.error("Service deleteUserStatus Error:", error);
     return {
       success: false,
-      message: "Error deleting user status",
-      error: error.message,
+      message: error.message || "Error deleting user status",
     };
   }
 };
+
 
 
 export default {

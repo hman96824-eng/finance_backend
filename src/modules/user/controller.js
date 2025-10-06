@@ -310,12 +310,11 @@ export const changeRole = async (req, res, next) => {
     next(error);
   }
 };
-export const deleteUserStatus = async (req, res) => {
+export const deleteUserStatus = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const password = req?.body?.password
 
-    const result = await userService.deleteStatus(id, password);
+    const result = await userService.deleteStatus(id);
 
     if (!result.success) {
       return res.status(404).json(result);
