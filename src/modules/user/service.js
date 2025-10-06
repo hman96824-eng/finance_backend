@@ -272,6 +272,8 @@ export const getAllUsers = async (filter = {}) => {
   };
   const users = await userRepo.findWithPopulate(baseFilter, "role_id", "name");
 
+  console.log("🔍 Filter used:", baseFilter);
+  console.log("📊 Users found:", users?.length);
   return users.map((user) => ({
     ...user._doc,
     role: user.role_id?.name || null, // extract name

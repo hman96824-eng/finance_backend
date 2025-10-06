@@ -84,7 +84,8 @@ export const getUser = async (req, res, next) => {
     }
 
     const users = await userService.getAllUsers(filter);
-    if (!users.length) throw ApiError.notFound(messages.USER_NOT_FOUND);
+    if (!users) throw ApiError.notFound(messages.USER_NOT_FOUND);
+    console.log("👥 Users in controller:", users);
 
     const totalActive = await userService.countUsersByStatus("active");
     const totalInctive = await userService.countUsersByStatus("inactive");
