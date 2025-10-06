@@ -13,6 +13,12 @@ const router = express.Router();
 const upload = multer({ dest: "uploads/" });
 
 router
+  .get(
+    "/",
+    middleware.authenticate,
+    checkPermission(["view_users"]),
+    userController.getUser
+  ) // get all user
   .put(
     "/upload-avatar",
     middleware.authenticate,
@@ -68,12 +74,6 @@ router
     validate(validation.passwordChange),
     userController.passowrdChange
   )
-  .get(
-    "/",
-    middleware.authenticate,
-    checkPermission(["view_users"]),
-    userController.getUser
-  ) // get all user
   .get(
     "/:id",
     middleware.authenticate,
