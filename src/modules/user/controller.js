@@ -24,8 +24,9 @@ export const refreshToken = async (req, res, next) => {
 export const signup = async (req, res, next) => {
   try {
     const data = await userService.signup(req.body);
-
-    return successResponse(res, data, messages.USER_CREATED);
+    return successResponse(res, messages.USER_CREATED, {
+      user: data,
+    });
   } catch (err) {
     next(err);
   }
@@ -75,14 +76,27 @@ export const passowrdChange = async (req, res, next) => {
 
 export const getUser = async (req, res, next) => {
   try {
-    const users = await userService.getAllUsers();
-    if (!users) {
-      return res.status(404).json({
-        success: false,
-        message: "No users found",
-      });
+    const { status } = req.query;
+    // Build filter based on query
+    const filter = {};
+    if (status && ["active", "inactive"].includes(status)) {
+      filter.status = status;
     }
-    res.json({ success: true, data: users });
+
+    const users = await userService.getAllUsers(filter);
+    if (!users.length) throw ApiError.notFound(messages.USER_NOT_FOUND);
+
+    const totalActive = await userService.countUsersByStatus("active");
+    const totalInctive = await userService.countUsersByStatus("inactive");
+    const totalUsers = totalActive + totalInctive;
+    res.json({
+      success: true,
+      totalUsers,
+      totalActive,
+      totalInctive,
+      filtered: users.length,
+      data: users,
+    });
   } catch (err) {
     console.error("Error in getUser:", err);
     next(err);

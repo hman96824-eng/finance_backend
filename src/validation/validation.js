@@ -110,7 +110,6 @@ export const passwordChange = z
 export default {
   // Auth
   loginValidation,
-  changePassword,
   registerValidation,
   requestOTP,
   verifyOTP,

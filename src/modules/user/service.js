@@ -123,6 +123,7 @@ export const signup = async ({
 
   const rolecheck = await RoleModel.findOne({ name: role });
   if (!rolecheck) throw ApiError.badRequest(messages.ROLE_NOT_DEFINE);
+  console.log(rolecheck, "role check ");
 
   if (password !== confirmPassword)
     throw ApiError.unauthorized(messages.PASSWORD_UNMATCH);
@@ -140,7 +141,7 @@ export const signup = async ({
     email,
     password: hashpassword,
     phone,
-    role_id: role._id,
+    role_id: rolecheck._id,
     status: "inactive",
     avatar: {
       url: avatarUrl, // placeholder image
@@ -149,18 +150,25 @@ export const signup = async ({
     },
   });
 
-  // 🔔 Send socket notification
-  io.emit("new_user_registered", {
+  // Create a clean user object without sensitive data
+  const userResponse = {
     id: newUser._id,
     name: newUser.name,
     email: newUser.email,
-    role: role.name,
+    phone: newUser.phone,
+    role: {
+      id: role._id,
+      name: role.name,
+    },
     status: newUser.status,
     avatar: newUser.avatar,
-  });
+    created_at: newUser.createdAt,
+    updated_at: newUser.updatedAt,
+  };
 
-  return newUser;
+  return userResponse;
 };
+
 export const forgetpassword = async ({ email }) => {
   const user = await userRepo.findOne({ email });
   if (!user) throw ApiError.unauthorized(messages.USER_NOT_FOUND);
@@ -180,6 +188,7 @@ export const forgetpassword = async ({ email }) => {
     html: GenerateOtpEmailTemplate(otp),
   });
 };
+
 export const verifyCode = async ({ email, code }) => {
   const user = await userRepo.findOne({ email });
   if (!user) throw ApiError.notFound(messages.USER_NOT_FOUND);
@@ -193,6 +202,7 @@ export const verifyCode = async ({ email, code }) => {
   await user.save();
   return { message: messages.VERIFIED_OTP };
 };
+
 export const resetPassword = async ({
   email,
   newPassword,
@@ -210,6 +220,7 @@ export const resetPassword = async ({
   user.password = hashpassword;
   await user.save();
 };
+
 export const passowrdChange = async (
   userId,
   currentPassword,
@@ -254,8 +265,12 @@ export const getUserById = async (id) => {
 
   return userObj;
 };
-export const getAllUsers = async () => {
-  const users = await userRepo.findWithPopulate({}, "role_id", "name");
+export const getAllUsers = async (filter = {}) => {
+  const baseFilter = {
+    status: { $in: ["active", "inactive"] },
+    ...filter,
+  };
+  const users = await userRepo.findWithPopulate(baseFilter, "role_id", "name");
 
   return users.map((user) => ({
     ...user._doc,
@@ -263,6 +278,11 @@ export const getAllUsers = async () => {
     role_id: undefined, // hide ObjectId
   }));
 };
+
+export const countUsersByStatus = async (status) => {
+  return userRepo.count({ status });
+};
+
 export const updateProfile = async (userId, updateData) => {
   const allowedFields = [
     "name",
@@ -559,6 +579,7 @@ export default {
   toggleUserStatus,
   getInactiveUsers,
   removeUnacceptedUser,
+  countUsersByStatus,
   updateProfile,
   assignRole,
   deleteStatus,
