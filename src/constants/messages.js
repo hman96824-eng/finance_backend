@@ -22,7 +22,7 @@ export const messages = {
   TOKEN_EXPIRED: "Invalid or expired token.",
   REFRESH_TOKEN: "Refresh token required",
   ACCESS_TOKEN: "New access token generated",
-  IsActive: "Your status is not Active",
+  IsActive: "you can not login because you are not a active user ",
   PERMISSON_NOT_GRANTED: "Forbidden: insufficient permissions",
   FILE_NOT_UPLOADED: "file not uploaded",
   // ========================
@@ -40,7 +40,7 @@ export const messages = {
   PASSWORD_RESET: "Your password has been reset. You can now login again.",
   PASSWORD_CHANGED: "Password changed successfully",
   PASSWORD_UNMATCH: "Passwords do not match",
-
+  INCORRECT_PASSWORD: "old password is incorrect",
   // ========================
   // VALIDATIONS
   // ========================

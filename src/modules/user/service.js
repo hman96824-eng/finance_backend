@@ -25,21 +25,65 @@ const inviteRepo = new Repository(InviteModel);
 const roleRepo = new Repository(RoleModel);
 
 export const login = async ({ email, password }) => {
-  const user = await userRepo.findOne({ email });
+  // ✅ Step 1: Fetch user with role populated (only role name/description)
+  const user = await userRepo.findOneWithPopulate(
+    { email },
+    "role_id",
+    "name description"
+  );
+
   if (!user) throw ApiError.unauthorized(messages.USER_NOT_FOUND);
 
+  // ✅ Step 2: Verify password
   const isMatch = await comparePassword(password, user.password);
   if (!isMatch) throw ApiError.unauthorized(messages.INVALID_CREDENTIALS);
-  if (user.status.toLowerCase() === "inactive")
+
+  // ✅ Step 3: Check user status
+  if (user.status?.toLowerCase() === "inactive") {
     throw ApiError.unauthorized(messages.IsActive);
-  const payload = { id: user._id, role: user.role_id, email: user.email };
+  }
+
+  // ✅ Step 4: Prepare JWT payload
+  const payload = {
+    id: user._id,
+    role: user.role_id?.name || "UNKNOWN",
+    email: user.email,
+  };
+
+  // ✅ Step 5: Generate tokens
   const accessToken = jwt.generateToken(payload);
   const refreshToken = jwt.generateRefreshToken(payload);
 
+  // ✅ Step 6: Remove sensitive fields
+  const userObj = user.toObject();
+  delete userObj.password;
+  delete userObj.resetCode;
+  delete userObj.resetCodeExpires;
+
+  // ✅ Step 7: Return full user data + role
   return {
     accessToken,
     refreshToken,
-    user,
+    user: {
+      id: userObj._id,
+      name: userObj.name,
+      email: userObj.email,
+      phone: userObj.phone,
+      status: userObj.status,
+      role: userObj.role_id?.name || null,
+      description: userObj?.description || null,
+
+      // ✅ Optional profile fields
+      salary: userObj.salary,
+      address: userObj.address,
+      gender: userObj.gender,
+      nationality: userObj.nationality,
+      maritalStatus: userObj.maritalStatus,
+      department: userObj.department,
+      avatar: userObj.avatar,
+      created_at: userObj.createdAt,
+      updated_at: userObj.updatedAt,
+    },
   };
 };
 export const refreshAccessToken = async (refreshToken) => {
@@ -70,15 +114,15 @@ export const signup = async ({
   name,
   email,
   phone,
-  roleName,
+  role,
   password,
   confirmPassword,
 }) => {
   const user = await userRepo.findOne({ email });
   if (user) throw ApiError.unauthorized(messages.USER_EXISTS);
 
-  const role = await RoleModel.findOne({ name: roleName });
-  if (!role) throw ApiError.badRequest(messages.ROLE_NOT_DEFINE);
+  const rolecheck = await RoleModel.findOne({ name: role });
+  if (!rolecheck) throw ApiError.badRequest(messages.ROLE_NOT_DEFINE);
 
   if (password !== confirmPassword)
     throw ApiError.unauthorized(messages.PASSWORD_UNMATCH);
@@ -166,7 +210,6 @@ export const resetPassword = async ({
   user.password = hashpassword;
   await user.save();
 };
-
 export const passowrdChange = async (
   userId,
   currentPassword,
@@ -190,8 +233,36 @@ export const passowrdChange = async (
   await user.save();
 };
 
-export const getAllUsers = async () => userRepo?.find();
-export const getUserById = async (id) => userRepo?.findById(id);
+export const getUserById = async (id) => {
+  // ✅ Populate role_id but exclude permissions field
+  const user = await userRepo.findByIdWithPopulate(
+    id,
+    "role_id",
+    "-permissions"
+  );
+
+  if (!user) {
+    throw ApiError.notFound(messages.USER_NOT_FOUND);
+  }
+
+  const userObj = user.toObject();
+
+  // ✅ Remove sensitive fields
+  delete userObj.password;
+  delete userObj.resetCode;
+  delete userObj.resetCodeExpires;
+
+  return userObj;
+};
+export const getAllUsers = async () => {
+  const users = await userRepo.findWithPopulate({}, "role_id", "name");
+
+  return users.map((user) => ({
+    ...user._doc,
+    role: user.role_id?.name || null, // extract name
+    role_id: undefined, // hide ObjectId
+  }));
+};
 export const updateProfile = async (userId, updateData) => {
   const allowedFields = [
     "name",
@@ -206,7 +277,7 @@ export const updateProfile = async (userId, updateData) => {
     "avatar",
   ];
 
-  // Filter only allowed fields
+  // ✅ Filter allowed fields only
   const filteredData = Object.keys(updateData)
     .filter((key) => allowedFields.includes(key))
     .reduce((obj, key) => {
@@ -214,21 +285,33 @@ export const updateProfile = async (userId, updateData) => {
       return obj;
     }, {});
 
-  // Auto-generate default_letter if name updated but no avatar
+  // ✅ Auto generate avatar default letter
   if (filteredData.name && !filteredData.avatar) {
     filteredData.avatar = {
       default_letter: filteredData.name.charAt(0).toUpperCase(),
     };
   }
 
-  // Update user
+  // ✅ Update user profile
   const updatedUser = await userRepo.updateProfile(userId, filteredData);
+  if (!updatedUser) throw new Error("User not found");
 
-  if (!updatedUser) {
-    throw new Error("User not found");
-  }
+  // ✅ Fetch again with role populated (to include role name)
+  const userWithRole = await userRepo.findByIdWithPopulate(
+    userId,
+    "role_id",
+    "name description"
+  );
 
-  return updatedUser;
+  if (!userWithRole) throw new Error("User not found");
+
+  // ✅ Convert to plain object & remove sensitive fields
+  const userObj = userWithRole.toObject();
+  delete userObj.password;
+  delete userObj.resetCode;
+  delete userObj.resetCodeExpires;
+
+  return userObj;
 };
 export const createInvite = async (email, role_id) => {
   const cleanEmail = email.trim().toLowerCase();
@@ -434,6 +517,30 @@ export const assignRole = async (id, newRoleName) => {
   await user.save();
   return user;
 };
+export const deleteStatus = async (id) => {
+  try {
+    const user = await userRepo.findById(id);
+
+    if (!user) throw ApiError.unauthorized(messages.USER_NOT_FOUND);
+
+    // Update status to "deleted"
+    user.status = "deleted";
+    await user.save();
+
+    return {
+      success: true,
+      message: "User status updated to deleted successfully",
+      data: user,
+    };
+  } catch (error) {
+    console.error("Service deleteUserStatus Error:", error);
+    return {
+      success: false,
+      message: "Error deleting user status",
+      error: error.message,
+    };
+  }
+};
 
 export default {
   login,
@@ -444,6 +551,7 @@ export default {
   forgetpassword,
   verifyCode,
   resetPassword,
+  passowrdChange,
   getAllUsers,
   getUserById,
   createInvite,
@@ -453,6 +561,6 @@ export default {
   removeUnacceptedUser,
   updateProfile,
   assignRole,
-  passowrdChange,
+  deleteStatus,
   // googleSignup,
 };
