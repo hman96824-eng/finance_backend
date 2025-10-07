@@ -7,8 +7,9 @@ export const login = async (req, res, next) => {
   try {
     const data = await userService.login(req.body);
     res.setHeader("Authorization", `Bearer ${data.accessToken}`);
+    console.log(res, "response ");
 
-    return successResponse(res, messages.LOGIN_MESSAGE, data,);
+    return successResponse(res, data, messages.LOGIN_MESSAGE);
   } catch (err) {
     next(err);
   }
