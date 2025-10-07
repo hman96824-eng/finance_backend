@@ -34,6 +34,7 @@ const io = new Server(httpServer, {
   cors: {
     origin: config.CORS_ORIGIN || "http://localhost:3000",
     methods: ["GET", "POST"],
+    credentials: true,
   },
 });
 
