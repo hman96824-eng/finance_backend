@@ -40,7 +40,7 @@ export const messages = {
   NEW_PASSWORD: "New password can not be the old password",
   PASSWORD_RESET: "Your password has been reset. You can now login again.",
   PASSWORD_CHANGED: "Password changed successfully",
-  PASSWORD_UNMATCH: "Passwords do not match",
+  PASSWORD_UNMATCH: "your current password is incorrect",
   INCORRECT_PASSWORD: "old password is incorrect",
   // ========================
   // VALIDATIONS

@@ -5,8 +5,8 @@ import cors from "cors";
 import express from "express";
 import ApiError from "./utils/ApiError.js";
 import finalresponse from "./middleware/response.js";
-import { createServer } from "http";  // ⬅️ import http
-import { Server } from "socket.io";   // ⬅️ import socket.io
+import { createServer } from "http"; // ⬅️ import http
+import { Server } from "socket.io"; // ⬅️ import socket.io
 
 const port = 5000;
 
@@ -34,6 +34,7 @@ const io = new Server(httpServer, {
   cors: {
     origin: config.CORS_ORIGIN || "http://localhost:3000",
     methods: ["GET", "POST"],
+    credentials: true,
   },
 });
 

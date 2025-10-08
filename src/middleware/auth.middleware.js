@@ -12,7 +12,6 @@ export const authenticate = (req, res, next) => {
     const token = authHeader.split(" ")[1];
 
     const decoded = jwtHelper.verifyToken(token, process.env.JWT_SECRET);
-    console.log(decoded, "decodededede");
     if (!decoded.id || !decoded.role)
       throw ApiError.unauthorized(messages.TOKEN_INVALID);
 
