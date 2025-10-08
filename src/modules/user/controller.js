@@ -7,8 +7,9 @@ export const login = async (req, res, next) => {
   try {
     const data = await userService.login(req.body);
     res.setHeader("Authorization", `Bearer ${data.accessToken}`);
+    console.log(res, "response ");
 
-    return successResponse(res, messages.LOGIN_MESSAGE, data);
+    return successResponse(res, data, messages.LOGIN_MESSAGE);
   } catch (err) {
     next(err);
   }
@@ -211,7 +212,7 @@ export const sendInvitation = async (req, res) => {
     const invite = await userService.createInvite(email, role_id);
 
     res.status(201).json({
-      message: "Invitation sent successfully and stored in DB.",
+      message: "Invitation sent successfully.",
       data: {
         email: invite.email,
         role_id: invite.role_id,

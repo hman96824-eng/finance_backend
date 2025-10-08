@@ -7,9 +7,10 @@ import config from "../../config/index.js";
  * @param {string} email - email of invited user
  */
 export const generateTeamInviteTemplate = (token, role, email) => {
-    const inviteUrl = `${config.frontEndUrl}/api/v1/user/register?token=${encodeURIComponent(
-        token
-    )}&email=${encodeURIComponent(email)}&role=${encodeURIComponent(role)}`;
+    const inviteUrl = `${config.appConfig.frontEndUrl
+        }/RegisterbyInvitation?token=${encodeURIComponent(
+            token
+        )}&email=${encodeURIComponent(email)}&role=${encodeURIComponent(role)}`;
 
     return `<!DOCTYPE html>
 <html lang="en">
