@@ -9,7 +9,7 @@ import bcrypt from "bcrypt";
 import crypto from "crypto";
 import templates from "../../utils/templates/invitationEmail.js";
 import { UserModel } from "./model.js";
-import { RoleModel } from "../role/role.js";
+import { RoleModel } from "../role/model.js";
 import { InviteModel } from "../invites/model.js";
 import Repository from "../../utils/repository.js";
 import sendEmail from "../../utils/email.js";
@@ -525,6 +525,8 @@ export const deleteStatus = async (id) => {
     };
   }
 };
+
+
 
 
 

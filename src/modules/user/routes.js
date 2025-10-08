@@ -13,6 +13,7 @@ const router = express.Router();
 const upload = multer({ dest: "uploads/" });
 
 router
+  .get("/invited", middleware.authenticate, checkPermission(["view_users"]), userController.getAllInvitedUsers)
   .put("/upload-avatar", middleware.authenticate, upload.single("avatar"), service.uploadProfileImage) // upload the dp photo 
   .delete("/remove-avatar", middleware.authenticate, service.removeProfileImage) // remove the dp photo
   .put("/profile", middleware.authenticate, userController.updateProfile) // update owen profile 
@@ -36,9 +37,12 @@ router
   .post("/invite", middleware.authenticate, checkPermission(["view_users"]), validate(validation.inviteUserValidation), userController.sendInvitation)
   .post("/register", validate(validation.completeRegistrationValidation), userController.completeRegistration)
   .get("/dashboard", middleware.authenticate, userController.dashboard)
+  // routes
   .put("/change-role/:id", middleware.authenticate, checkPermission(["assign_roles"]), userController.changeRole) // change the user role
 
   // export data in excel file 
   .get("/export/excel", middleware.authenticate, checkPermission(["view_users"]), exportUsersExcel) // export the all user data in excel file
+
+
 
 export default router;

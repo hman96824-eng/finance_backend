@@ -7,7 +7,6 @@ export const login = async (req, res, next) => {
   try {
     const data = await userService.login(req.body);
     res.setHeader("Authorization", `Bearer ${data.accessToken}`);
-    console.log(res, "response ");
 
     return successResponse(res, data, messages.LOGIN_MESSAGE);
   } catch (err) {
@@ -330,6 +329,24 @@ export const deleteUserStatus = async (req, res, next) => {
     });
   }
 };
+export const getAllInvitedUsers = async (req, res) => {
+  try {
+    const { accepted } = req.query;
+
+    const result = await userService.getAllInvitedUsersService(accepted);
+
+    res.status(200).json({
+      success: true,
+      ...result, // spreads totalUsers, totalAccepted, etc.
+    });
+  } catch (error) {
+    console.error("Error in getAllInvitedUsers:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message || "Internal server error",
+    });
+  }
+};
 export const health = async (req, res) => {
   res.status(200).json({ success: true, message: "ok" });
 };
@@ -356,5 +373,6 @@ export default {
   updateProfile,
   changeRole,
   deleteUserStatus,
+  getAllInvitedUsers,
   // googleSignup,
 };

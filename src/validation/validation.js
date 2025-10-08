@@ -1,17 +1,25 @@
-// validations.js
 import { z } from "zod";
 import { messages } from "../constants/messages.js";
+import { RoleModel } from "../modules/role/model.js";
+import Repository from "../utils/repository.js";
 
-// Common schemas
+const roleRepo = new Repository(RoleModel)
+
+// ===============================
+// 📦 COMMON SCHEMAS
+// ===============================
 const emailSchema = z.string().email({ message: messages.EMAIL_CHECK });
 const passwordSchema = z.string().min(6, { message: messages.PASSWORD_CHECK });
-const idParam = z.object({
-  id: z.string().regex(/^[a-f\d]{24}$/i, { message: messages.INVALID_USER_ID }),
-});
-// ========================
-// AUTH SCHEMAS
-// ========================
 
+const idParam = z.object({
+  id: z
+    .string()
+    .regex(/^[a-f\d]{24}$/i, { message: messages.INVALID_USER_ID }),
+});
+
+// ===============================
+// 👤 AUTH VALIDATIONS
+// ===============================
 export const registerValidation = z
   .object({
     name: z.string().trim().min(3, { message: messages.NAME_CHECK }),
@@ -19,9 +27,7 @@ export const registerValidation = z
       .string()
       .regex(/^\+?[1-9]\d{1,14}$/, { message: messages.PHONE_CHECK })
       .optional(),
-    role: z.enum(["ADMIN", "MANAGER", "EMPLOYEE"], {
-      message: messages.ROLE_CHECK,
-    }),
+    role: z.string().trim().nonempty({ message: messages.ROLE_REQUIRED }),
     email: emailSchema,
     password: passwordSchema,
     confirmPassword: z.string({ message: messages.CONFIRM_PASSWORD_REQUIRED }),
@@ -42,6 +48,7 @@ export const verifyOTP = z.object({
   email: emailSchema,
   code: z.string().min(4, { message: messages.OTP_CHECK }),
 });
+
 export const resetPassword = z
   .object({
     email: emailSchema,
@@ -53,15 +60,23 @@ export const resetPassword = z
     message: messages.CONFIRM_PASSWORD,
   });
 
-// ========================
-// USER SCHEMAS
-// ========================
+// ===============================
+// 👥 USER VALIDATIONS
+// ===============================
+
+// ✅ Dynamic Role Validation — checks from DB
 export const inviteUserValidation = z.object({
   email: emailSchema,
-  role_id: z.enum(["ADMIN", "MANAGER", "EMPLOYEE"], {
-    message: messages.ROLE_CHECK,
-  }),
+  role_id: z
+    .string()
+    .trim()
+    .nonempty({ message: messages.ROLE_REQUIRED })
+    .refine(async (roleId) => {
+      const role = await roleRepo.findById(roleId);
+      return !!role;
+    }, { message: messages.ROLE_NOT_FOUND }),
 });
+
 export const completeRegistrationValidation = z
   .object({
     name: z.string().trim().min(3, { message: messages.NAME_CHECK }),
@@ -80,6 +95,7 @@ export const completeRegistrationValidation = z
 export const toggleUserStatusValidation = z.object({
   status: z.enum(["active", "inactive"], { message: messages.STATUS_CHECK }),
 });
+
 export const updateProfileValidation = z.object({
   name: z.string().min(3, { message: messages.NAME_CHECK }).optional(),
   phone: z
@@ -95,6 +111,7 @@ export const updateProfileValidation = z.object({
   description: z.string().optional(),
   avatar: z.string().url({ message: "Invalid image URL" }).optional(),
 });
+
 export const passwordChange = z
   .object({
     currentPassword: passwordSchema,
@@ -108,9 +125,35 @@ export const passwordChange = z
     message: messages.CONFIRM_PASSWORD,
   });
 
-// ========================
-// EXPORT
-// ========================
+// ===============================
+// 🧱 ROLE VALIDATIONS
+// ===============================
+export const addRoleValidation = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(2, { message: messages.ROLE_NAME_REQUIRED })
+    .max(50, { message: messages.ROLE_NAME_TOO_LONG }),
+
+  description: z
+    .string()
+    .trim()
+    .min(5, { message: messages.ROLE_DESCRIPTION_REQUIRED })
+    .max(200, { message: messages.ROLE_DESCRIPTION_TOO_LONG }),
+
+  permissions: z
+    .array(z.string())
+    .optional()
+    .refine(
+      (permissions) =>
+        !permissions || permissions.every((p) => typeof p === "string"),
+      { message: messages.PERMISSION_TYPE_ERROR }
+    ),
+});
+
+// ===============================
+// 📤 EXPORT ALL
+// ===============================
 export default {
   // Auth
   loginValidation,
@@ -118,6 +161,7 @@ export default {
   requestOTP,
   verifyOTP,
   resetPassword,
+
   // User
   idParam,
   inviteUserValidation,
@@ -125,4 +169,7 @@ export default {
   toggleUserStatusValidation,
   updateProfileValidation,
   passwordChange,
+
+  // Role
+  addRoleValidation,
 };
