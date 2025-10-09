@@ -9,17 +9,8 @@ const DEFAULT_PERMISSIONS = [
 
 const roleSchema = new mongoose.Schema(
   {
-    name: {
-      type: String,
-      required: true,
-      unique: true,
-      trim: true,
-    },
-    description: {
-      type: String,
-      required: true,
-      trim: true,
-    },
+    name: { type: String, required: true, unique: true },
+    description: String,
     permissions: {
       type: [String],
       default: DEFAULT_PERMISSIONS,
@@ -27,6 +18,8 @@ const roleSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+
 
 // Ensure default permissions are merged with any custom ones
 roleSchema.pre("save", function (next) {

@@ -8,7 +8,7 @@ import finalresponse from "./middleware/response.js";
 import { createServer } from "http";  // ⬅️ import http
 import { Server } from "socket.io";   // ⬅️ import socket.io
 
-const port = 5000;
+const port = config.PORT || 3000;
 
 const app = express();
 app.use(express.json());

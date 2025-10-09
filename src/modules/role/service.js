@@ -30,7 +30,7 @@ export const updateRole = async (id, updateData) => {
 };
 export const deleteRole = async (id) => {
     const role = await roleRepo.findById(id);
-    if (!role) throw new ApiError.notFound(messages.ROLE_NOT_FOUND, 404)
+    if (!role) throw ApiError.notFound(messages.ROLE_NOT_FOUND, 404)
 
     await roleRepo.deleteById(id);
     return true;

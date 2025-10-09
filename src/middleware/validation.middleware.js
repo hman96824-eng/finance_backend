@@ -1,23 +1,12 @@
-export const validate = (schema) => (req, res, next) => {
+export const validate = (schema) => async (req, res, next) => {
   try {
-    schema.parse(req.body);
+    await schema.parseAsync(req.body);
     next();
-  } catch (err) {
-    if (err.issues) {
-      // Zod validation error
-      return res.status(400).json({
-        success: false,
-        errors: err.issues.map((e) => ({
-          field: e.path[0],
-          message: e.message,
-        })),
-      });
-    }
-    // Unexpected error
+  } catch (error) {
     return res.status(400).json({
       success: false,
       message: "Validation failed",
-      error: err.message,
+      error: error.errors?.[0]?.message || error.message,
     });
   }
 };

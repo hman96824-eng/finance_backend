@@ -66,16 +66,14 @@ export const resetPassword = z
 
 // ✅ Dynamic Role Validation — checks from DB
 export const inviteUserValidation = z.object({
-  email: emailSchema,
-  role_id: z
-    .string()
-    .trim()
-    .nonempty({ message: messages.ROLE_REQUIRED })
-    .refine(async (roleId) => {
-      const role = await roleRepo.findById(roleId);
-      return !!role;
-    }, { message: messages.ROLE_NOT_FOUND }),
+  name: z.string().trim().nonempty({ message: "Name is required" }),
+  email: z.string().email({ message: "Valid email is required" }),
+  role_id: z.string().trim().nonempty({ message: "Role name is required" }).refine(async (roleName) => {
+    const role = await roleRepo.findOne({ name: roleName });
+    return !!role;
+  }, { message: "Role not found" }),
 });
+
 
 export const completeRegistrationValidation = z
   .object({

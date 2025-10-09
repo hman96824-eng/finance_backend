@@ -18,7 +18,6 @@ import { io } from "../../server.js";
 
 // Instantiate repositories for models
 const userRepo = new Repository(UserModel);
-const inviteRepo = new Repository(InviteModel);
 const roleRepo = new Repository(RoleModel)
 
 export const login = async ({ email, password }) => {
@@ -283,94 +282,6 @@ export const updateProfile = async (userId, updateData) => {
 
   return userObj;
 };
-export const createInvite = async (email, role_id) => {
-  const cleanEmail = email.trim().toLowerCase();
-  const existingUser = await userRepo?.findOne({ email: cleanEmail });
-  if (existingUser) {
-    throw ApiError?.unauthorized(messages.USER_ALREADY_EXISTS);
-  } else {
-    await inviteRepo?.update(
-      { email: cleanEmail },
-      { $set: { accepted: false } }
-    );
-  }
-
-  let invite = await inviteRepo?.findOne({ email: cleanEmail });
-  const token = crypto.randomBytes(32).toString("hex");
-  const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24);
-
-  if (invite) {
-    invite.token = token;
-    invite.expiresAt = expiresAt;
-    invite.invite = invite.invite + 1;
-    await invite.save();
-  } else {
-    invite = await inviteRepo.create({
-      email: cleanEmail,
-      role_id,
-      token,
-      expiresAt,
-      invite: 1,
-    });
-  }
-  console.log(config.USER_EMAIL);
-
-  await sendEmail({
-    to: email,
-    subject: "Accept Your Manager Position",
-    text: "You’re invited to join Onu. Click the link to register.",
-    html: templates.generateTeamInviteTemplate(invite?.token, role_id, email),
-  });
-
-  console.log("Invite send successfully.");
-
-  return invite;
-};
-export const registerUser = async (inviteToken, newRole, userData) => {
-  const { name, phone, password, confirmPassword } = userData;
-  if (!password || password !== confirmPassword)
-    throw ApiError.unauthorized(messages.PASSWORD_INVALID);
-
-  const NewRole = await roleRepo.findOne({ name: newRole })
-  if (!NewRole) throw ApiError.unauthorized(messages.ROLE_NOT_FOUND)
-
-  const invite = await inviteRepo.findOne({ token: inviteToken });
-  if (!invite) throw ApiError.unauthorized(messages.TOKEN_INVALID);
-  if (!invite.expiresAt || invite.expiresAt < new Date())
-    throw ApiError.badRequest(messages.TOKEN_EXPIRED);
-  // if (invite.accepted && ) throw new Error("Invitation already used.");
-
-  const existingUser = await userRepo.findOne({ email: invite.email });
-  if (existingUser && invite.accepted)
-    throw ApiError.unauthorized(messages.USER_ALREADY_EXISTS);
-
-  const hashedPassword = await bcrypt.hash(password, 10);
-  const newUser = await userRepo.create({
-    name,
-    email: invite.email,
-    phone,
-    password: hashedPassword,
-    role_id: NewRole._id,
-    status: "active",
-  });
-
-  invite.accepted = true;
-  invite.token = null;
-  invite.expiresAt = null;
-  await invite.save();
-
-
-  return {
-    message: messages.SIGNUP_SUCCESS,
-    user: {
-      id: newUser._id,
-      name: newUser.name,
-      email: newUser.email,
-      role_id: newUser.role_id,
-    },
-  };
-  console.log("registeration is successfuly");
-};
 export const toggleUserStatus = async (id) => {
   const user = await userRepo.findById(id);
   if (!user) throw ApiError.notFound(messages.USER_NOT_FOUND);
@@ -530,6 +441,8 @@ export const deleteStatus = async (id) => {
 
 
 
+
+
 export default {
   login,
   uploadProfileImage,
@@ -542,8 +455,6 @@ export default {
   getAllUsers,
   countUsersByStatus,
   getUserById,
-  createInvite,
-  registerUser,
   toggleUserStatus,
   getInactiveUsers,
   removeUnacceptedUser,

@@ -71,7 +71,7 @@ export const getUser = async (req, res, next) => {
     const { status } = req.query;
     // Build filter based on query
     const filter = {};
-    if (status && ["active", "inactive"].includes(status)) {
+    if (status && ["active"].includes(status)) {
       filter.status = status;
     }
 
@@ -194,58 +194,7 @@ export const updateProfile = async (req, res, next) => {
     next(err);
   }
 };
-export const sendInvitation = async (req, res) => {
-  try {
-    console.log("check 4");
 
-    const { email, role_id } = req.body;
-
-    if (!email || !role_id) {
-      return res
-        .status(400)
-        .json({ message: "Email and role_id are required." });
-    }
-
-    console.log("check 6");
-
-    const invite = await userService.createInvite(email, role_id);
-
-    res.status(201).json({
-      message: "Invitation sent successfully.",
-      data: {
-        email: invite.email,
-        role_id: invite.role_id,
-        accepted: invite.accepted,
-        inviteCount: invite.invite,
-        expiresAt: invite.expiresAt,
-      },
-    });
-    console.log("chcek 7");
-  } catch (error) {
-    console.error(error, "error");
-    res.status(400).json({ message: error.message });
-  }
-};
-export const completeRegistration = async (req, res) => {
-  const { token } = req.query;
-  const { email } = req.query;
-  const { role } = req.query;
-
-  if (!token) {
-    return res.status(400).json({ message: messages.TOKEN_MISSING });
-  }
-
-  try {
-    const result = await userService.registerUser(token, role, req.body);
-    res.status(201).json({
-      success: true,
-      message: messages.SIGNUP_SUCCESS,
-      ...result,
-    });
-  } catch (err) {
-    res.status(400).json({ message: err.message });
-  }
-};
 export const toggleUserStatus = async (req, res) => {
   try {
     const userID = req?.params?.id
@@ -329,24 +278,6 @@ export const deleteUserStatus = async (req, res, next) => {
     });
   }
 };
-export const getAllInvitedUsers = async (req, res) => {
-  try {
-    const { accepted } = req.query;
-
-    const result = await userService.getAllInvitedUsersService(accepted);
-
-    res.status(200).json({
-      success: true,
-      ...result, // spreads totalUsers, totalAccepted, etc.
-    });
-  } catch (error) {
-    console.error("Error in getAllInvitedUsers:", error);
-    res.status(500).json({
-      success: false,
-      message: error.message || "Internal server error",
-    });
-  }
-};
 export const health = async (req, res) => {
   res.status(200).json({ success: true, message: "ok" });
 };
@@ -362,9 +293,7 @@ export default {
   // zeeshan
   getUser,
   getUserById,
-  sendInvitation,
   toggleUserStatus,
-  completeRegistration,
   dashboard,
   getProfile,
   InactiveUserStatus,
@@ -373,6 +302,5 @@ export default {
   updateProfile,
   changeRole,
   deleteUserStatus,
-  getAllInvitedUsers,
   // googleSignup,
 };

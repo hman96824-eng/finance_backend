@@ -44,7 +44,7 @@ export const deleteRole = async (req, res, next) => {
 
         await roleService.deleteRole(id);
 
-        return successResponse(res, ROLE_DELETED);
+        return successResponse(res, messages.ROLE_DELETED);
     } catch (error) {
         next(error);
     }
