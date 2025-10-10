@@ -5,10 +5,10 @@ import cors from "cors";
 import express from "express";
 import ApiError from "./utils/ApiError.js";
 import finalresponse from "./middleware/response.js";
-import { createServer } from "http";  // ⬅️ import http
-import { Server } from "socket.io";   // ⬅️ import socket.io
+import { createServer } from "http"; // ⬅️ import http
+import { Server } from "socket.io"; // ⬅️ import socket.io
 
-const port = config.PORT || 3000;
+const port = config.PORT || 5000;
 
 const app = express();
 app.use(express.json());
