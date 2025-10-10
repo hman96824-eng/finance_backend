@@ -23,6 +23,7 @@ export const signup = async (req, res, next) => {
     next(err);
   }
 };
+
 export const forgetpassword = async (req, res, next) => {
   try {
     const data = await userService.forgetpassword(req.body);

@@ -12,18 +12,10 @@ const port = config.PORT || 3000;
 
 const app = express();
 app.use(express.json());
+const corssetting = { ...config.corsSettings }
+app.use(cors(corssetting))
 
-app.use(
-  cors({
-    origin: config.CORS_ORIGIN || "http://localhost:3000",
-    methods: ["GET", "POST", "PUT", "DELETE"],
-    credentials: true,
-  })
-);
-
-// load routes
 routes(app);
-// error handler (last)
 app.use(finalresponse);
 
 // ✅ Create http server from express

@@ -89,8 +89,8 @@ export const signup = async ({
   const rolecheck = await roleRepo.findOne({ name: role });
   if (!rolecheck) throw ApiError.badRequest(messages.ROLE_NOT_DEFINE);
 
-  if (password !== confirmPassword)
-    throw ApiError.unauthorized(messages.PASSWORD_UNMATCH);
+  // if (password !== confirmPassword)
+  //   throw ApiError.unauthorized(messages.PASSWORD_UNMATCH);
 
   const hashpassword = await hashPassword(password);
 

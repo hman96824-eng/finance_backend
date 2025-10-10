@@ -19,15 +19,16 @@ export const getAllInvitedUsers = async (acceptedFilter) => {
     if (acceptedFilter === "true") filter.accepted = true;
     else if (acceptedFilter === "false") filter.accepted = false;
 
-    const invites = await inviteRepo.findAll(filter);
+    const invites = await inviteRepo.findWithPopulate(filter, ["role_id"]);
 
     const totalUsers = await inviteRepo.countAll();
     const totalAccepted = await inviteRepo.countByField({ accepted: true });
     const totalUnaccepted = await inviteRepo.countByField({ accepted: false });
 
     const formattedData = invites.map((inv) => ({
+        name: inv.name,
         email: inv.email,
-        role_id: inv.role_id,
+        role_id: inv.role_id?.name,
         accepted: inv.accepted,
         inviteCount: inv.invite,
         expiresAt: inv.expiresAt,
@@ -74,12 +75,15 @@ export const createInvite = async (name, email, roleName) => {
         });
     }
 
-    // 🔹 Step 3: Send email
+    const { html, plainText } = templates.generateTeamInviteTemplate(invite.token, role.name, email);
+
     await sendEmail({
         to: email,
-        subject: `You’re invited as ${role.name}`,
-        html: templates.generateTeamInviteTemplate(invite.token, role.name, email),
+        subject: `Invitation to join Onu as ${role.name}`,
+        html,
+        text: plainText,
     });
+
 
     return invite;
 };
@@ -95,7 +99,6 @@ export const registerUser = async (inviteToken, newRole, userData) => {
     if (!invite) throw ApiError.unauthorized(messages.TOKEN_INVALID);
     if (!invite.expiresAt || invite.expiresAt < new Date())
         throw ApiError.badRequest(messages.TOKEN_EXPIRED);
-    // if (invite.accepted && ) throw new Error("Invitation already used.");
 
     const existingUser = await userRepo.findOne({ email: invite.email });
     if (existingUser && invite.accepted)

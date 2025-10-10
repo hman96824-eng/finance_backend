@@ -7,57 +7,67 @@ import config from "../../config/index.js";
  * @param {string} email - email of invited user
  */
 export const generateTeamInviteTemplate = (token, role, email) => {
-    const inviteUrl = `${config.appConfig.frontEndUrl
-        }/RegisterbyInvitation?token=${encodeURIComponent(
-            token
-        )}&email=${encodeURIComponent(email)}&role=${encodeURIComponent(role)}`;
+    const inviteUrl = `${config.appConfig.frontEndUrl}/RegisterbyInvitation?token=${encodeURIComponent(
+        token
+    )}&email=${encodeURIComponent(email)}&role=${encodeURIComponent(role)}`;
 
-    return `<!DOCTYPE html>
+    const plainText = `
+Hello,
+
+You’ve been invited to join Onu as a ${role}!
+
+Click the link below to accept your invitation (valid for 24 hours):
+${inviteUrl}
+
+If you didn’t expect this invitation, please ignore this email.
+
+— The Onu Team
+`;
+
+    const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Invitation</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="x-apple-disable-message-reformatting" />
+  <meta name="description" content="Onu Invitation Email" />
+  <title>You're Invited to Onu</title>
 </head>
-<body style="margin:0;padding:0;background-color:#f4f6f8;font-family:Arial, sans-serif;">
+<body style="margin:0;padding:0;background-color:#f4f6f8;font-family:Arial, sans-serif;line-height:1.6;">
   <center>
-    <table border="0" cellspacing="0" cellpadding="0" align="center" width="100%" 
+    <table border="0" cellspacing="0" cellpadding="0" align="center" width="100%"
       style="max-width:768px;margin:auto;background-color:#ffffff;border-radius:8px;box-shadow:0 4px 8px rgba(0,0,0,0.05);">
       <tbody>
         <tr>
           <td align="center" style="padding:24px 16px">
-            <img src="https://onu.ai/wp-content/uploads/2024/03/onu-logo-blue-300-min.png" 
-              alt="Onu Team Logo" width="120" style="border-style:none;margin-bottom:12px;">
-            <h2 style="margin:8px 0 0;font-size:24px;font-weight:600;line-height:1.25;color:#003366;">
-              You’re Invited!
+            <img src="https://onu.ai/wp-content/uploads/2024/03/onu-logo-blue-300-min.png"
+              alt="Onu Team Logo" width="120" style="border:none;margin-bottom:12px;">
+            <h2 style="margin:8px 0 0;font-size:22px;font-weight:600;color:#003366;">
+              You’re Invited to Join Onu
             </h2>
           </td>
         </tr>
         <tr>
           <td align="center" style="padding:0 24px 32px;">
-            <table border="0" cellspacing="0" cellpadding="0" width="100%" 
-              style="border:1px solid #e2e4e8; border-radius:6px; overflow:hidden;">
+            <table border="0" cellspacing="0" cellpadding="0" width="100%"
+              style="border:1px solid #e2e4e8; border-radius:6px;">
               <tbody>
                 <tr>
                   <td style="padding:32px;">
-                    <h3 style="text-align:center;font-size:20px;font-weight:600;color:#003366;margin-bottom:16px;">
-                      Invitation to join as <span style="color:#0070f3">${role}</span>
+                    <h3 style="text-align:center;font-size:18px;font-weight:600;color:#003366;margin-bottom:12px;">
+                      You’re invited to join as <span style="color:#0070f3">${role}</span>
                     </h3>
                     <p style="margin:10px 0;color:#555;text-align:center;">
-                      You're just a step away from exploring all the amazing features Onu has to offer.
+                      Welcome aboard! Click the button below to accept your invitation. The link will expire in <b>24 hours</b>.
                     </p>
-                    <p style="margin:10px 0;color:#555;text-align:center;">
-                      Simply click the button below to accept your invitation. The link will expire in <b>24 hours</b>.
-                    </p>
-                    
-                    <table border="0" cellspacing="0" cellpadding="0" align="center" 
-                      style="margin:24px auto 32px;">
+
+                    <table border="0" cellspacing="0" cellpadding="0" align="center" style="margin:24px auto;">
                       <tbody>
                         <tr>
                           <td align="center">
-                            <a href="${inviteUrl}" 
+                            <a href="${inviteUrl}"
                               style="background-color:#003366;color:#fff;text-decoration:none;display:inline-block;
-                              font-size:16px;font-weight:600;border-radius:6px;padding:.85em 1.8em;" 
+                              font-size:16px;font-weight:600;border-radius:6px;padding:12px 24px;"
                               target="_blank" rel="noopener noreferrer">
                               Accept Invitation
                             </a>
@@ -67,15 +77,14 @@ export const generateTeamInviteTemplate = (token, role, email) => {
                     </table>
 
                     <p style="margin:10px 0;color:#777;font-size:14px;text-align:center;">
-                      If the button above doesn’t work, copy and paste this URL into your browser:<br>
-                      <a href="${inviteUrl}" target="_blank" rel="noopener noreferrer" 
-                        style="color:#003366;word-break:break-all;">${inviteUrl}</a>
+                      If the button above doesn’t work, use this link:<br>
+                      <a href="${inviteUrl}" target="_blank" rel="noopener noreferrer" style="color:#003366;">${inviteUrl}</a>
                     </p>
 
-                    <p style="margin:16px 0;color:#555;text-align:center;font-size:14px;">
-                      If you fail to register within the given time, the link will expire. Please reach out to your administrator for a new invitation.
+                    <p style="margin-top:16px;color:#555;text-align:center;font-size:14px;">
+                      Didn’t expect this email? You can safely ignore it.
                     </p>
-                    <p style="margin:10px 0;color:#555;text-align:center;">Thanks,<br>The Onu Team</p>
+                    <p style="margin:10px 0;color:#555;text-align:center;">Best regards,<br>The Onu Team</p>
                   </td>
                 </tr>
               </tbody>
@@ -84,14 +93,18 @@ export const generateTeamInviteTemplate = (token, role, email) => {
         </tr>
       </tbody>
     </table>
+
     <p style="margin:16px 0;color:#6a737d;font-size:13px;text-align:center;">
-      You're receiving this email because an invitation to join Onu has been sent to you.
+      You received this email because an administrator at Onu sent you an invitation.<br>
+      If you believe this was a mistake, please contact us at
+      <a href="mailto:support@onu.ai" style="color:#0070f3;">support@onu.ai</a>
     </p>
   </center>
 </body>
 </html>`;
-};
 
+    return { html, plainText };
+};
 
 export const generateEmailVerificationTemplate = (token) => {
 
