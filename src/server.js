@@ -8,22 +8,14 @@ import finalresponse from "./middleware/response.js";
 import { createServer } from "http"; // ⬅️ import http
 import { Server } from "socket.io"; // ⬅️ import socket.io
 
-const port = 5000;
+const port = config.PORT || 3000;
 
 const app = express();
 app.use(express.json());
+const corssetting = { ...config.corsSettings }
+app.use(cors(corssetting))
 
-app.use(
-  cors({
-    origin: config.CORS_ORIGIN || "http://localhost:3000", // frontend url
-    methods: ["GET", "POST", "PUT", "DELETE"],
-    credentials: true,
-  })
-);
-
-// load routes
 routes(app);
-// error handler (last)
 app.use(finalresponse);
 
 // ✅ Create http server from express

@@ -12,7 +12,7 @@ import bcrypt from "bcrypt";
 import crypto from "crypto";
 import templates from "../../utils/templates/invitationEmail.js";
 import { UserModel } from "./model.js";
-import { RoleModel } from "../role/role.js";
+import { RoleModel } from "../role/model.js";
 import { InviteModel } from "../invites/model.js";
 import Repository from "../../utils/repository.js";
 import sendEmail from "../../utils/email.js";
@@ -93,8 +93,8 @@ export const signup = async ({
   if (!rolecheck) throw ApiError.badRequest(messages.ROLE_NOT_DEFINE);
   console.log(rolecheck, "role check ");
 
-  if (password !== confirmPassword)
-    throw ApiError.unauthorized(messages.PASSWORD_UNMATCH);
+  // if (password !== confirmPassword)
+  //   throw ApiError.unauthorized(messages.PASSWORD_UNMATCH);
 
   const hashpassword = await hashPassword(password);
 
@@ -547,8 +547,6 @@ export default {
   getAllUsers,
   countUsersByStatus,
   getUserById,
-  createInvite,
-  registerUser,
   toggleUserStatus,
   getInactiveUsers,
   removeUnacceptedUser,

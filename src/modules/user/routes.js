@@ -128,12 +128,6 @@ router
     middleware.authenticate,
     checkPermission(["assign_roles"]),
     userController.changeRole
-  )
-  .put(
-    "/change-role/:id",
-    middleware.authenticate,
-    checkPermission(["assign_roles"]),
-    userController.changeRole
   ) // change the user role
 
   // export data in excel file
