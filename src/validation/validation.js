@@ -3,7 +3,7 @@ import { messages } from "../constants/messages.js";
 import { RoleModel } from "../modules/role/model.js";
 import Repository from "../utils/repository.js";
 
-const roleRepo = new Repository(RoleModel)
+const roleRepo = new Repository(RoleModel);
 
 // ===============================
 // 📦 COMMON SCHEMAS
@@ -12,9 +12,7 @@ const emailSchema = z.string().email({ message: messages.EMAIL_CHECK });
 const passwordSchema = z.string().min(6, { message: messages.PASSWORD_CHECK });
 
 const idParam = z.object({
-  id: z
-    .string()
-    .regex(/^[a-f\d]{24}$/i, { message: messages.INVALID_USER_ID }),
+  id: z.string().regex(/^[a-f\d]{24}$/i, { message: messages.INVALID_USER_ID }),
 });
 
 // ===============================
@@ -68,16 +66,21 @@ export const resetPassword = z
 export const inviteUserValidation = z.object({
   name: z.string().trim().nonempty({ message: "Name is required" }),
   email: z.string().email({ message: "Valid email is required" }),
-  role_id: z.string().trim().nonempty({ message: "Role name is required" }).refine(async (roleName) => {
-    const role = await roleRepo.findOne({ name: roleName });
-    return !!role;
-  }, { message: "Role not found" }),
+  role_id: z
+    .string()
+    .trim()
+    .nonempty({ message: "Role name is required" })
+    .refine(
+      async (roleName) => {
+        const role = await roleRepo.findOne({ name: roleName });
+        return !!role;
+      },
+      { message: "Role not found" }
+    ),
 });
-
 
 export const completeRegistrationValidation = z
   .object({
-    name: z.string().trim().min(3, { message: messages.NAME_CHECK }),
     phone: z
       .string()
       .regex(/^\+?[1-9]\d{1,14}$/, { message: messages.PHONE_CHECK })
@@ -148,6 +151,8 @@ export const addRoleValidation = z.object({
       { message: messages.PERMISSION_TYPE_ERROR }
     ),
 });
+
+// export const createOrganizationValidation =
 
 // ===============================
 // 📤 EXPORT ALL

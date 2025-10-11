@@ -3,7 +3,10 @@ import ApiError from "../../utils/ApiError.js";
 import { messages } from "../../constants/messages.js";
 import { config } from "../../config/config.js";
 import { comparePassword, hashPassword } from "../../utils/bcrypt.helper.js";
-import { uploadToCloudinary, deleteFromCloudinary, } from "../../config/cloud.js";
+import {
+  uploadToCloudinary,
+  deleteFromCloudinary,
+} from "../../config/cloud.js";
 import GenerateOtpEmailTemplate from "../../utils/templates/OtpGenerator.js";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
@@ -18,7 +21,7 @@ import { io } from "../../server.js";
 
 // Instantiate repositories for models
 const userRepo = new Repository(UserModel);
-const roleRepo = new Repository(RoleModel)
+const roleRepo = new Repository(RoleModel);
 
 export const login = async ({ email, password }) => {
   // ✅ Step 1: Fetch user with role populated (only role name/description)
@@ -28,6 +31,9 @@ export const login = async ({ email, password }) => {
     "name description"
   );
   if (!user) throw ApiError.unauthorized(messages.USER_NOT_FOUND);
+  console.log("user", user);
+  if (user.role_id?.name !== "ADMIN")
+    throw ApiError.unauthorized(messages.INVALID_ROLE);
 
   const isMatch = await comparePassword(password, user.password);
   if (!isMatch) throw ApiError.unauthorized(messages.INVALID_CREDENTIALS);
@@ -71,7 +77,6 @@ export const login = async ({ email, password }) => {
       avatar: userObj.avatar,
       created_at: userObj.createdAt,
       updated_at: userObj.updatedAt,
-
     },
   };
 };
@@ -93,7 +98,6 @@ export const signup = async ({
   //   throw ApiError.unauthorized(messages.PASSWORD_UNMATCH);
 
   const hashpassword = await hashPassword(password);
-
 
   const firstLetter = name.charAt(0).toUpperCase();
   const avatarUrl = `https://ui-avatars.com/api/?name=${firstLetter}&background=random&color=fff&size=128`;
@@ -201,7 +205,11 @@ export const passowrdChange = async (
 
 export const getUserById = async (id) => {
   // ✅ Populate role_id but exclude permissions field
-  const user = await userRepo.findByIdWithPopulate(id, "role_id", "-permissions");
+  const user = await userRepo.findByIdWithPopulate(
+    id,
+    "role_id",
+    "-permissions"
+  );
 
   if (!user) {
     throw ApiError.notFound(messages.USER_NOT_FOUND);
@@ -365,7 +373,6 @@ export const removeProfileImage = async (req, res, next) => {
       await deleteFromCloudinary(user.avatar.public_id);
     }
 
-
     const firstLetter = user.name.charAt(0).toUpperCase();
 
     // ✅ Generate avatar URL using UI Avatars (optional)
@@ -405,7 +412,8 @@ export const deleteStatus = async (id) => {
     const user = await userRepo.findById(id);
     if (!user) throw ApiError.notFound(messages.USER_NOT_FOUND);
 
-    if (user.status === "deleted") throw ApiError.badRequest(messages.USER_ALREADY_DELETED)
+    if (user.status === "deleted")
+      throw ApiError.badRequest(messages.USER_ALREADY_DELETED);
 
     // Optional password check (if you uncomment later)
     // const isMatch = await comparePassword(password, user.password)
@@ -436,12 +444,6 @@ export const deleteStatus = async (id) => {
     };
   }
 };
-
-
-
-
-
-
 
 export default {
   login,

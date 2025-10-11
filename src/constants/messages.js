@@ -56,6 +56,7 @@ export const messages = {
   REQUIRED_FIELDS_MISSING: "Please fill in all required fields",
   INVALID_INPUT: "Invalid input provided",
   INVALID_USER_ID: "Invalid user ID",
+  INVALID_ROLE: "only admin can login",
   ROLE_CHECK: "Role must be either ADMIN or MANAGER",
   STATUS_CHECK: "Invalid status value",
   CONFIRM_EMAIL: "Verify your email",
@@ -98,7 +99,8 @@ export const messages = {
   ROLE_LIST: "Roles fetched successfully.",
   ROLE_NAME_REQUIRED: "Role name is required.",
   ROLE_DESCRIPTION_REQUIRED: "Role description is required.",
-  ROLE_DESCRIPTION_TOO_LONG: "Role description must be less than 200 characters.",
+  ROLE_DESCRIPTION_TOO_LONG:
+    "Role description must be less than 200 characters.",
   ROLE_NAME_TOO_LONG: "Role name must be less than 50 characters.",
   PERMISSION_TYPE_ERROR: "Permissions must be an array of strings.",
 
@@ -109,8 +111,6 @@ export const messages = {
   ROLE_DESCRIPTION_REQUIRED: "Role description is required.",
   ROLE_DESCRIPTION_TOO_LONG: "Description must not exceed 200 characters.",
   PERMISSION_TYPE_ERROR: "Each permission must be a string.",
-
-
 };
 
 export default messages;
