@@ -46,6 +46,10 @@ export const getAllInvitedUsers = async (acceptedFilter) => {
 export const createInvite = async (name, email, roleName) => {
   const cleanEmail = email.trim().toLowerCase();
 
+  console.log(name, "name");
+  console.log(email, "email");
+  console.log(roleName, "roleName");
+
   // 🔹 Step 1: Find role by name
   const role = await RoleModel.findOne({ name: roleName });
   if (!role) {
@@ -53,7 +57,7 @@ export const createInvite = async (name, email, roleName) => {
   }
 
   // 🔹 Step 2: Check existing invite
-  let invite = await InviteModel.findOne({ email: cleanEmail });
+  let invite = await inviteRepo.findOne({ email: cleanEmail });
 
   const token = crypto.randomBytes(32).toString("hex");
   const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
@@ -66,8 +70,8 @@ export const createInvite = async (name, email, roleName) => {
     invite.role_id = role._id;
     await invite.save();
   } else {
-    invite = await InviteModel.create({
-      name, // ✅ New field
+    invite = await inviteRepo.create({
+      name,
       email: cleanEmail,
       role_id: role._id,
       token,
@@ -78,7 +82,8 @@ export const createInvite = async (name, email, roleName) => {
   const { html, plainText } = templates.generateTeamInviteTemplate(
     invite.token,
     role.name,
-    email
+    email,
+    name
   );
 
   await sendEmail({

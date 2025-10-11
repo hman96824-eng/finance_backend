@@ -18,6 +18,7 @@ export const authenticate = (req, res, next) => {
 
     req.user = {
       id: decoded.id,
+      name: decoded.name,
       email: decoded.email,
       role_id: decoded.role_id,
     };
