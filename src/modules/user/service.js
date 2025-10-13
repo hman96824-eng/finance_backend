@@ -32,8 +32,6 @@ export const login = async ({ email, password }) => {
   );
   if (!user) throw ApiError.unauthorized(messages.USER_NOT_FOUND);
   console.log("user", user);
-  if (user.role_id?.name !== "ADMIN")
-    throw ApiError.unauthorized(messages.INVALID_ROLE);
 
   const isMatch = await comparePassword(password, user.password);
   if (!isMatch) throw ApiError.unauthorized(messages.INVALID_CREDENTIALS);
@@ -309,7 +307,12 @@ export const toggleUserStatus = async (id) => {
 };
 export const getInactiveUsers = async () => {
   try {
-    const users = await userRepo.find({ status: "inactive" });
+    const users = await userRepo.findObj(
+      { status: "inactive" },
+      {},
+      {},
+      { path: "role_id", select: "name" }
+    );
     return users || [];
   } catch (error) {
     throw new Error("Failed to fetch inactive users: " + error.message);

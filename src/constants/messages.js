@@ -111,6 +111,10 @@ export const messages = {
   ROLE_DESCRIPTION_REQUIRED: "Role description is required.",
   ROLE_DESCRIPTION_TOO_LONG: "Description must not exceed 200 characters.",
   PERMISSION_TYPE_ERROR: "Each permission must be a string.",
+
+  // organization
+  ORGANIZATION_CREATED: "Organizaton created successfullys",
+  ORG_ALREADY_EXISTS: "Organization Already Exists",
 };
 
 export default messages;

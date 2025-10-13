@@ -26,6 +26,7 @@ export const getAllInvitedUsers = async (acceptedFilter) => {
   const totalUnaccepted = await inviteRepo.countByField({ accepted: false });
 
   const formattedData = invites.map((inv) => ({
+    id: inv._id,
     name: inv.name,
     email: inv.email,
     role_id: inv.role_id?.name,
@@ -139,8 +140,19 @@ export const registerUser = async (inviteToken, userData) => {
   };
 };
 
+export const updateInviteStatus = async (id) => {
+  const invite = await InviteModel.findById(id);
+  if (!invite) throw ApiError.notFound(messages.USER_NOT_FOUND);
+
+  invite.status = "deleted";
+  await invite.save();
+
+  return invite;
+};
+
 export default {
   getAllInvitedUsers,
   createInvite,
   registerUser,
+  updateInviteStatus,
 };

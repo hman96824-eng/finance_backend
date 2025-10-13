@@ -152,7 +152,35 @@ export const addRoleValidation = z.object({
     ),
 });
 
-// export const createOrganizationValidation =
+export const createOrganizationValidation = z.object({
+  name: z.string().min(2, { message: "Organization name is required" }),
+  size: z.string().optional(),
+  emails: z
+    .array(z.string().email({ message: "Invalid email format" }))
+    .min(1, { message: "At least one email is required" }),
+  phones: z
+    .array(
+      z
+        .string()
+        .regex(/^\+?[1-9]\d{1,14}$/, { message: "Invalid phone number format" })
+    )
+    .min(1, { message: "At least one phone number is required" }),
+  website: z.string().url({ message: "Invalid website URL" }).optional(),
+  description: z.string().optional(),
+  addresses: z
+    .array(
+      z.object({
+        addressName: z.string().optional(),
+        street1: z.string().min(1, { message: "Street 1 is required" }),
+        street2: z.string().optional(),
+        city: z.string().min(1, { message: "City is required" }),
+        zipCode: z.string().min(1, { message: "Zip code is required" }),
+        country: z.string().min(1, { message: "Country is required" }),
+        state: z.string().min(1, { message: "State is required" }),
+      })
+    )
+    .min(1, { message: "At least one address is required" }),
+});
 
 // ===============================
 // 📤 EXPORT ALL
@@ -175,4 +203,7 @@ export default {
 
   // Role
   addRoleValidation,
+
+  // createOrganizationValidation
+  createOrganizationValidation,
 };

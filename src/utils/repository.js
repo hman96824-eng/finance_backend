@@ -33,8 +33,8 @@ export default class Repository {
   async countByField(filter) {
     return this.count(filter);
   }
-  /**
-   * Find document by ID.
+  /*
+    Find document by ID.
    */
   async findById(id, projection = {}, options = {}) {
     return this.model.findById(id, projection, options);
@@ -45,9 +45,30 @@ export default class Repository {
    */
   async find(query = {}, projection = {}, options = {}) {
     if (!query || typeof query !== "object") {
-      throw new Error(`Invalid input: expected object, received ${typeof query}`);
+      throw new Error(
+        `Invalid input: expected object, received ${typeof query}`
+      );
     }
     return this.model.find(query, projection, options);
+  }
+
+  /**
+   * use populate and get name and different values instead of object
+   */
+  async findObj(query = {}, projection = {}, options = {}, populate = null) {
+    if (!query || typeof query !== "object") {
+      throw new Error(
+        `Invalid input: expected object, received ${typeof query}`
+      );
+    }
+
+    let mongooseQuery = this.model.find(query, projection, options);
+
+    if (populate) {
+      mongooseQuery = mongooseQuery.populate(populate);
+    }
+
+    return mongooseQuery.exec(); // Execute the query
   }
 
   /**
@@ -56,7 +77,9 @@ export default class Repository {
    */
   async findAll(query = {}, projection = {}, options = {}) {
     if (!query || typeof query !== "object") {
-      throw new Error(`Invalid input: expected object, received ${typeof query}`);
+      throw new Error(
+        `Invalid input: expected object, received ${typeof query}`
+      );
     }
     return this.model.find(query, projection, options);
   }
@@ -131,11 +154,19 @@ export default class Repository {
   // ========================
 
   async softDeleteById(id) {
-    return this.model.findByIdAndUpdate(id, { $set: { deleted: true } }, { new: true });
+    return this.model.findByIdAndUpdate(
+      id,
+      { $set: { deleted: true } },
+      { new: true }
+    );
   }
 
   async restoreById(id) {
-    return this.model.findByIdAndUpdate(id, { $set: { deleted: false } }, { new: true });
+    return this.model.findByIdAndUpdate(
+      id,
+      { $set: { deleted: false } },
+      { new: true }
+    );
   }
 
   // ========================
@@ -164,12 +195,18 @@ export default class Repository {
   // ========================
 
   async getProfile(userId) {
-    return this.model.findById(userId).select("-password -resetCode -resetCodeExpires");
+    return this.model
+      .findById(userId)
+      .select("-password -resetCode -resetCodeExpires");
   }
 
   async updateProfile(userId, profileData) {
     return this.model
-      .findByIdAndUpdate(userId, { $set: profileData }, { new: true, runValidators: true })
+      .findByIdAndUpdate(
+        userId,
+        { $set: profileData },
+        { new: true, runValidators: true }
+      )
       .select("-password -resetCode -resetCodeExpires");
   }
 

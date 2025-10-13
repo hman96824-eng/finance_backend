@@ -4,8 +4,8 @@ import config from "../../config/index.js";
  * Invitation Email Template
  * @param {string} token - invitation token
  * @param {string} role - role of invited user (e.g., ADMIN, MANAGER)
- * @param {string} email - email of invited user
  * @param {string} name - email of invited user
+ * @param {string} email - email of invited user
  */
 export const generateTeamInviteTemplate = (token, role, email, name) => {
   const inviteUrl = `${

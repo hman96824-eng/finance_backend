@@ -15,7 +15,6 @@ export const login = async (req, res, next) => {
 };
 export const signup = async (req, res, next) => {
   try {
-
     const data = await userService.signup(req.body);
 
     return successResponse(res, data, data.notification, messages.USER_CREATED);
@@ -198,7 +197,7 @@ export const updateProfile = async (req, res, next) => {
 
 export const toggleUserStatus = async (req, res) => {
   try {
-    const userID = req?.params?.id
+    const userID = req?.params?.id;
     const result = await userService.toggleUserStatus(userID);
     res.json({ success: true, ...result });
   } catch (err) {
@@ -207,25 +206,30 @@ export const toggleUserStatus = async (req, res) => {
       .json({ message: err.message || messages.USER_STATUS_UPDATE_FAILED });
   }
 };
-export const dashboard = (req, res) => {
+export const dashboard = (req, res, next) => {
   res.json({
     message: `Welcome, ${req.user.email}!`,
     role: req.user.role_id,
   });
 };
-export const InactiveUserStatus = async (req, res) => {
+export const InactiveUserStatus = async (req, res, next) => {
   try {
     const inactiveUsers = await userService.getInactiveUsers();
+
+    const transformedUsers = inactiveUsers.map((user) => {
+      const userObj = user.toObject(); // Convert Mongoose doc to plain object
+      userObj.role_id = userObj.role_id?.name || null;
+      delete userObj.password; // Optional: remove password if needed
+      return userObj;
+    });
+
     res.status(200).json({
       success: true,
-      count: inactiveUsers.length,
-      users: inactiveUsers,
+      count: transformedUsers.length,
+      users: transformedUsers,
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    next(error);
   }
 };
 export const RemoveUnacceptedUser = async (req, res) => {
@@ -282,7 +286,6 @@ export const deleteUserStatus = async (req, res, next) => {
 export const health = async (req, res) => {
   res.status(200).json({ success: true, message: "ok" });
 };
-
 
 export default {
   login,
