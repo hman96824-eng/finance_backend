@@ -187,14 +187,10 @@ export const organizationValidation = z.object({
     .max(50, { message: "Organization size is too long" }),
 
   emails: z.array(z.string().email({ message: "Invalid email format" })).min(1, { message: "At least one email is required" }),
-
-
   phone: z
     .string()
-    .trim()
-    .regex(/^\+?[1-9]\d{7,14}$/, {
-      message: "Phone number must be in valid international format (e.g., +1234567890)",
-    }),
+    .min(1, "Phone is required")
+    .regex(/^\+?[0-9\s-]{7,20}$/, "Invalid phone number format"),
 
   website: z
     .string()

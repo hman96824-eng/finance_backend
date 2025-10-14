@@ -91,7 +91,7 @@ const OrganizationSchema = new mongoose.Schema(
         phone: {
             type: String,
             trim: true,
-            maxlength: 30,
+            maxlength: 11,
         },
         website: {
             type: String,
