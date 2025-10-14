@@ -149,6 +149,77 @@ export const addRoleValidation = z.object({
     ),
 });
 
+const addressSchema = z.object({
+  name: z.string().max(100, { message: "Address name too long" }),
+  primary: z.boolean().optional(),
+  type: z.enum(["mailing", "billing", "shipping"], {
+    message: "Address type must be one of: mailing, billing, shipping",
+  }),
+  street: z.string().max(150, { message: "Street too long" }),
+  street2: z.string().max(150).optional(),
+  city: z.string().max(100, { message: "City too long" }),
+  state: z.string().max(100, { message: "State too long" }),
+  zip: z.string().max(20, { message: "ZIP code too long" }),
+  country: z.string().max(100, { message: "Country name too long" }),
+  notes: z.string().max(500).optional(),
+});
+
+export const organizationValidation = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(2, { message: "Organization name is required" })
+    .max(100, { message: "Organization name is too long" }),
+
+  code: z
+    .string()
+    .trim()
+    .min(2, { message: "Organization code is required" })
+    .max(50, { message: "Organization code is too long" }),
+
+  size: z
+    .string()
+    .trim()
+    .min(1, { message: "Organization size is required" })
+    .max(50, { message: "Organization size is too long" }),
+
+  emails: z.array(z.string().email({ message: "Invalid email format" })).min(1, { message: "At least one email is required" }),
+
+
+  phone: z
+    .string()
+    .trim()
+    .regex(/^\+?[1-9]\d{7,14}$/, {
+      message: "Phone number must be in valid international format (e.g., +1234567890)",
+    }),
+
+  website: z
+    .string()
+    .trim()
+    .url({ message: "Website must be a valid URL" }),
+
+  description: z
+    .string()
+    .trim()
+    .min(10, { message: "Description is required" })
+    .max(1000, { message: "Description too long" }),
+
+  tags: z
+    .array(z.string())
+    .max(50, { message: "Too many tags (max 50 allowed)" })
+    .optional(),
+
+  // logo: z
+  //   .string()
+  //   .url({ message: "Logo must be a valid URL" })
+  //   .optional(),
+
+  addresses: z
+    .array(addressSchema)
+    .min(1, { message: "At least one address is required" }),
+});
+
+
 // ===============================
 // 📤 EXPORT ALL
 // ===============================
@@ -170,4 +241,6 @@ export default {
 
   // Role
   addRoleValidation,
+  // Organization validatoin
+  organizationValidation,
 };
