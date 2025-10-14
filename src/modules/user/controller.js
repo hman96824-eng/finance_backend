@@ -71,7 +71,7 @@ export const getUser = async (req, res, next) => {
     const { status } = req.query;
     // Build filter based on query
     const filter = {};
-    if (status && ["active"].includes(status)) {
+    if (status && ["active", "inactive", "deleted"].includes(status)) {
       filter.status = status;
     }
 
@@ -80,12 +80,14 @@ export const getUser = async (req, res, next) => {
 
     const totalActive = await userService.countUsersByStatus("active");
     const totalInctive = await userService.countUsersByStatus("inactive");
-    const totalUsers = totalActive + totalInctive;
+    const deletedUser = await userService.countUsersByStatus("deleted");
+    const totalUsers = totalActive + totalInctive + deletedUser;
     res.json({
       success: true,
       totalUsers,
       totalActive,
       totalInctive,
+      deletedUser,
       filtered: users.length,
       data: users,
     });

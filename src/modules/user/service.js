@@ -224,7 +224,7 @@ export const getUserById = async (id) => {
 };
 export const getAllUsers = async (filter = {}) => {
   const baseFilter = {
-    status: { $in: ["active", "inactive"] },
+    status: { $in: ["active", "inactive", "deleted"] },
     ...filter,
   };
   const users = await userRepo.findWithPopulate(baseFilter, "role_id", "name");
