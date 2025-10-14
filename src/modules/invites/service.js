@@ -21,28 +21,18 @@ export const getAllInvitedUsers = async (acceptedFilter) => {
 
   const invites = await inviteRepo.findWithPopulate(filter, ["role_id"]);
 
-  const totalUsers = await inviteRepo.countAll();
-  const totalAccepted = await inviteRepo.countByField({ accepted: true });
-  const totalUnaccepted = await inviteRepo.countByField({ accepted: false });
-
   const formattedData = invites.map((inv) => ({
-    id: inv._id,
+    _id: inv._id,
     name: inv.name,
     email: inv.email,
     role_id: inv.role_id?.name,
     accepted: inv.accepted,
     inviteCount: inv.invite,
     expiresAt: inv.expiresAt,
+    status: inv.status,
   }));
 
-  return {
-    message: "Invited users fetched successfully",
-    totalUsers,
-    totalAccepted,
-    totalUnaccepted,
-    filtered: formattedData.length,
-    data: formattedData,
-  };
+  return formattedData;
 };
 export const createInvite = async (name, email, roleName) => {
   const cleanEmail = email.trim().toLowerCase();

@@ -11,7 +11,7 @@ export const getAllInvitedUsers = async (req, res, next) => {
 
     return successResponse(res, result, "users fetch successfully");
   } catch (error) {
-    next(err);
+    next(error);
   }
 };
 export const sendInvitation = async (req, res) => {

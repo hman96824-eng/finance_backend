@@ -418,22 +418,8 @@ export const deleteStatus = async (id) => {
     if (user.status === "deleted")
       throw ApiError.badRequest(messages.USER_ALREADY_DELETED);
 
-    // Optional password check (if you uncomment later)
-    // const isMatch = await comparePassword(password, user.password)
-    // if (!isMatch) throw ApiError.unauthorized(messages.PASSWORD_UNMATCH)
-
-    // ✅ Update status to "deleted"
     user.status = "deleted";
     await user.save();
-
-    // ✅ Optional socket notification (if you want to broadcast)
-    // io.emit("user_status_deleted", {
-    //   id: user._id,
-    //   name: user.name,
-    //   email: user.email,
-    //   status: user.status,
-    // });
-
     return {
       success: true,
       message: "User status updated to deleted successfully",
