@@ -111,6 +111,30 @@ export const messages = {
   ROLE_DESCRIPTION_REQUIRED: "Role description is required.",
   ROLE_DESCRIPTION_TOO_LONG: "Description must not exceed 200 characters.",
   PERMISSION_TYPE_ERROR: "Each permission must be a string.",
+  // ========================
+  // Organization Details
+  // ========================
+  ORG_CREATED: "Organization created successfully",
+  ORG_UPDATED: "Organization updated successfully",
+  ORG_DELETED: "Organization deleted successfully",
+  ORG_NOT_FOUND: "Organization not found",
+  ORG_FETCHED: "Organization fetched successfully",
+  ORG_LIST: "Organizations fetched successfully",
+
+
+  // Role messages...
+  ROLE_CREATED: "Role created successfully",
+  ROLE_UPDATED: "Role updated successfully",
+  ROLE_NOT_FOUND: "Role not found",
+
+  // ✅ Add these:
+  ORG_CREATED: "Organization created successfully",
+  ORG_UPDATED: "Organization updated successfully",
+  ORG_NOT_FOUND: "Organization not found",
+  ORG_DELETED: "Organization deleted successfully",
+
+  // Common/server
+  SERVER_ERROR: "An unexpected error occurred",
 
   // organization
   ORGANIZATION_CREATED: "Organizaton created successfullys",
