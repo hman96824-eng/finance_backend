@@ -26,7 +26,12 @@ router
     service.uploadProfileImage
   ) // upload the dp photo
   .delete("/remove-avatar", middleware.authenticate, service.removeProfileImage) // remove the dp photo
-  .put("/profile", middleware.authenticate, userController.updateProfile) // update owen profile
+  .put(
+    "/profile",
+    middleware.authenticate,
+    checkPermission(["update_own_profile"]),
+    userController.updateProfile
+  ) // update owen profile
   .put(
     "/toggle-status/:id",
     middleware.authenticate,
@@ -36,10 +41,14 @@ router
   .put(
     "/delete-status/:id",
     middleware.authenticate,
-    checkPermission(["manage_users"]),
     userController.deleteUserStatus
   ) // soft delete user
-  .get("/profile", middleware.authenticate, userController.getProfile) // get owen profile
+  .get(
+    "/profile",
+    middleware.authenticate,
+    checkPermission(["view_own_profile"]),
+    userController.getProfile
+  ) // get owen profile
   .post(
     "/signup",
     validate(validation.registerValidation),
@@ -48,7 +57,7 @@ router
   .get(
     "/inactive",
     middleware.authenticate,
-    checkPermission(["manage_users"]),
+    checkPermission(["view_users"]),
     userController.InactiveUserStatus
   ) // all InActive user's
   .post("/login", validate(validation.loginValidation), userController.login)

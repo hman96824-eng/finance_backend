@@ -32,6 +32,7 @@ export const login = async ({ email, password }) => {
     "name description"
   );
   if (!user) throw ApiError.unauthorized(messages.USER_NOT_FOUND);
+  console.log("user", user);
 
   const isMatch = await comparePassword(password, user.password);
   if (!isMatch) throw ApiError.unauthorized(messages.INVALID_CREDENTIALS);
@@ -229,7 +230,7 @@ export const getUserById = async (id) => {
 };
 export const getAllUsers = async (filter = {}) => {
   const baseFilter = {
-    status: { $in: ["active", "inactive"] },
+    status: { $in: ["active", "inactive", "deleted"] },
     ...filter,
   };
   const users = await userRepo.findWithPopulate(baseFilter, "role_id", "name");
@@ -399,7 +400,12 @@ export const toggleUserStatus = async (id) => {
 };
 export const getInactiveUsers = async () => {
   try {
-    const users = await userRepo.find({ status: "inactive" });
+    const users = await userRepo.findObj(
+      { status: "inactive" },
+      {},
+      {},
+      { path: "role_id", select: "name" }
+    );
     return users || [];
   } catch (error) {
     throw new Error("Failed to fetch inactive users: " + error.message);
@@ -505,22 +511,8 @@ export const deleteStatus = async (id) => {
     if (user.status === "deleted")
       throw ApiError.badRequest(messages.USER_ALREADY_DELETED);
 
-    // Optional password check (if you uncomment later)
-    // const isMatch = await comparePassword(password, user.password)
-    // if (!isMatch) throw ApiError.unauthorized(messages.PASSWORD_UNMATCH)
-
-    // ✅ Update status to "deleted"
     user.status = "deleted";
     await user.save();
-
-    // ✅ Optional socket notification (if you want to broadcast)
-    // io.emit("user_status_deleted", {
-    //   id: user._id,
-    //   name: user.name,
-    //   email: user.email,
-    //   status: user.status,
-    // });
-
     return {
       success: true,
       message: "User status updated to deleted successfully",

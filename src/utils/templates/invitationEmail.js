@@ -4,14 +4,22 @@ import config from "../../config/index.js";
  * Invitation Email Template
  * @param {string} token - invitation token
  * @param {string} role - role of invited user (e.g., ADMIN, MANAGER)
+ * @param {string} name - email of invited user
  * @param {string} email - email of invited user
  */
-export const generateTeamInviteTemplate = (token, role, email) => {
-    const inviteUrl = `${config.appConfig.frontEndUrl}/RegisterbyInvitation?token=${encodeURIComponent(
-        token
-    )}&email=${encodeURIComponent(email)}&role=${encodeURIComponent(role)}`;
+export const generateTeamInviteTemplate = (token, role, email, name) => {
+  const inviteUrl = `${
+    config.appConfig.frontEndUrl
+  }/RegisterbyInvitation?token=${encodeURIComponent(
+    token
+  )}&name=${encodeURIComponent(name)}&email=${encodeURIComponent(
+    email
+  )}&role=${encodeURIComponent(role)}`;
+  console.log(name, "email name");
+  console.log(email, "email email");
+  console.log(role, "email role");
 
-    const plainText = `
+  const plainText = `
 Hello,
 
 You’ve been invited to join Onu as a ${role}!
@@ -24,7 +32,7 @@ If you didn’t expect this invitation, please ignore this email.
 — The Onu Team
 `;
 
-    const html = `<!DOCTYPE html>
+  const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -103,12 +111,11 @@ If you didn’t expect this invitation, please ignore this email.
 </body>
 </html>`;
 
-    return { html, plainText };
+  return { html, plainText };
 };
 
 export const generateEmailVerificationTemplate = (token) => {
-
-    return `<!DOCTYPE html>
+  return `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -166,11 +173,10 @@ export const generateEmailVerificationTemplate = (token) => {
     </center>
 </body>
 </html>`;
-}
+};
 
 export const generateForgotEmailTemplate = (token) => {
-
-    return `<!DOCTYPE html>
+  return `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -228,10 +234,10 @@ export const generateForgotEmailTemplate = (token) => {
     </center>
 </body>
 </html>`;
-}
+};
 
 export const generateTeamEmailTemplate = (token) => {
-    return `<!DOCTYPE html>
+  return `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -289,11 +295,11 @@ export const generateTeamEmailTemplate = (token) => {
     </center>
 </body>
 </html>`;
-}
+};
 
 export default {
-    generateTeamInviteTemplate,
-    generateEmailVerificationTemplate,
-    generateForgotEmailTemplate,
-    generateTeamEmailTemplate
+  generateTeamInviteTemplate,
+  generateEmailVerificationTemplate,
+  generateForgotEmailTemplate,
+  generateTeamEmailTemplate,
 };

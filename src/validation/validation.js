@@ -3,7 +3,7 @@ import { messages } from "../constants/messages.js";
 import { RoleModel } from "../modules/role/model.js";
 import Repository from "../utils/repository.js";
 
-const roleRepo = new Repository(RoleModel)
+const roleRepo = new Repository(RoleModel);
 
 // ===============================
 // 📦 COMMON SCHEMAS
@@ -12,9 +12,7 @@ const emailSchema = z.string().email({ message: messages.EMAIL_CHECK });
 const passwordSchema = z.string().min(6, { message: messages.PASSWORD_CHECK });
 
 const idParam = z.object({
-  id: z
-    .string()
-    .regex(/^[a-f\d]{24}$/i, { message: messages.INVALID_USER_ID }),
+  id: z.string().regex(/^[a-f\d]{24}$/i, { message: messages.INVALID_USER_ID }),
 });
 
 // ===============================
@@ -68,16 +66,21 @@ export const resetPassword = z
 export const inviteUserValidation = z.object({
   name: z.string().trim().nonempty({ message: "Name is required" }),
   email: z.string().email({ message: "Valid email is required" }),
-  role_id: z.string().trim().nonempty({ message: "Role name is required" }).refine(async (roleName) => {
-    const role = await roleRepo.findOne({ name: roleName });
-    return !!role;
-  }, { message: "Role not found" }),
+  role_id: z
+    .string()
+    .trim()
+    .nonempty({ message: "Role name is required" })
+    .refine(
+      async (roleName) => {
+        const role = await roleRepo.findOne({ name: roleName });
+        return !!role;
+      },
+      { message: "Role not found" }
+    ),
 });
-
 
 export const completeRegistrationValidation = z
   .object({
-    name: z.string().trim().min(3, { message: messages.NAME_CHECK }),
     phone: z
       .string()
       .regex(/^\+?[1-9]\d{1,14}$/, { message: messages.PHONE_CHECK })
@@ -149,6 +152,36 @@ export const addRoleValidation = z.object({
     ),
 });
 
+export const createOrganizationValidation = z.object({
+  name: z.string().min(2, { message: "Organization name is required" }),
+  size: z.string().optional(),
+  emails: z
+    .array(z.string().email({ message: "Invalid email format" }))
+    .min(1, { message: "At least one email is required" }),
+  phones: z
+    .array(
+      z
+        .string()
+        .regex(/^\+?[1-9]\d{1,14}$/, { message: "Invalid phone number format" })
+    )
+    .min(1, { message: "At least one phone number is required" }),
+  website: z.string().url({ message: "Invalid website URL" }).optional(),
+  description: z.string().optional(),
+  addresses: z
+    .array(
+      z.object({
+        addressName: z.string().optional(),
+        street1: z.string().min(1, { message: "Street 1 is required" }),
+        street2: z.string().optional(),
+        city: z.string().min(1, { message: "City is required" }),
+        zipCode: z.string().min(1, { message: "Zip code is required" }),
+        country: z.string().min(1, { message: "Country is required" }),
+        state: z.string().min(1, { message: "State is required" }),
+      })
+    )
+    .min(1, { message: "At least one address is required" }),
+});
+
 // ===============================
 // 📤 EXPORT ALL
 // ===============================
@@ -170,4 +203,7 @@ export default {
 
   // Role
   addRoleValidation,
+
+  // createOrganizationValidation
+  createOrganizationValidation,
 };

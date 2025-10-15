@@ -71,7 +71,7 @@ export const getUser = async (req, res, next) => {
     const { status } = req.query;
     // Build filter based on query
     const filter = {};
-    if (status && ["active"].includes(status)) {
+    if (status && ["active", "inactive", "deleted"].includes(status)) {
       filter.status = status;
     }
 
@@ -81,12 +81,14 @@ export const getUser = async (req, res, next) => {
 
     const totalActive = await userService.countUsersByStatus("active");
     const totalInctive = await userService.countUsersByStatus("inactive");
-    const totalUsers = totalActive + totalInctive;
+    const deletedUser = await userService.countUsersByStatus("deleted");
+    const totalUsers = totalActive + totalInctive + deletedUser;
     res.json({
       success: true,
       totalUsers,
       totalActive,
       totalInctive,
+      deletedUser,
       filtered: users.length,
       data: users,
     });
@@ -207,25 +209,30 @@ export const toggleUserStatus = async (req, res) => {
       .json({ message: err.message || messages.USER_STATUS_UPDATE_FAILED });
   }
 };
-export const dashboard = (req, res) => {
+export const dashboard = (req, res, next) => {
   res.json({
     message: `Welcome, ${req.user.email}!`,
     role: req.user.role_id,
   });
 };
-export const InactiveUserStatus = async (req, res) => {
+export const InactiveUserStatus = async (req, res, next) => {
   try {
     const inactiveUsers = await userService.getInactiveUsers();
+
+    const transformedUsers = inactiveUsers.map((user) => {
+      const userObj = user.toObject(); // Convert Mongoose doc to plain object
+      userObj.role_id = userObj.role_id?.name || null;
+      delete userObj.password; // Optional: remove password if needed
+      return userObj;
+    });
+
     res.status(200).json({
       success: true,
-      count: inactiveUsers.length,
-      users: inactiveUsers,
+      count: transformedUsers.length,
+      users: transformedUsers,
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    next(error);
   }
 };
 export const RemoveUnacceptedUser = async (req, res) => {
