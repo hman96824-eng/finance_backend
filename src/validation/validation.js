@@ -155,8 +155,8 @@ export const addRoleValidation = z.object({
 const addressSchema = z.object({
   name: z.string().max(100, { message: "Address name too long" }),
   primary: z.boolean().optional(),
-  type: z.enum(["mailing", "billing", "shipping"], {
-    message: "Address type must be one of: mailing, billing, shipping",
+  type: z.enum(["mailing", "billing", "shipping", "factory", "office"], {
+    message: "Address type must be one of: mailing, billing, shipping, Factory , Office",
   }),
   street: z.string().max(150, { message: "Street too long" }),
   street2: z.string().max(150).optional(),
@@ -195,7 +195,8 @@ export const organizationValidation = z.object({
   website: z
     .string()
     .trim()
-    .url({ message: "Website must be a valid URL" }),
+    .url({ message: "Website must be a valid URL" })
+    .optional(),
 
   description: z
     .string()
@@ -208,10 +209,10 @@ export const organizationValidation = z.object({
     .max(50, { message: "Too many tags (max 50 allowed)" })
     .optional(),
 
-  // logo: z
-  //   .string()
-  //   .url({ message: "Logo must be a valid URL" })
-  //   .optional(),
+  avatar: z
+    .string()
+    .url({ message: "Logo must be a valid URL" })
+    .optional(),
 
   addresses: z
     .array(addressSchema)

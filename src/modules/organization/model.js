@@ -2,55 +2,20 @@ import mongoose from 'mongoose';
 
 const AddressSchema = new mongoose.Schema(
     {
-        name: {
-            type: String,
-            trim: true,
-            maxlength: 100,
-        },
-        primary: {
-            type: Boolean,
-            default: false,
-        },
+        name: { type: String, trim: true, maxlength: 100 },
+        primary: { type: Boolean, default: false },
         type: {
             type: String,
-            enum: ['mailing', 'billing', 'shipping'],
+            enum: ["mailing", "billing", "shipping", "factory", "office"],
             default: 'mailing',
         },
-        street: {
-            type: String,
-            trim: true,
-            maxlength: 150,
-        },
-        street2: {
-            type: String,
-            trim: true,
-            maxlength: 150,
-        },
-        city: {
-            type: String,
-            trim: true,
-            maxlength: 100,
-        },
-        state: {
-            type: String,
-            trim: true,
-            maxlength: 100,
-        },
-        zip: {
-            type: String,
-            trim: true,
-            maxlength: 20,
-        },
-        country: {
-            type: String,
-            trim: true,
-            maxlength: 100,
-        },
-        notes: {
-            type: String,
-            trim: true,
-            maxlength: 500,
-        },
+        street: { type: String, trim: true, maxlength: 150 },
+        street2: { type: String, trim: true, maxlength: 150 },
+        city: { type: String, trim: true, maxlength: 100 },
+        state: { type: String, trim: true, maxlength: 100 },
+        zip: { type: String, trim: true, maxlength: 20 },
+        country: { type: String, trim: true, maxlength: 100 },
+        notes: { type: String, trim: true, maxlength: 500 },
     },
     { _id: false }
 );
@@ -64,23 +29,13 @@ const OrganizationSchema = new mongoose.Schema(
             maxlength: 100,
             index: true,
         },
-        code: {
-            type: String,
-            trim: true,
-            maxlength: 50,
-            unique: true,
-            sparse: true,
-        },
-        size: {
-            type: String,
-            trim: true,
-            maxlength: 50,
-        },
+        code: { type: String, trim: true, maxlength: 50, unique: true, sparse: true },
+        size: { type: String, trim: true, maxlength: 50 },
         emails: {
             type: [String],
             validate: {
                 validator: function (emails) {
-                    return emails.every(email =>
+                    return emails.every((email) =>
                         /^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/.test(email)
                     );
                 },
@@ -88,21 +43,9 @@ const OrganizationSchema = new mongoose.Schema(
             },
             default: [],
         },
-        phone: {
-            type: String,
-            trim: true,
-            maxlength: 11,
-        },
-        website: {
-            type: String,
-            trim: true,
-            match: /^https?:\/\/.+$/,
-        },
-        description: {
-            type: String,
-            trim: true,
-            maxlength: 1000,
-        },
+        phone: { type: String, trim: true, maxlength: 20 },
+        website: { type: String, trim: true, match: /^https?:\/\/.+$/ },
+        description: { type: String, trim: true, maxlength: 1000 },
         tags: {
             type: [String],
             default: [],
@@ -113,14 +56,12 @@ const OrganizationSchema = new mongoose.Schema(
                 message: 'Too many tags (max 50)',
             },
         },
-        logo: {
-            type: String,
-            trim: true,
+        avatar: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Media',
+            default: null,
         },
-        addresses: {
-            type: [AddressSchema],
-            default: [],
-        },
+        addresses: { type: [AddressSchema], default: [] },
     },
     {
         timestamps: true,

@@ -336,10 +336,10 @@ export const uploadProfileImage = async (req, res, next) => {
     const userId = req.user.id; // get from JWT middleware
     const user = await userRepo.findById(userId);
 
-    console.log(req, "req");
-    console.log(req.file, "req file");
-    console.log(user, "user");
-    console.log(userId, "user id ");
+    // console.log(req, "req");
+    // console.log(req.file, "req file");
+    // console.log(user, "user");
+    // console.log(userId, "user id ");
     if (!req.file) throw ApiError.badRequest(messages.FILE_NOT_UPLOADED);
 
     // If user already has an image, remove old one
@@ -349,6 +349,7 @@ export const uploadProfileImage = async (req, res, next) => {
 
     // Upload new image to cloudinary
     const result = await uploadToCloudinary(req.file.path, "user_avatars");
+    // console.log(result, "photo upload ouput");
 
     // Update DB
     user.avatar = {
