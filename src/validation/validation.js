@@ -192,11 +192,7 @@ export const organizationValidation = z.object({
     .min(1, "Phone is required")
     .regex(/^\+?[0-9\s-]{7,20}$/, "Invalid phone number format"),
 
-  website: z
-    .string()
-    .trim()
-    .url({ message: "Website must be a valid URL" })
-    .optional(),
+  website: z.string().trim().url({ message: "Website must be a valid URL" }).optional(),
 
   description: z
     .string()

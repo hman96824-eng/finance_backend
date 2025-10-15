@@ -17,7 +17,6 @@ export const createOrUpdateOrganization = async (req, res, next) => {
             req.body.addresses = JSON.parse(req.body.address || req.body.addresses);
         }
 
-
         if (req.file) {
             const media = await MediaService.uploadMedia(
                 req.file.path,

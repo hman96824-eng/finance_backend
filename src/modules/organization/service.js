@@ -21,6 +21,7 @@ export const saveOrganization = async (data) => {
                 }
             }
 
+            return await OrganizationRepo.create(data);
         }
 
         // For update - ensure new name/code (if provided) doesn't collide with another org
