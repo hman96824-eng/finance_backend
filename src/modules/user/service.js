@@ -31,6 +31,7 @@ export const login = async ({ email, password }) => {
     "role_id",
     "name description"
   );
+  if (user.status !== "active") throw ApiError.unauthorized(messages.IsActive);
   if (!user) throw ApiError.unauthorized(messages.USER_NOT_FOUND);
   console.log("user", user);
 
@@ -429,10 +430,10 @@ export const uploadProfileImage = async (req, res, next) => {
     const userId = req.user.id; // get from JWT middleware
     const user = await userRepo.findById(userId);
 
-    console.log(req, "req");
-    console.log(req.file, "req file");
-    console.log(user, "user");
-    console.log(userId, "user id ");
+    // console.log(req, "req");
+    // console.log(req.file, "req file");
+    // console.log(user, "user");
+    // console.log(userId, "user id ");
     if (!req.file) throw ApiError.badRequest(messages.FILE_NOT_UPLOADED);
 
     // If user already has an image, remove old one
@@ -442,6 +443,7 @@ export const uploadProfileImage = async (req, res, next) => {
 
     // Upload new image to cloudinary
     const result = await uploadToCloudinary(req.file.path, "user_avatars");
+    // console.log(result, "photo upload ouput");
 
     // Update DB
     user.avatar = {
@@ -493,12 +495,23 @@ export const assignRole = async (id, newRoleName) => {
   if (!user) throw ApiError.notFound(messages.USER_NOT_FOUND);
   if (!newRoleName) throw ApiError.badRequest(messages.ROLE_NOT_DEFINE);
 
+  // console.log(user, "user");
+
   // 🔑 Find role by name
   const role = await roleRepo.findOne({ name: newRoleName });
   if (!role) throw ApiError.notFound(messages.ROLE_NOT_FOUND);
+  // console.log(role, "role");
+
+  if (user.role_id?.toString() === role._id.toString()) {
+    throw ApiError.badRequest(`User already has the role '${newRoleName}'`);
+  }
+
+  console.log(user.role_id?.toString(), "user role");
+  console.log(role._id.toString(), "role id ");
 
   // ✅ Assign role ObjectId
   user.role_id = role._id;
+  // give error if newRoleName is same as the current role
 
   await user.save();
   return user;

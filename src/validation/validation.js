@@ -152,35 +152,69 @@ export const addRoleValidation = z.object({
     ),
 });
 
-export const createOrganizationValidation = z.object({
-  name: z.string().min(2, { message: "Organization name is required" }),
-  size: z.string().optional(),
-  emails: z
-    .array(z.string().email({ message: "Invalid email format" }))
-    .min(1, { message: "At least one email is required" }),
-  phones: z
-    .array(
-      z
-        .string()
-        .regex(/^\+?[1-9]\d{1,14}$/, { message: "Invalid phone number format" })
-    )
-    .min(1, { message: "At least one phone number is required" }),
-  website: z.string().url({ message: "Invalid website URL" }).optional(),
-  description: z.string().optional(),
+const addressSchema = z.object({
+  name: z.string().max(100, { message: "Address name too long" }),
+  primary: z.boolean().optional(),
+  type: z.enum(["mailing", "billing", "shipping", "factory", "office"], {
+    message: "Address type must be one of: mailing, billing, shipping, Factory , Office",
+  }),
+  street: z.string().max(150, { message: "Street too long" }),
+  street2: z.string().max(150).optional(),
+  city: z.string().max(100, { message: "City too long" }),
+  state: z.string().max(100, { message: "State too long" }),
+  zip: z.string().max(20, { message: "ZIP code too long" }),
+  country: z.string().max(100, { message: "Country name too long" }),
+  notes: z.string().max(500).optional(),
+});
+
+export const organizationValidation = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(2, { message: "Organization name is required" })
+    .max(100, { message: "Organization name is too long" }),
+
+  code: z
+    .string()
+    .trim()
+    .min(2, { message: "Organization code is required" })
+    .max(50, { message: "Organization code is too long" }),
+
+  size: z
+    .string()
+    .trim()
+    .min(1, { message: "Organization size is required" })
+    .max(50, { message: "Organization size is too long" }),
+
+  emails: z.array(z.string().email({ message: "Invalid email format" })).min(1, { message: "At least one email is required" }),
+  phone: z
+    .string()
+    .min(1, "Phone is required")
+    .regex(/^\+?[0-9\s-]{7,20}$/, "Invalid phone number format"),
+
+  website: z.string().trim().url({ message: "Website must be a valid URL" }).optional(),
+
+  description: z
+    .string()
+    .trim()
+    .min(10, { message: "Description is required" })
+    .max(1000, { message: "Description too long" }),
+
+  tags: z
+    .array(z.string())
+    .max(50, { message: "Too many tags (max 50 allowed)" })
+    .optional(),
+
+  avatar: z
+    .string()
+    .url({ message: "Logo must be a valid URL" })
+    .optional(),
+
   addresses: z
-    .array(
-      z.object({
-        addressName: z.string().optional(),
-        street1: z.string().min(1, { message: "Street 1 is required" }),
-        street2: z.string().optional(),
-        city: z.string().min(1, { message: "City is required" }),
-        zipCode: z.string().min(1, { message: "Zip code is required" }),
-        country: z.string().min(1, { message: "Country is required" }),
-        state: z.string().min(1, { message: "State is required" }),
-      })
-    )
+    .array(addressSchema)
     .min(1, { message: "At least one address is required" }),
 });
+
 
 // ===============================
 // 📤 EXPORT ALL
@@ -203,7 +237,6 @@ export default {
 
   // Role
   addRoleValidation,
-
-  // createOrganizationValidation
-  createOrganizationValidation,
+  // Organization validatoin
+  organizationValidation,
 };

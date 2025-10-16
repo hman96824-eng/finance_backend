@@ -81,8 +81,15 @@ router
     "/passwordChange",
     middleware.authenticate,
     validate(validation.passwordChange),
+    checkPermission(["change_password"]),
     userController.passowrdChange
   )
+  .get(
+    "/",
+    middleware.authenticate,
+    checkPermission(["view_users"]),
+    userController.getUser
+  ) // get all user
   .get(
     "/:id",
     middleware.authenticate,
@@ -94,7 +101,7 @@ router
   .delete(
     "/remove/:id",
     middleware.authenticate,
-    checkPermission(["view_users"]),
+    checkPermission(["manage_users"]),
     userController.RemoveUnacceptedUser
   ) // unaccepted user
   // Send Invitation
