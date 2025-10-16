@@ -26,12 +26,14 @@ router
     service.uploadProfileImage
   ) // upload the dp photo
   .delete("/remove-avatar", middleware.authenticate, service.removeProfileImage) // remove the dp photo
+  // update own profile
   .put(
     "/profile",
     middleware.authenticate,
     checkPermission(["update_own_profile"]),
     userController.updateProfile
-  ) // update owen profile
+  )
+
   .put(
     "/toggle-status/:id",
     middleware.authenticate,
@@ -104,19 +106,6 @@ router
     checkPermission(["manage_users"]),
     userController.RemoveUnacceptedUser
   ) // unaccepted user
-  // Send Invitation
-  .post(
-    "/invite",
-    middleware.authenticate,
-    checkPermission(["view_users"]),
-    validate(validation.inviteUserValidation),
-    userController.sendInvitation
-  )
-  .post(
-    "/register",
-    validate(validation.completeRegistrationValidation),
-    userController.completeRegistration
-  )
   .get("/dashboard", middleware.authenticate, userController.dashboard)
   // User's Status
   .delete(
@@ -125,20 +114,6 @@ router
     checkPermission(["view_users"]),
     userController.RemoveUnacceptedUser
   )
-  // Send Invitation
-  .post(
-    "/invite",
-    middleware.authenticate,
-    checkPermission(["view_users"]),
-    validate(validation.inviteUserValidation),
-    userController.sendInvitation
-  )
-  .post(
-    "/register",
-    validate(validation.completeRegistrationValidation),
-    userController.completeRegistration
-  )
-  .get("/dashboard", middleware.authenticate, userController.dashboard)
   .put(
     "/change-role/:id",
     middleware.authenticate,
