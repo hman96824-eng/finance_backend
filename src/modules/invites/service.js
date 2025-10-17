@@ -38,10 +38,10 @@ export const createInvite = async (name, email, roleName) => {
   const cleanEmail = email.trim().toLowerCase();
   const existUser = await userRepo.findOne({ email: cleanEmail });
   if (existUser) throw ApiError.unauthorized(messages.USER_ALREADY_EXISTS);
-  console.log(name, "name");
-  console.log(email, "email");
-  console.log(roleName, "roleName");
-  console.log(existUser, "existUser");
+  // console.log(name, "name");
+  // console.log(email, "email");
+  // console.log(roleName, "roleName");
+  // console.log(existUser, "existUser");
 
   // 🔹 Step 1: Find role by name
   const role = await RoleModel.findOne({ name: roleName });
@@ -143,9 +143,37 @@ export const updateInviteStatus = async (id) => {
   return invite;
 };
 
+// export const softDeleteManyInvitedUsers = async (userIds) => {
+//   try {
+//     await inviteRepo.updateMany(
+//       { _id: { $in: userIds } },
+//       { $set: { status: "deleted" } }
+//     );
+//     const updatedDocs = await inviteRepo.find({ _id: { $in: userIds } });
+//     return updatedDocs;
+//   } catch (error) {
+//     console.log(error?.message, "eror");
+//   }
+// };
+
+export const softDeleteManyInvitedUsers = async (userIds) => {
+  try {
+    const response = await inviteRepo.updateMany(
+      { _id: { $in: userIds } },
+      { $set: { status: "deleted" } }
+    );
+
+    // response contains matchedCount & modifiedCount
+    return response;
+  } catch (error) {
+    console.log(error?.message, "error");
+  }
+};
+
 export default {
   getAllInvitedUsers,
   createInvite,
   registerUser,
   updateInviteStatus,
+  softDeleteManyInvitedUsers,
 };

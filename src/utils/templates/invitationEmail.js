@@ -15,9 +15,6 @@ export const generateTeamInviteTemplate = (token, role, email, name) => {
   )}&name=${encodeURIComponent(name)}&email=${encodeURIComponent(
     email
   )}&role=${encodeURIComponent(role)}`;
-  console.log(name, "email name");
-  console.log(email, "email email");
-  console.log(role, "email role");
 
   const plainText = `
 Hello,

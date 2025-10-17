@@ -161,6 +161,11 @@ export default class Repository {
     );
   }
 
+  // softdelete All
+  async updateMany(filter, update, options = {}) {
+    return this.model.updateMany(filter, update, options);
+  }
+
   async restoreById(id) {
     return this.model.findByIdAndUpdate(
       id,
