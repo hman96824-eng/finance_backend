@@ -33,7 +33,6 @@ export const login = async ({ email, password }) => {
   );
   if (user.status !== "active") throw ApiError.unauthorized(messages.IsActive);
   if (!user) throw ApiError.unauthorized(messages.USER_NOT_FOUND);
-  console.log("user", user);
 
   const isMatch = await comparePassword(password, user.password);
   if (!isMatch) throw ApiError.unauthorized(messages.INVALID_CREDENTIALS);
@@ -93,7 +92,6 @@ export const signup = async ({
 
   const rolecheck = await roleRepo.findOne({ name: role });
   if (!rolecheck) throw ApiError.badRequest(messages.ROLE_NOT_DEFINE);
-  console.log(rolecheck, "role check ");
 
   // if (password !== confirmPassword)
   //   throw ApiError.unauthorized(messages.PASSWORD_UNMATCH);
@@ -325,7 +323,6 @@ export const createInvite = async (email, role_id) => {
       invite: 1,
     });
   }
-  console.log(config.USER_EMAIL);
 
   await sendEmail({
     to: email,
@@ -540,6 +537,18 @@ export const deleteStatus = async (id) => {
   }
 };
 
+export const softDeleteManyUsers = async (userIds) => {
+  try {
+    let response = await userRepo.updateMany(
+      { _id: { $in: userIds } },
+      { $set: { status: "deleted" } }
+    );
+    const updatedDocs = await inviteRepo.find({ _id: { $in: userIds } });
+    return updatedDocs;
+  } catch (error) {
+    console.log(error?.message, "eror");
+  }
+};
 export default {
   login,
   uploadProfileImage,
@@ -559,5 +568,6 @@ export default {
   updateProfile,
   assignRole,
   deleteStatus,
+  softDeleteManyUsers,
   // googleSignup,
 };

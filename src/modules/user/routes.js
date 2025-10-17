@@ -8,11 +8,14 @@ import middleware from "../../middleware/auth.middleware.js";
 // import passport from "../../utils/passport.js";
 import { checkPermission } from "../../middleware/permissons.js";
 import { exportUsersExcel } from "../../config/excel.js";
+import controller from "./controller.js";
 
 const router = express.Router();
 const upload = multer({ dest: "uploads/" });
 
 router
+
+  .put("/deleteMany", middleware.authenticate, userController.DeleteMany)
   .get(
     "/",
     middleware.authenticate,
@@ -28,7 +31,7 @@ router
   .delete("/remove-avatar", middleware.authenticate, service.removeProfileImage) // remove the dp photo
   // update own profile
   .put(
-    "/profile",
+    "/",
     middleware.authenticate,
     checkPermission(["update_own_profile"]),
     userController.updateProfile

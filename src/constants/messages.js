@@ -37,7 +37,7 @@ export const messages = {
   VERIFIED_OTP: "OTP verified successfully",
   OTP_CHECK: "Invalid OTP code",
 
-  NEW_PASSWORD: "New password can not be the old password",
+  NEW_PASSWORD: "New password cannot be the same as the old password.",
   PASSWORD_RESET: "Your password has been reset. You can now login again.",
   PASSWORD_CHANGED: "Password changed successfully",
   PASSWORD_UNMATCH: "your current password is incorrect",
@@ -61,6 +61,7 @@ export const messages = {
   STATUS_CHECK: "Invalid status value",
   CONFIRM_EMAIL: "Verify your email",
   ROLE_NOT_DEFINE: "This role is not defined",
+  INVALID_OTP: "Invalid OTP. Please try again.",
 
   // ========================
   // USER ACTIONS
@@ -134,7 +135,7 @@ export const messages = {
 
   // Common/server
   SERVER_ERROR: "An unexpected error occurred",
-
+  NO_ID_PROVIDED: "No User ID provided",
   // organization
   ORGANIZATION_CREATED: "Organizaton created successfullys",
   ORG_ALREADY_EXISTS: "Organization Already Exists",
