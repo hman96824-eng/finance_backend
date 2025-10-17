@@ -14,11 +14,12 @@ router
         "/add",
         middleware.authenticate,
         upload.single("avatar"),
-        parseFormFields,                          // <-- must be BEFORE validate()
+        parseFormFields, // ✅ add this
         validate(validation.organizationValidation),
         checkPermission(["manage_system_settings"]),
         OrgController.createOrUpdateOrganization
     )
+
     .get('/', middleware.authenticate, OrgController.getAllOrganizations)
     .get('/:id', middleware.authenticate, OrgController.getOrganization)
     .delete('/:id', middleware.authenticate, checkPermission(['manage_system_settings']), OrgController.deleteOrganization)

@@ -215,7 +215,7 @@ export default class Repository {
   // ========================
 
   async findWithPopulate(query = {}, populateField, selectFields = "") {
-    return this.model.find(query).populate(populateField, selectFields);
+    return this.model.find(query).populate(populateField, selectFields).sort({ updatedAt: 1 });
   }
 
   async findOneWithPopulate(query = {}, populateField, selectFields = "") {

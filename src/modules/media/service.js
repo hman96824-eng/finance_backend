@@ -7,6 +7,7 @@ import fs from "fs";
 export const uploadMedia = async (filePath, folder = "uploads", uploadedBy = null) => {
     try {
         const uploadResult = await uploadToCloudinary(filePath, folder);
+        console.log("url;;", uploadResult.secure_url);
 
         const media = await Media.create({
             url: uploadResult.secure_url,
@@ -17,6 +18,8 @@ export const uploadMedia = async (filePath, folder = "uploads", uploadedBy = nul
             size: uploadResult.bytes,
             uploadedBy,
         });
+        console.log("check 1");
+
 
         // try to remove local temporary file; do not fail the whole flow if unlink fails
         try {
@@ -27,6 +30,7 @@ export const uploadMedia = async (filePath, folder = "uploads", uploadedBy = nul
             // optionally log the error to your logger. Keep silent here to avoid masking success.
             // console.warn("Failed to remove temp upload:", e);
         }
+        console.log("check 2");
 
         return media;
     } catch (error) {

@@ -19,6 +19,7 @@ export const addRole = async ({ name, description, permissions }) => {
 };
 export const getAllRoles = async () => {
     const roles = await roleRepo.find({});
+
     return roles;
 };
 export const updateRole = async (id, updateData) => {

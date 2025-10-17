@@ -44,7 +44,7 @@ const OrganizationSchema = new mongoose.Schema(
             default: [],
         },
         phone: { type: String, trim: true, maxlength: 20 },
-        website: { type: String, trim: true, match: /^https?:\/\/.+$/ },
+        website: { type: String, trim: true },
         description: { type: String, trim: true, maxlength: 1000 },
         tags: {
             type: [String],
