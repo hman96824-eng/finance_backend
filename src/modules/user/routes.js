@@ -31,7 +31,7 @@ router
   .delete("/remove-avatar", middleware.authenticate, service.removeProfileImage) // remove the dp photo
   // update own profile
   .put(
-    "/",
+    "/profile",
     middleware.authenticate,
     checkPermission(["update_own_profile"]),
     userController.updateProfile
