@@ -109,14 +109,13 @@ router
     checkPermission(["manage_users"]),
     userController.ArchiveDeleteUsers
   ) // unaccepted user
-  .get("/dashboard", middleware.authenticate, userController.dashboard)
-  // User's Status
   .delete(
-    "/remove/:id",
+    "/remove-multiple-archive",
     middleware.authenticate,
-    checkPermission(["view_users"]),
-    userController.RemoveUnacceptedUser
-  )
+    checkPermission(["manage_users"]),
+    userController.ArchiveDeleteMultipleUsers
+  ) // unaccepted multiple users
+  .get("/dashboard", middleware.authenticate, userController.dashboard)
   .put(
     "/change-role/:id",
     middleware.authenticate,

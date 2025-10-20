@@ -418,6 +418,33 @@ export const archiveDeleteUser = async (userId) => {
     throw new Error("Failed to remove user: " + error.message);
   }
 };
+export const archiveDeleteMultipleUsers = async (userIds) => {
+  try {
+    // Find users that match IDs and are in "deleted" status
+    const users = await userRepo.find({
+      _id: { $in: userIds },
+      status: "deleted",
+    });
+
+    if (users.length === 0) {
+      throw new Error("No users found or already permanently removed.");
+    }
+
+    // Delete them all
+    const deleteResult = await userRepo.deleteMany({
+      _id: { $in: userIds },
+      status: "deleted",
+    });
+
+    return {
+      message: `${deleteResult.deletedCount} user(s) removed successfully.`,
+      deletedCount: deleteResult.deletedCount,
+    };
+  } catch (error) {
+    throw new Error("Failed to remove users: " + error.message);
+  }
+};
+
 export const uploadProfileImage = async (req, res, next) => {
   try {
     const userId = req.user.id; // get from JWT middleware
@@ -565,5 +592,6 @@ export default {
   assignRole,
   deleteStatus,
   softDeleteManyUsers,
+  archiveDeleteMultipleUsers,
   // googleSignup,
 };

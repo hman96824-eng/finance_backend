@@ -252,6 +252,32 @@ export const ArchiveDeleteUsers = async (req, res) => {
     });
   }
 };
+export const ArchiveDeleteMultipleUsers = async (req, res) => {
+  try {
+    const { ids } = req.body; // array of user IDs
+
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide an array of user IDs.",
+      });
+    }
+
+    const result = await userService.archiveDeleteMultipleUsers(ids);
+
+    res.status(200).json({
+      success: true,
+      message: result.message,
+      deletedCount: result.deletedCount,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
 export const changeRole = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -359,5 +385,6 @@ export default {
   changeRole,
   deleteUserStatus,
   DeleteMany,
+  ArchiveDeleteMultipleUsers,
   // googleSignup,
 };
