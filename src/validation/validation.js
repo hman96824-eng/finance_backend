@@ -160,10 +160,8 @@ export const addRoleValidation = z.object({
 const addressSchema = z.object({
   name: z.string().trim().min(1, { message: messages.NAME_CHECK }),
   primary: z.boolean().optional(),
-  type: z
-    .enum(["mailing", "billing", "shipping", "factory", "office"], {
-      errorMap: () => ({ message: messages.INVALID_INPUT }),
-    }),
+  type: z.string().trim().min(1, { message: messages.TYPE_CHECK }),
+
   street: z.string().optional(),
   street2: z.string().optional(),
   city: z.string().optional(),

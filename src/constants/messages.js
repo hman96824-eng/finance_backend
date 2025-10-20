@@ -122,6 +122,8 @@ export const messages = {
   ORG_FETCHED: "Organization fetched successfully",
   ORG_LIST: "Organizations fetched successfully",
 
+  TYPE_CHECK: "Address type is required",
+
   // Role messages...
   ROLE_CREATED: "Role created successfully",
   ROLE_UPDATED: "Role updated successfully",
