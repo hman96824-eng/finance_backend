@@ -405,11 +405,11 @@ export const getInactiveUsers = async () => {
     throw new Error("Failed to fetch inactive users: " + error.message);
   }
 };
-export const removeUnacceptedUser = async (userId) => {
+export const archiveDeleteUser = async (userId) => {
   try {
-    const user = await userRepo.findOne({ _id: userId, status: "inactive" });
+    const user = await userRepo.findOne({ _id: userId, status: "deleted" });
     if (!user) {
-      throw new Error("User not found or already accepted");
+      throw new Error("User not found or already deleted");
     }
 
     await userRepo.deleteOne({ _id: userId });
@@ -559,7 +559,7 @@ export default {
   getUserById,
   toggleUserStatus,
   getInactiveUsers,
-  removeUnacceptedUser,
+  archiveDeleteUser,
   countUsersByStatus,
   updateProfile,
   assignRole,

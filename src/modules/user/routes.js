@@ -9,6 +9,7 @@ import middleware from "../../middleware/auth.middleware.js";
 import { checkPermission } from "../../middleware/permissons.js";
 import { exportUsersExcel } from "../../config/excel.js";
 import controller from "./controller.js";
+import { check } from "zod";
 
 const router = express.Router();
 const upload = multer({ dest: "uploads/" });
@@ -106,7 +107,7 @@ router
     "/remove/:id",
     middleware.authenticate,
     checkPermission(["manage_users"]),
-    userController.RemoveUnacceptedUser
+    userController.ArchiveDeleteUsers
   ) // unaccepted user
   .get("/dashboard", middleware.authenticate, userController.dashboard)
   // User's Status
@@ -129,5 +130,6 @@ router
     middleware.authenticate,
     checkPermission(["view_users"]),
     exportUsersExcel
-  ); // export the all user data in excel file
+  ) // export the all user data in excel file
+
 export default router;

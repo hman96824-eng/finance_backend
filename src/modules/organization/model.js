@@ -1,28 +1,31 @@
+
+
+
 import mongoose from "mongoose";
-import { trim } from "zod";
 
 const addressSchema = new mongoose.Schema({
-    name: { type: String, required: true },
+    name: { type: String, required: true, trim: true },
     primary: { type: Boolean, default: false },
-    type: { type: String, minlength: 1, trim: true, required: true },
-    street: { type: String, required: true },
-    street2: { type: String },
-    city: { type: String },
-    state: { type: String },
-    zip: { type: String },
-    notes: { type: String },
+    type: { type: String, minlength: 1, trim: true },
+    street: { type: String, required: true, trim: true },
+    street2: { type: String, trim: true },
+    city: { type: String, trim: true },
+    state: { type: String, trim: true },
+    zip: { type: String, trim: true },
+    country: { type: String, trim: true },
+    notes: { type: String, trim: true },
 });
 
 const organizationSchema = new mongoose.Schema(
     {
-        name: { type: String, required: true, unique: true },
-        code: { type: String },
-        size: { type: String },
-        emails: [{ type: String, required: true }],
-        phone: String,
-        website: String,
-        description: String,
-        tags: [String],
+        name: { type: String, required: true, unique: true, trim: true },
+        code: { type: String, trim: true },
+        size: { type: String, trim: true },
+        emails: [{ type: String, required: true, trim: true }],
+        phone: { type: String, trim: true },
+        website: { type: String, trim: true },
+        description: { type: String, trim: true },
+        tags: [{ type: String, trim: true }],
         avatar: { type: mongoose.Schema.Types.ObjectId, ref: "Media" },
         addresses: [addressSchema],
     },

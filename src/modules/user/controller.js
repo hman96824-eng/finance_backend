@@ -236,10 +236,10 @@ export const InactiveUserStatus = async (req, res, next) => {
     next(error);
   }
 };
-export const RemoveUnacceptedUser = async (req, res) => {
+export const ArchiveDeleteUsers = async (req, res) => {
   try {
     const { id } = req.params; // user ID from URL
-    const result = await userService.removeUnacceptedUser(id);
+    const result = await userService.archiveDeleteUser(id);
 
     res.status(200).json({
       success: true,
@@ -353,7 +353,7 @@ export default {
   dashboard,
   getProfile,
   InactiveUserStatus,
-  RemoveUnacceptedUser,
+  ArchiveDeleteUsers,
   health,
   updateProfile,
   changeRole,
