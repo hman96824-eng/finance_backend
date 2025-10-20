@@ -2,8 +2,10 @@ import { z } from "zod";
 import { messages } from "../constants/messages.js";
 import { RoleModel } from "../modules/role/model.js";
 import Repository from "../utils/repository.js";
+import organization from "../modules/organization/model.js";
 
 const roleRepo = new Repository(RoleModel);
+const orgRepo = new Repository(organization);
 
 // ===============================
 // 📦 COMMON SCHEMAS
@@ -152,69 +154,49 @@ export const addRoleValidation = z.object({
     ),
 });
 
+// ===============================
+// 🏢 ORGANIZATION VALIDATIONS
+// ===============================
 const addressSchema = z.object({
-  name: z.string().max(100, { message: "Address name too long" }),
+  name: z.string().trim().min(1, { message: messages.NAME_CHECK }),
   primary: z.boolean().optional(),
-  type: z.enum(["mailing", "billing", "shipping", "factory", "office"], {
-    message: "Address type must be one of: mailing, billing, shipping, Factory , Office",
-  }),
-  street: z.string().max(150, { message: "Street too long" }),
-  street2: z.string().max(150).optional(),
-  city: z.string().max(100, { message: "City too long" }),
-  state: z.string().max(100, { message: "State too long" }),
-  zip: z.string().max(20, { message: "ZIP code too long" }),
-  country: z.string().max(100, { message: "Country name too long" }),
-  notes: z.string().max(500).optional(),
+  type: z
+    .enum(["mailing", "billing", "shipping", "factory", "office"], {
+      errorMap: () => ({ message: messages.INVALID_INPUT }),
+    }),
+  street: z.string().optional(),
+  street2: z.string().optional(),
+  city: z.string().optional(),
+  state: z.string().optional(),
+  zip: z.string().optional(),
+  notes: z.string().optional(),
 });
 
 export const organizationValidation = z.object({
-  name: z
-    .string()
-    .trim()
-    .min(2, { message: "Organization name is required" })
-    .max(100, { message: "Organization name is too long" }),
-
-  code: z
-    .string()
-    .trim()
-    .min(2, { message: "Organization code is required" })
-    .max(50, { message: "Organization code is too long" }),
-
-  size: z
-    .string()
-    .trim()
-    .min(1, { message: "Organization size is required" })
-    .max(50, { message: "Organization size is too long" }),
-
-  emails: z.array(z.string().email({ message: "Invalid email format" })).min(1, { message: "At least one email is required" }),
+  name: z.string().trim().min(3, { message: messages.NAME_CHECK }),
+  code: z.string().optional(),
+  size: z.string().optional(),
+  emails: z
+    .union([z.array(emailSchema), emailSchema])
+    .transform((val) => (Array.isArray(val) ? val : [val]))
+    .refine((arr) => arr.length > 0, { message: messages.EMAIL_CHECK }),
   phone: z
     .string()
-    .min(1, "Phone is required")
-    .regex(/^\+?[0-9\s-]{7,20}$/, "Invalid phone number format"),
-
-  website: z.string().trim().url({ message: "Website must be a valid URL" }).optional(),
-
-  description: z
-    .string()
-    .trim()
-    .min(10, { message: "Description is required" })
-    .max(1000, { message: "Description too long" }),
-
-  tags: z
-    .array(z.string())
-    .max(50, { message: "Too many tags (max 50 allowed)" })
+    .regex(/^\+?[1-9]\d{1,14}$/, { message: messages.PHONE_CHECK })
     .optional(),
-
-  avatar: z
-    .string()
-    .url({ message: "Logo must be a valid URL" })
-    .optional(),
-
-  addresses: z
-    .array(addressSchema)
-    .min(1, { message: "At least one address is required" }),
-});
-
+  website: z.string().url({ message: messages.INVALID_INPUT }).optional(),
+  description: z.string().optional(),
+  tags: z.array(z.string()).optional(),
+  avatar: z.string().regex(/^[a-f\d]{24}$/i, { message: messages.INVALID_USER_ID }).optional(),
+  addresses: z.array(addressSchema).optional(),
+}).refine(
+  async (data) => {
+    // ensure organization name uniqueness when creating
+    const exists = await orgRepo.findOne({ name: data.name });
+    return !exists;
+  },
+  { message: messages.ORG_ALREADY_EXISTS }
+);
 
 // ===============================
 // 📤 EXPORT ALL
@@ -237,6 +219,6 @@ export default {
 
   // Role
   addRoleValidation,
-  // Organization validatoin
+  // Organization validation
   organizationValidation,
 };

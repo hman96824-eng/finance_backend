@@ -36,7 +36,6 @@ router
     checkPermission(["update_own_profile"]),
     userController.updateProfile
   )
-
   .put(
     "/toggle-status/:id",
     middleware.authenticate,

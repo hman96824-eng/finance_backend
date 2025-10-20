@@ -138,7 +138,13 @@ export const messages = {
   NO_ID_PROVIDED: "No User ID provided",
   // organization
   ORGANIZATION_CREATED: "Organizaton created successfullys",
+  ORGANIZATION_UPDATED: "Organizaton updated successfullys",
+  MEDIA_UPLOAD_FAILED: "Media upload failed",
+  MEDIA_DELETE_FAILED: "Media delete failed",
+  MEDIA_NOT_FOUND: "Media not found",
   ORG_ALREADY_EXISTS: "Organization Already Exists",
+  DUPLICATE_FIELD: "Duplicate value provided for field",
+  ORG_CODE_EXISTS: "Organization code already exists",
 };
 
 export default messages;

@@ -254,8 +254,12 @@ export const updateProfile = async (userId, updateData) => {
     "department",
     "salary",
     "description",
-    "avatar",
   ];
+
+  // ✅ Remove avatar if sent (ignore changes to avatar)
+  if ("avatar" in updateData) {
+    delete updateData.avatar;
+  }
 
   // ✅ Filter allowed fields only
   const filteredData = Object.keys(updateData)
@@ -265,18 +269,11 @@ export const updateProfile = async (userId, updateData) => {
       return obj;
     }, {});
 
-  // ✅ Auto generate avatar default letter
-  if (filteredData.name && !filteredData.avatar) {
-    filteredData.avatar = {
-      default_letter: filteredData.name.charAt(0).toUpperCase(),
-    };
-  }
-
   // ✅ Update user profile
   const updatedUser = await userRepo.updateProfile(userId, filteredData);
   if (!updatedUser) throw new Error("User not found");
 
-  // ✅ Fetch again with role populated (to include role name)
+  // ✅ Fetch again with role populated
   const userWithRole = await userRepo.findByIdWithPopulate(
     userId,
     "role_id",
@@ -285,7 +282,6 @@ export const updateProfile = async (userId, updateData) => {
 
   if (!userWithRole) throw new Error("User not found");
 
-  // ✅ Convert to plain object & remove sensitive fields
   const userObj = userWithRole.toObject();
   delete userObj.password;
   delete userObj.resetCode;

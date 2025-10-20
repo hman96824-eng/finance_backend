@@ -14,15 +14,10 @@ router
         "/add",
         middleware.authenticate,
         upload.single("avatar"),
-        parseFormFields, // ✅ add this
-        validate(validation.organizationValidation),
+        parseFormFields,
         checkPermission(["manage_system_settings"]),
         OrgController.createOrUpdateOrganization
     )
-
-    .get('/', middleware.authenticate, OrgController.getAllOrganizations)
-    .get('/:id', middleware.authenticate, OrgController.getOrganization)
-    .delete('/:id', middleware.authenticate, checkPermission(['manage_system_settings']), OrgController.deleteOrganization)
-    .put("/:id", middleware.authenticate, validate(validation.organizationValidation), checkPermission(['manage_system_settings']), OrgController.updateOrganization);
+    .get("/", middleware.authenticate, OrgController.getLatestOrganization);
 
 export default router;

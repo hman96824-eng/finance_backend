@@ -1,53 +1,86 @@
-import organization from './model.js';
+import Organization from './model.js';
 import Repository from '../../utils/repository.js';
 import ApiError from '../../utils/ApiError.js';
 import messages from '../../constants/messages.js';
 
-const OrganizationRepo = new Repository(organization);
+const OrganizationRepo = new Repository(Organization);
 
-export const saveOrganization = async (data) => {
+export const createOrUpdateOrganization = async (orgData, mediaId, userId) => {
+    const {
+        name,
+        code,
+        size,
+        emails,
+        phone,
+        website,
+        description,
+        tags,
+        addresses,
+    } = orgData;
+
     try {
-        // changed code: check existence before create / update to avoid duplicates
-        // For create - check any org with same name or code
-        if (!data._id) {
-            const orConditions = [];
-            if (data.name) orConditions.push({ name: data.name });
-            if (data.code) orConditions.push({ code: data.code });
+        // check if organization already exists
+        const existingOrg = await Organization.findOne({ name });
 
-            if (orConditions.length > 0) {
-                const existing = await organization.findOne({ $or: orConditions }).lean();
-                if (existing) {
-                    throw ApiError.badRequest(messages?.ORG_ALREADY_EXISTS || 'Organization with same name or code already exists');
+        if (existingOrg) {
+            // update existing org
+            existingOrg.code = code ?? existingOrg.code;
+            existingOrg.size = size ?? existingOrg.size;
+            existingOrg.emails = emails ?? existingOrg.emails;
+            existingOrg.phone = phone ?? existingOrg.phone;
+            existingOrg.website = website ?? existingOrg.website;
+            existingOrg.description = description ?? existingOrg.description;
+            existingOrg.tags = tags ?? existingOrg.tags;
+            existingOrg.addresses = addresses ?? existingOrg.addresses;
+            if (mediaId) existingOrg.avatar = mediaId;
+
+            try {
+                await existingOrg.save();
+            } catch (err) {
+                // handle mongo duplicate key on update
+                if (err && err.code === 11000) {
+                    const dupField = Object.keys(err.keyValue || {})[0] || 'field';
+                    // use message component; specific message for code if present
+                    if (dupField === 'code') throw ApiError.badRequest(messages.ORG_CODE_EXISTS || `${messages.DUPLICATE_FIELD}: ${dupField}`);
+                    throw ApiError.badRequest(`${messages.DUPLICATE_FIELD}: ${dupField}`);
                 }
+                if (err instanceof ApiError) throw err;
+                throw ApiError.internal(messages.SERVER_ERROR);
             }
 
-            return await OrganizationRepo.create(data);
+            return { updated: true, organization: existingOrg };
         }
 
-        // For update - ensure new name/code (if provided) doesn't collide with another org
-        if (data._id) {
-            const orConditions = [];
-            if (data.name) orConditions.push({ name: data.name });
-            if (data.code) orConditions.push({ code: data.code });
-
-            if (orConditions.length > 0) {
-                const existing = await organization.findOne({
-                    $or: orConditions,
-                    _id: { $ne: data._id },
-                }).lean();
-                if (existing) {
-                    throw ApiError.badRequest(messages?.ORG_ALREADY_EXISTS || 'Organization with same name or code already exists');
-                }
+        // create new organization
+        try {
+            const newOrg = await Organization.create({
+                name,
+                code,
+                size,
+                emails,
+                phone,
+                website,
+                description,
+                tags,
+                avatar: mediaId || null,
+                addresses,
+            });
+            return { created: true, organization: newOrg };
+        } catch (err) {
+            // handle duplicate key on create (E11000)
+            if (err && err.code === 11000) {
+                const dupField = Object.keys(err.keyValue || {})[0] || 'field';
+                if (dupField === 'code') throw ApiError.badRequest(messages.ORG_CODE_EXISTS || `${messages.DUPLICATE_FIELD}: ${dupField}`);
+                // if name duplicate, use existing message constant
+                if (dupField === 'name') throw ApiError.badRequest(messages.ORG_ALREADY_EXISTS || `${messages.DUPLICATE_FIELD}: ${dupField}`);
+                throw ApiError.badRequest(`${messages.DUPLICATE_FIELD}: ${dupField}`);
             }
-
-            const updatedOrg = await OrganizationRepo.updateById(data._id, data, { new: true, runValidators: true });
-            if (!updatedOrg) throw ApiError.notFound(messages.ORG_NOT_FOUND);
-            return updatedOrg;
+            if (err instanceof ApiError) throw err;
+            throw ApiError.internal(messages.SERVER_ERROR);
         }
-
     } catch (error) {
         if (error instanceof ApiError) throw error;
-        throw ApiError.internal(error.message || messages.SERVER_ERROR);
+        throw ApiError.internal(messages.SERVER_ERROR);
     }
 };
 
@@ -60,46 +93,17 @@ export const getAllOrganizations = async () => {
     }
 };
 
-export const getOrganizationById = async (id) => {
-    try {
-        const org = await OrganizationRepo.findById(id);
-        if (!org) throw ApiError.notFound(messages.ORG_NOT_FOUND);
-        return org;
-    } catch (error) {
-        if (error instanceof ApiError) throw error;
-        throw ApiError.internal(messages.SERVER_ERROR);
-    }
-};
+export const getLatestOrganization = async () => {
+    const org = await Organization.findOne()
+        .sort({ createdAt: -1 })   // 👈 latest organization
+        .populate("avatar")        // 👈 include image info
+        .populate("addresses");    // optional, if addresses are stored separately
 
-export const deleteOrganization = async (id) => {
-    try {
-        const org = await OrganizationRepo.deleteById(id);
-        if (!org) throw ApiError.notFound(messages.ORG_NOT_FOUND);
-        return org;
-    } catch (error) {
-        if (error instanceof ApiError) throw error;
-        throw ApiError.internal(messages.SERVER_ERROR);
-    }
-};
-
-export const updateOrganization = async (id, data) => {
-    try {
-        const org = await OrganizationRepo.updateById(id, data, {
-            new: true,
-            runValidators: true,
-        });
-        if (!org) throw ApiError.notFound(messages.ORG_NOT_FOUND);
-        return org;
-    } catch (error) {
-        if (error instanceof ApiError) throw error;
-        throw ApiError.internal(error.message || messages.SERVER_ERROR);
-    }
+    return org;
 };
 
 export default {
-    saveOrganization,
+    createOrUpdateOrganization,
     getAllOrganizations,
-    getOrganizationById,
-    deleteOrganization,
-    updateOrganization,
+    getLatestOrganization,
 };

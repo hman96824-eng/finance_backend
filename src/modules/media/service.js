@@ -1,13 +1,20 @@
 import Media from "./model.js";
-import { uploadToCloudinary, deleteFromCloudinary } from "../../config/cloud.js";
+import { uploadToCloudinary } from "../../config/cloud.js";
 import ApiError from "../../utils/ApiError.js";
 import messages from "../../constants/messages.js";
 import fs from "fs";
 
+// import Media from "./model.js";
+// import { uploadToCloudinary } from "../../config/cloud.js";
+// import ApiError from "../../utils/ApiError.js";
+// import messages from "../../constants/messages.js";
+// import fs from "fs";
+
 export const uploadMedia = async (filePath, folder = "uploads", uploadedBy = null) => {
     try {
+        if (!filePath) return null;
+
         const uploadResult = await uploadToCloudinary(filePath, folder);
-        console.log("url;;", uploadResult.secure_url);
 
         const media = await Media.create({
             url: uploadResult.secure_url,
@@ -18,27 +25,17 @@ export const uploadMedia = async (filePath, folder = "uploads", uploadedBy = nul
             size: uploadResult.bytes,
             uploadedBy,
         });
-        console.log("check 1");
 
+        // delete temp file
+        if (filePath && fs.existsSync(filePath)) await fs.promises.unlink(filePath);
 
-        // try to remove local temporary file; do not fail the whole flow if unlink fails
-        try {
-            if (filePath && fs.existsSync(filePath)) {
-                await fs.promises.unlink(filePath);
-            }
-        } catch (e) {
-            // optionally log the error to your logger. Keep silent here to avoid masking success.
-            // console.warn("Failed to remove temp upload:", e);
-        }
-        console.log("check 2");
-
-        return media;
+        return media; // return full doc (you’ll get media._id)
     } catch (error) {
-        // preserve ApiError if already thrown from lower layers
-        if (error instanceof ApiError) throw error;
         throw ApiError.internal(error.message || messages.MEDIA_UPLOAD_FAILED);
     }
 };
+
+
 
 export const deleteMedia = async (id) => {
     try {
