@@ -572,6 +572,21 @@ export const softDeleteManyUsers = async (userIds) => {
     console.log(error?.message, "eror");
   }
 };
+
+export const deleteManyArchivedUsers = async (userIds) => {
+  try {
+    if (!Array.isArray(userIds) || userIds.length === 0) {
+      throw new Error("userIds must be a non-empty array");
+    }
+
+    const result = await userRepo.deleteMany({ _id: { $in: userIds } });
+    return result; // contains { acknowledged, deletedCount }
+  } catch (error) {
+    console.error("Error deleting invited users:", error.message);
+    throw error;
+  }
+};
+
 export default {
   login,
   uploadProfileImage,
@@ -592,6 +607,6 @@ export default {
   assignRole,
   deleteStatus,
   softDeleteManyUsers,
-  archiveDeleteMultipleUsers,
+  deleteManyArchivedUsers,
   // googleSignup,
 };
