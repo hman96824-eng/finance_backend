@@ -295,15 +295,6 @@ export const DeleteMany = async (req, res, next) => {
     const userIds = req.body;
     const { type } = req.query;
 
-    // Validation
-    if (userIds?.length === 0) {
-      throw ApiError.badRequest("No user IDs provided");
-    }
-
-    if (!type || !["members", "invited"].includes(type)) {
-      throw ApiError.badRequest("Invalid or missing type parameter");
-    }
-
     // Call appropriate service
     let result;
     if (type === "members") {
@@ -311,25 +302,8 @@ export const DeleteMany = async (req, res, next) => {
     } else if (type === "invited") {
       result = await inviteservice.softDeleteManyInvitedUsers(userIds);
     }
-    // Handle no matches
-    if (!result.matchedCount || result.matchedCount === 0) {
-      throw ApiError.notFound(`No ${type} found with the provided IDs`);
-    }
 
-    // Handle already deleted or inactive
-    if (!result?.length) {
-      throw ApiError.badRequest(`${type} already deleted or inactive`);
-    }
-
-    Success;
-    return successResponse(
-      res,
-      {
-        matchedCount: result.matchedCount,
-        modifiedCount: result.modifiedCount,
-      },
-      `${type} marked as deleted successfully`
-    );
+    return successResponse(res, result, messages.USER_DELETED);
   } catch (err) {
     next(err);
   }

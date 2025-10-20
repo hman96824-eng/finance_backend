@@ -399,7 +399,7 @@ export const toggleUserStatus = async (id) => {
 export const getInactiveUsers = async () => {
   try {
     const users = await userRepo.findObj(
-      { status: "inactive" },
+      { status: "deleted" },
       {},
       {},
       { path: "role_id", select: "name" }
