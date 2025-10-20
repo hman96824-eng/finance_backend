@@ -300,7 +300,9 @@ export const DeleteMany = async (req, res, next) => {
     if (type === "members") {
       result = await userService.softDeleteManyUsers(userIds);
     } else if (type === "invited") {
-      result = await inviteservice.softDeleteManyInvitedUsers(userIds);
+      result = await inviteservice.deleteManyInvitedUsers(userIds);
+    } else if (type === "archived") {
+      result = await userService.deleteManyArchivedUsers(userIds);
     }
 
     return successResponse(res, result, messages.USER_DELETED);

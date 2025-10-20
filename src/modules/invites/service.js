@@ -135,39 +135,26 @@ export const registerUser = async (inviteToken, userData) => {
 };
 
 export const updateInviteStatus = async (id) => {
-  const invite = await InviteModel.findById(id);
+  const invite = await inviteRepo.findOne({ _id: id });
   if (!invite) throw ApiError.notFound(messages.USER_NOT_FOUND);
 
-  invite.status = "deleted";
-  await invite.save();
+  // Permanently delete the invite
+  const deleted = await inviteRepo.deleteOne({ _id: id });
 
-  return invite;
+  return deleted;
 };
 
-// export const softDeleteManyInvitedUsers = async (userIds) => {
-//   try {
-//     await inviteRepo.updateMany(
-//       { _id: { $in: userIds } },
-//       { $set: { status: "deleted" } }
-//     );
-//     const updatedDocs = await inviteRepo.find({ _id: { $in: userIds } });
-//     return updatedDocs;
-//   } catch (error) {
-//     console.log(error?.message, "eror");
-//   }
-// };
-
-export const softDeleteManyInvitedUsers = async (userIds) => {
+export const deleteManyInvitedUsers = async (userIds) => {
   try {
-    const response = await inviteRepo.updateMany(
-      { _id: { $in: userIds } },
-      { $set: { status: "deleted" } }
-    );
+    if (!Array.isArray(userIds) || userIds.length === 0) {
+      throw new Error("userIds must be a non-empty array");
+    }
 
-    // response contains matchedCount & modifiedCount
-    return response;
+    const result = await inviteRepo.deleteMany({ _id: { $in: userIds } });
+    return result; // contains { acknowledged, deletedCount }
   } catch (error) {
-    console.log(error?.message, "error");
+    console.error("Error deleting invited users:", error.message);
+    throw error;
   }
 };
 
@@ -176,5 +163,5 @@ export default {
   createInvite,
   registerUser,
   updateInviteStatus,
-  softDeleteManyInvitedUsers,
+  deleteManyInvitedUsers,
 };
