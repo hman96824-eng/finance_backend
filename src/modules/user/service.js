@@ -31,8 +31,8 @@ export const login = async ({ email, password }) => {
     "role_id",
     "name description"
   );
-  if (user.status !== "active") throw ApiError.unauthorized(messages.IsActive);
   if (!user) throw ApiError.unauthorized(messages.USER_NOT_FOUND);
+  if (user.status !== "active") throw ApiError.unauthorized(messages.IsActive);
 
   const isMatch = await comparePassword(password, user.password);
   if (!isMatch) throw ApiError.unauthorized(messages.INVALID_CREDENTIALS);
