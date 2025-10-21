@@ -50,18 +50,17 @@ export const completeRegistration = async (req, res) => {
 export const updateInviteStatus = async (req, res) => {
   try {
     const { id } = req.params;
-    const updated = await inviteService.updateInviteStatus(id);
+    const deleted = await inviteService.updateInviteStatus(id);
     res.status(200).json({
       success: true,
-      message: "Status updated successfully",
-      data: updated,
+      message: "Invite deleted permanently",
+      data: deleted,
     });
   } catch (err) {
-    console.error("Error updating invite status:", err);
+    console.error("Error deleting invite:", err);
     res.status(500).json({ message: err.message });
   }
 };
-
 export default {
   getAllInvitedUsers,
   sendInvitation,
