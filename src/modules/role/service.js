@@ -37,9 +37,19 @@ export const deleteRole = async (id) => {
   return true;
 };
 
+export const getRoleById = async (id) => {
+  const role = await roleRepo.findById(id);
+
+  if (!role) {
+    throw ApiError.notFound(messages.ROLE_NOT_FOUND);
+  }
+  return role;
+};
+
 export default {
   addRole,
   getAllRoles,
   updateRole,
   deleteRole,
+  getRoleById,
 };
