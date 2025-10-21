@@ -22,13 +22,25 @@ export const getAllRoles = async () => {
 
   return roles;
 };
+// services/roleService.js
 export const updateRole = async (id, updateData) => {
+  const { permissions } = updateData;
+
   const role = await roleRepo.findById(id);
   if (!role) throw ApiError.notFound(messages.ROLE_NOT_FOUND, 404);
 
-  const updatedRole = await roleRepo.updateById(id, updateData);
-  return updatedRole;
+  // ✅ Replace mode — permissions reflect exactly what's selected in frontend
+  if (Array.isArray(permissions)) {
+    // Clean and normalize the array
+    const normalized = permissions.map((p) => p.trim()).filter((p) => p !== "");
+
+    role.permissions = normalized;
+  }
+
+  await role.save();
+  return role;
 };
+
 export const deleteRole = async (id) => {
   const role = await roleRepo.findById(id);
   if (!role) throw ApiError.notFound(messages.ROLE_NOT_FOUND, 404);

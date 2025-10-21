@@ -26,18 +26,38 @@ export const getAllRoles = async (req, res, next) => {
     next(error);
   }
 };
+// controllers/roleController.js
 export const updateRole = async (req, res, next) => {
   try {
     const { id } = req.params;
     const { permissions } = req.body;
 
+    // validate
+    if (!Array.isArray(permissions)) {
+      return res.status(400).json({
+        success: false,
+        message: "Permissions must be an array",
+      });
+    }
+    // Ensure array of non-empty strings
+    const invalid = permissions.some(
+      (p) => typeof p !== "string" || p.trim() === ""
+    );
+    if (invalid) {
+      return res.status(400).json({
+        success: false,
+        message: "Permissions array must contain non-empty strings only",
+      });
+    }
+
     const updatedRole = await roleService.updateRole(id, { permissions });
 
-    return successResponse(res, updatedRole);
+    return successResponse(res, updatedRole, "Role updated successfully");
   } catch (error) {
     next(error);
   }
 };
+
 export const deleteRole = async (req, res, next) => {
   try {
     const { id } = req.params;
