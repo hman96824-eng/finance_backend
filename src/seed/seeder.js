@@ -37,7 +37,7 @@ const seedRoles = async () => {
       {
         name: "MANAGER",
         permissions: [
-          "view_users",
+          // "view_users",
           "create_transaction",
           "edit_transaction",
           "delete_transaction",
@@ -53,7 +53,7 @@ const seedRoles = async () => {
         ],
       },
       {
-        name: "EMPLOYEE",
+        name: "Employee",
         permissions: [
           "view_own_payslip",
           "view_own_profile",

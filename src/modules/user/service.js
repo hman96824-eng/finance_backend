@@ -525,7 +525,7 @@ export const assignRole = async (id, newRoleName) => {
   // 🔑 Find role by name
   const role = await roleRepo.findOne({ name: newRoleName });
   if (!role) throw ApiError.notFound(messages.ROLE_NOT_FOUND);
-  // console.log(role, "role");
+  console.log(role, "role");
 
   if (user.role_id?.toString() === role._id.toString()) {
     throw ApiError.badRequest(`User already has the role '${newRoleName}'`);

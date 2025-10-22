@@ -58,10 +58,24 @@ export const getRoleById = async (id) => {
   return role;
 };
 
+export const updateRoleInfo = async (id, { name, description }) => {
+  const updated = await roleRepo.updateById(
+    id,
+    {
+      name,
+      ...(description !== undefined && { description }), // only update if provided
+    },
+    { new: true } // return updated document
+  );
+
+  return updated;
+};
+
 export default {
   addRole,
   getAllRoles,
   updateRole,
   deleteRole,
   getRoleById,
+  updateRoleInfo,
 };

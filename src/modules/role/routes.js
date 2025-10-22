@@ -33,12 +33,17 @@ router
     checkPermission(["assign_roles"]),
     roleController.deleteRole
   )
-  .post("/adduser", middleware.authenticate, checkPermission(["assign_roles"]))
   .get(
     "/:id",
     middleware.authenticate,
     checkPermission(["assign_roles"]), // or skip if public
     roleController.getRoleById
+  )
+  .put(
+    "/update-roleinfo/:id",
+    middleware.authenticate,
+    checkPermission(["assign_roles"]),
+    roleController.updateRoleInfo
   );
 
 export default router;

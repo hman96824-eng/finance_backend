@@ -22,6 +22,12 @@ export const authenticate = (req, res, next) => {
       role_id: decoded.role_id,
     };
 
+    console.log("User authenticated:", {
+      id: req.user.id,
+      name: req.user.name,
+      email: req.user.email,
+      role_id: req.user.role_id,
+    });
     next();
   } catch (err) {
     next(err);
