@@ -44,7 +44,11 @@ export const updateRole = async (id, updateData) => {
 export const deleteRole = async (id) => {
   const role = await roleRepo.findById(id);
   if (!role) throw ApiError.notFound(messages.ROLE_NOT_FOUND, 404);
+  console.log(role.name.toLowerCase(), "user role name ");
 
+  if (role.name.toLowerCase() === "admin") {
+    throw ApiError.badRequest("Admin role cannot be deleted");
+  }
   await roleRepo.deleteById(id);
   return true;
 };

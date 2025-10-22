@@ -9,7 +9,7 @@ export const addRole = async (req, res, next) => {
     const { name, description, permissions } = req.body;
 
     const newRole = await roleService.addRole({
-      name,
+      name: name.toUpperCase(),
       description,
       permissions,
     });
