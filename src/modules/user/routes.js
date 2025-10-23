@@ -9,58 +9,13 @@ import middleware from "../../middleware/auth.middleware.js";
 import { checkPermission } from "../../middleware/permissons.js";
 import { exportUsersExcel } from "../../config/excel.js";
 import controller from "./controller.js";
-import { check } from "zod";
 
 const router = express.Router();
 const upload = multer({ dest: "uploads/" });
 
 router
-
-  .put("/deleteMany", middleware.authenticate, userController.DeleteMany)
-  .get(
-    "/",
-    middleware.authenticate,
-    checkPermission(["view_users"]),
-    userController.getUser
-  ) // get all user
-  .put(
-    "/upload-avatar",
-    middleware.authenticate,
-    upload.single("avatar"),
-    service.uploadProfileImage
-  ) // upload the dp photo
-  .delete("/remove-avatar", middleware.authenticate, service.removeProfileImage) // remove the dp photo
-  // update own profile
-  .put("/profile", middleware.authenticate, userController.updateProfile)
-  .put(
-    "/toggle-status/:id",
-    middleware.authenticate,
-    checkPermission(["manage_users"]),
-    userController.toggleUserStatus
-  ) // toggle user status
-  .put(
-    "/delete-status/:id",
-    middleware.authenticate,
-    userController.deleteUserStatus
-  ) // soft delete user
-  .get(
-    "/profile",
-    middleware.authenticate,
-    checkPermission(["view_own_profile"]),
-    userController.getProfile
-  ) // get owen profile
-  .post(
-    "/signup",
-    validate(validation.registerValidation),
-    userController.signup
-  )
-  .get(
-    "/inactive",
-    middleware.authenticate,
-    checkPermission(["view_users"]),
-    userController.InactiveUserStatus
-  ) // all InActive user's
   .post("/login", validate(validation.loginValidation), userController.login)
+  .get("/health", userController.health)
   .post(
     "/forgetPasswordOtp",
     validate(validation.requestOTP),
@@ -76,53 +31,49 @@ router
     validate(validation.resetPassword),
     userController.resetPassword
   )
-
+  .post(
+    "/signup",
+    validate(validation.registerValidation),
+    userController.signup
+  )
   .post(
     "/passwordChange",
-    middleware.authenticate,
     validate(validation.passwordChange),
     userController.passowrdChange
-  )
-  .get(
-    "/",
-    middleware.authenticate,
-    checkPermission(["view_users"]),
-    userController.getUser
-  ) // get all user
-  .get(
-    "/:id",
-    middleware.authenticate,
-    checkPermission(["view_users"]),
-    userController.getUserById
-  ) // get user by ID
-  .get("/health", userController.health)
-  // User's Status
-  .delete(
-    "/remove/:id",
-    middleware.authenticate,
-    checkPermission(["manage_users"]),
-    userController.ArchiveDeleteUsers
-  ) // unaccepted user
+  );
+
+router.use(middleware.authenticate);
+
+router
+  .put("/deleteMany", userController.DeleteMany)
+  .put("/upload-avatar", upload.single("avatar"), service.uploadProfileImage) // upload the dp photo
+  .delete("/remove-avatar", service.removeProfileImage) // remove the dp photo
+  // update own profile
+  .put("/profile", userController.updateProfile)
+  .put("/delete-status/:id", userController.deleteUserStatus) // soft delete user
+  .get("/profile", userController.getProfile) // get owen profile
+  // unaccepted multiple users
+  .get("/dashboard", userController.dashboard);
+
+// export the all user data in excel file
+
+router
+  .use(checkPermission(["view_users"]))
+  .get("/", userController.getUser)
+  .get("/inactive", userController.InactiveUserStatus)
+  .get("/", userController.getUser)
+  .get("/:id", userController.getUserById)
+  .get("/export/excel", exportUsersExcel); // get all user
+router
+  .use(checkPermission(["manage_users"]))
+  .put("/toggle-status/:id", userController.toggleUserStatus)
+  .delete("/remove/:id", userController.ArchiveDeleteUsers)
   .delete(
     "/remove-multiple-archive",
-    middleware.authenticate,
-    checkPermission(["manage_users"]),
     userController.ArchiveDeleteMultipleUsers
-  ) // unaccepted multiple users
-  .get("/dashboard", middleware.authenticate, userController.dashboard)
-  .put(
-    "/change-role/:id",
-    middleware.authenticate,
-    checkPermission(["assign_roles"]),
-    userController.changeRole
-  ) // change the user role
+  );
 
-  // export data in excel file
-  .get(
-    "/export/excel",
-    middleware.authenticate,
-    checkPermission(["view_users"]),
-    exportUsersExcel
-  ); // export the all user data in excel file
-
+router
+  .use(checkPermission(["assign_roles"]))
+  .put("/change-role/:id", userController.changeRole);
 export default router;
