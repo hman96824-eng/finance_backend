@@ -106,7 +106,7 @@ export const messages = {
   PERMISSION_TYPE_ERROR: "Permissions must be an array of strings.",
 
   ROLE_REQUIRED: "Role is required.",
-  ROLE_NOT_FOUND: "Selected role does not exist.",
+  // ROLE_NOT_FOUND: "Selected role does not exist.",
   ROLE_NAME_REQUIRED: "Role name is required.",
   ROLE_NAME_TOO_LONG: "Role name must not exceed 50 characters.",
   ROLE_DESCRIPTION_REQUIRED: "Role description is required.",
@@ -154,6 +154,11 @@ export const messages = {
   employeeFound: "Employee fetched successfully",
   employeeUpdated: "Employee updated successfully",
   employeeNotFound: "Employee not found",
+
+  // permissions
+  PERMISSION_INVALID: "Permissions array must contain non-empty strings only",
+  PERMISSION_ADDED: "Permission added successfully",
+  ROLE_STRING: "Role name is required and must be a string",
 };
 
 export default messages;

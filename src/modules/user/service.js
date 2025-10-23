@@ -74,6 +74,10 @@ export const login = async ({ email, password }) => {
     "name description"
   );
 
+  // console.log(user, "user login service");
+  if (!user) throw ApiError.unauthorized(messages.USER_NOT_FOUND);
+  if (user.status !== "active") throw ApiError.unauthorized(messages.IsActive);
+
   if (!user) throw ApiError.unauthorized(messages.USER_NOT_FOUND);
 
   if (user.status?.toLowerCase() === "inactive") {
@@ -88,7 +92,10 @@ export const login = async ({ email, password }) => {
     id: user._id,
     role: user.role_id?.name || "UNKNOWN",
     email: user.email,
+    role_id: user.role_id?._id || null,
   };
+
+  console.log(payload, "token payload");
 
   const accessToken = jwt.generateToken(payload);
 

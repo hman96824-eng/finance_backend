@@ -9,126 +9,66 @@ import middleware from "../../middleware/auth.middleware.js";
 import { checkPermission } from "../../middleware/permissons.js";
 import { exportUsersExcel } from "../../config/excel.js";
 import controller from "./controller.js";
-import { check } from "zod";
 
 const router = express.Router();
 const upload = multer({ dest: "uploads/" });
 
+// public routes
 router
-
-  .put("/deleteMany", middleware.authenticate, userController.DeleteMany)
-  .get(
-    "/",
-    middleware.authenticate,
-    checkPermission(["view_users"]),
-    userController.getUser
-  ) // get all user
-  .put(
-    "/upload-avatar",
-    middleware.authenticate,
-    upload.single("avatar"),
-    service.uploadProfileImage
-  ) // upload the dp photo
-  .delete("/remove-avatar", middleware.authenticate, service.removeProfileImage) // remove the dp photo
-  // update own profile
-  .put(
-    "/profile",
-    middleware.authenticate,
-    checkPermission(["view_own_profile"]),
-    userController.updateProfile
-  )
-  .put(
-    "/toggle-status/:id",
-    middleware.authenticate,
-    checkPermission(["manage_users"]),
-    userController.toggleUserStatus
-  ) // toggle user status
-  .put(
-    "/delete-status/:id",
-    middleware.authenticate,
-    userController.deleteUserStatus
-  ) // soft delete user
-  .get(
-    "/profile",
-    middleware.authenticate,
-    checkPermission(["view_own_profile"]),
-    userController.getProfile
-  ) // get owen profile
-  .post(
-    "/signup",
-    validate(validation.registerValidation),
-    userController.signup
-  )
-  .get(
-    "/inactive",
-    middleware.authenticate,
-    checkPermission(["view_users"]),
-    userController.InactiveUserStatus
-  ) // all InActive user's
-  .post("/login", validate(validation.loginValidation), userController.login)
+  .post("/login", validate(validation.loginValidation), userController.login) // login
+  .get("/health", userController.health)
   .post(
     "/forgetPasswordOtp",
     validate(validation.requestOTP),
     userController.forgetpassword
-  )
+  ) // request otp for forget password \
   .post(
     "/ForgetVerifyOtp",
     validate(validation.verifyOTP),
     userController.verifyCode
-  )
+  ) // verify otp for forget password
   .post(
     "/forgetPassword",
     validate(validation.resetPassword),
     userController.resetPassword
-  )
-
+  ) // reset password
+  .post(
+    "/signup",
+    validate(validation.registerValidation),
+    userController.signup
+  ) // register user
   .post(
     "/passwordChange",
-    middleware.authenticate,
     validate(validation.passwordChange),
-    checkPermission(["view_own_profile"]),
     userController.passowrdChange
-  )
-  .get(
-    "/",
-    middleware.authenticate,
-    checkPermission(["view_users"]),
-    userController.getUser
-  ) // get all user
-  .get(
-    "/:id",
-    middleware.authenticate,
-    checkPermission(["view_users"]),
-    userController.getUserById
-  ) // get user by ID
-  .get("/health", userController.health)
-  // User's Status
-  .delete(
-    "/remove/:id",
-    middleware.authenticate,
-    checkPermission(["manage_users"]),
-    userController.ArchiveDeleteUsers
-  ) // unaccepted user
-  .delete(
-    "/remove-multiple-archive",
-    middleware.authenticate,
-    checkPermission(["manage_users"]),
-    userController.ArchiveDeleteMultipleUsers
-  ) // unaccepted multiple users
-  .get("/dashboard", middleware.authenticate, userController.dashboard)
-  .put(
-    "/change-role/:id",
-    middleware.authenticate,
-    checkPermission(["assign_roles"]),
-    userController.changeRole
-  ) // change the user role
+  ); // change password
 
-  // export data in excel file
-  .get(
-    "/export/excel",
-    middleware.authenticate,
-    checkPermission(["view_users"]),
-    exportUsersExcel
-  ) // export the all user data in excel file
+// jwt authentication for routes below
+router.use(middleware.authenticate);
 
+// routes need jwt authentication
+router
+  .put("/deleteMany", userController.DeleteMany) // delete multiple users
+  .put("/upload-avatar", upload.single("avatar"), service.uploadProfileImage) // upload dp photo
+  .delete("/remove-avatar", service.removeProfileImage) // remove the dp photo
+  .put("/profile", userController.updateProfile) // update own profile
+  .get("/profile", userController.getProfile) // get own profile
+  .get("/dashboard", userController.dashboard);
+
+router
+  .use(checkPermission(["view_users"]))
+  .get("/", userController.getUser) // get all users
+  .get("/inactive", userController.InactiveUserStatus) // get inactive users
+  .get("/:id", userController.getUserById) // get user by id
+  .get("/export/excel", exportUsersExcel); // export users to excel
+
+router
+  .use(checkPermission(["manage_users"]))
+  .put("/toggle-status/:id", userController.toggleUserStatus) // activate/deactivate user
+  .delete("/remove/:id", userController.ArchiveDeleteUsers) // hard delete user
+  .put("/delete-status/:id", userController.deleteUserStatus); // soft delete user
+
+router
+  .use(checkPermission(["assign_roles"]))
+  .put("/change-role/:id", userController.changeRole); // change user role
 export default router;

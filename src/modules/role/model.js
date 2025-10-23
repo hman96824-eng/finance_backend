@@ -1,33 +1,22 @@
 import mongoose from "mongoose";
 
-const DEFAULT_PERMISSIONS = [
-  "view_profile",
-  "edit_profile",
-  "change_password",
-  "logout",
-];
-
 const roleSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, unique: true },
     description: String,
     permissions: {
       type: [String],
-      default: DEFAULT_PERMISSIONS,
+      default: [],
     },
   },
   { timestamps: true }
 );
 
-
-
 // Ensure default permissions are merged with any custom ones
 roleSchema.pre("save", function (next) {
   if (this.isNew) {
     // Combine default and custom permissions (avoid duplicates)
-    const allPermissions = [
-      ...new Set([...(this.permissions || []), ...DEFAULT_PERMISSIONS]),
-    ];
+    const allPermissions = [...new Set([...(this.permissions || [])])];
     this.permissions = allPermissions;
   }
   next();

@@ -12,18 +12,17 @@ const port = config.PORT || 3000;
 
 const app = express();
 // app.use(express.json());
-app.use(express.json({ limit: '10mb' })); // default is 100kb
-app.use(express.urlencoded({ limit: '10mb', extended: true }));
+app.use(express.json({ limit: "10mb" })); // default is 100kb
+app.use(express.urlencoded({ limit: "10mb", extended: true }));
 
-const corssetting = { ...config.corsSettings }
-app.use(cors(corssetting))
+const corssetting = { ...config.corsSettings };
+app.use(cors(corssetting));
 
 routes(app);
 app.use(finalresponse);
 
 // ✅ Create http server from express
 const httpServer = createServer(app);
-
 
 // ✅ Initialize socket.io
 const io = new Server(httpServer, {

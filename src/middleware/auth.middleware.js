@@ -21,7 +21,6 @@ export const authenticate = (req, res, next) => {
       email: decoded.email,
       role_id: decoded.role_id,
     };
-
     next();
   } catch (err) {
     next(err);

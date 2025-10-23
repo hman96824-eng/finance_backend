@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { optional, z } from "zod";
 import { messages } from "../constants/messages.js";
 import { RoleModel } from "../modules/role/model.js";
 import Repository from "../utils/repository.js";
@@ -141,8 +141,8 @@ export const addRoleValidation = z.object({
   description: z
     .string()
     .trim()
-    .min(5, { message: messages.ROLE_DESCRIPTION_REQUIRED })
-    .max(200, { message: messages.ROLE_DESCRIPTION_TOO_LONG }),
+    .max(200, { message: messages.ROLE_DESCRIPTION_TOO_LONG })
+    .optional(),
 
   permissions: z
     .array(z.string())
@@ -151,7 +151,8 @@ export const addRoleValidation = z.object({
       (permissions) =>
         !permissions || permissions.every((p) => typeof p === "string"),
       { message: messages.PERMISSION_TYPE_ERROR }
-    ),
+    )
+    .optional(),
 });
 
 // ===============================
@@ -170,31 +171,36 @@ const addressSchema = z.object({
   notes: z.string().optional(),
 });
 
-export const organizationValidation = z.object({
-  name: z.string().trim().min(3, { message: messages.NAME_CHECK }),
-  code: z.string().optional(),
-  size: z.string().optional(),
-  emails: z
-    .union([z.array(emailSchema), emailSchema])
-    .transform((val) => (Array.isArray(val) ? val : [val]))
-    .refine((arr) => arr.length > 0, { message: messages.EMAIL_CHECK }),
-  phone: z
-    .string()
-    .regex(/^\+?[1-9]\d{1,14}$/, { message: messages.PHONE_CHECK })
-    .optional(),
-  website: z.string().url({ message: messages.INVALID_INPUT }).optional(),
-  description: z.string().optional(),
-  tags: z.array(z.string()).optional(),
-  avatar: z.string().regex(/^[a-f\d]{24}$/i, { message: messages.INVALID_USER_ID }).optional(),
-  addresses: z.array(addressSchema).optional(),
-}).refine(
-  async (data) => {
-    // ensure organization name uniqueness when creating
-    const exists = await orgRepo.findOne({ name: data.name });
-    return !exists;
-  },
-  { message: messages.ORG_ALREADY_EXISTS }
-);
+export const organizationValidation = z
+  .object({
+    name: z.string().trim().min(3, { message: messages.NAME_CHECK }),
+    code: z.string().optional(),
+    size: z.string().optional(),
+    emails: z
+      .union([z.array(emailSchema), emailSchema])
+      .transform((val) => (Array.isArray(val) ? val : [val]))
+      .refine((arr) => arr.length > 0, { message: messages.EMAIL_CHECK }),
+    phone: z
+      .string()
+      .regex(/^\+?[1-9]\d{1,14}$/, { message: messages.PHONE_CHECK })
+      .optional(),
+    website: z.string().url({ message: messages.INVALID_INPUT }).optional(),
+    description: z.string().optional(),
+    tags: z.array(z.string()).optional(),
+    avatar: z
+      .string()
+      .regex(/^[a-f\d]{24}$/i, { message: messages.INVALID_USER_ID })
+      .optional(),
+    addresses: z.array(addressSchema).optional(),
+  })
+  .refine(
+    async (data) => {
+      // ensure organization name uniqueness when creating
+      const exists = await orgRepo.findOne({ name: data.name });
+      return !exists;
+    },
+    { message: messages.ORG_ALREADY_EXISTS }
+  );
 
 // ===============================
 // 📤 EXPORT ALL
