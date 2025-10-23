@@ -3,6 +3,7 @@ import { EmployeeModel } from "./model.js";
 import { DepartmentModel } from "../department/model.js";
 import { SalaryModel } from "../salary/model.js";
 import { RoleModel } from "../role/model.js";
+import MediaModel from "../media/model.js";
 import ApiError from "../../utils/ApiError.js";
 import Repository from "../../utils/repository.js";
 import mongoose from "mongoose";
@@ -14,6 +15,7 @@ const userRepository = new Repository(UserModel);
 const departmentRepository = new Repository(DepartmentModel);
 const salaryRepository = new Repository(SalaryModel);
 const roleRepository = new Repository(RoleModel);
+const mediaRepository = new Repository(MediaModel);
 
 // 🔹 Helper function: Generate Employee Code
 async function generateEmployeeCode() {
@@ -126,7 +128,15 @@ const employeeService = {
                         address,
                         department: dept._id,
                         salary: salaryDoc._id,
-                        avatar: avatar || null,
+                        avatar: avatar ? {
+                            url: (await mediaRepository.findById(avatar))?.url || null,
+                            public_id: (await mediaRepository.findById(avatar))?.public_id || null,
+                            default_letter: name.charAt(0).toUpperCase()
+                        } : {
+                            url: null,
+                            public_id: null,
+                            default_letter: name.charAt(0).toUpperCase()
+                        },
                     },
                 ],
                 { session }
@@ -144,7 +154,7 @@ const employeeService = {
                         user: userDoc._id,
                         department: dept._id,
                         salary: salaryDoc._id,
-                        employeeType,
+                        employeeType: employeeType || "Full-time",
                         employeeCode,
                         startEmployeeDate: startEmployeeDate || new Date(),
                         endEmployeeDate,
@@ -212,7 +222,7 @@ const employeeService = {
                 .populate("salary")
                 .populate("department")
                 .populate("role_id", "name")
-                // .select("-password -resetCode -resetCodeExpires");
+            // .select("-password -resetCode -resetCodeExpires");
 
             return createdUser;
         } catch (error) {
@@ -277,7 +287,7 @@ const employeeService = {
             .populate("salary") // get salary details
             .populate("department") // get department details
             .populate("role_id", "name") // get only role name
-            // .select("-password -resetCode -resetCodeExpires"); // hide sensitive fields
+        // .select("-password -resetCode -resetCodeExpires"); // hide sensitive fields
 
         // 3️⃣ If no employees found
         if (!employees || employees.length === 0) {

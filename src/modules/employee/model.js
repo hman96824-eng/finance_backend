@@ -42,6 +42,7 @@ const employeeSchema = new mongoose.Schema(
             unique: true,
             trim: true,
         },
+        employeeType: { type: String, enum: ["Full-time", "Part-time", "Remote"], default: "Full-time" },
 
         startEmployeeDate: { type: Date, required: true },
         endEmployeeDate: { type: Date, default: null },

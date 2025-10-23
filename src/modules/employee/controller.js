@@ -18,6 +18,7 @@ export const addEmployee = async (req, res, next) => {
             avatar: media?._id || null,
         };
 
+
         // ✅ 3️⃣ Call service (don’t touch your logic)
         const result = await employeeService.createEmployee(employeeData);
 
