@@ -48,7 +48,7 @@ const employeeService = {
             const {
                 name,
                 email,
-                password,
+                // password,
                 phoneNumber,
                 cnic,
                 address,
@@ -70,7 +70,7 @@ const employeeService = {
 
             // 0️⃣ Validation: ensure required fields
             if (!email) throw ApiError.validationError("Email is required");
-            if (!password) throw ApiError.validationError("Password is required");
+            // if (!password) throw ApiError.validationError("Password is required");
 
             // Pre-check: user with same email must not exist
             const existingUser = await UserModel.findOne({ email }).session(session);
@@ -102,7 +102,7 @@ const employeeService = {
             created.salary = salaryDoc;
 
             // 3️⃣ Hash password
-            const hashedPassword = await bcrypt.hash(password, 10);
+            // const hashedPassword = await bcrypt.hash(password, 10);
             const employeeRole = await RoleModel.findOne({ name: "EMPLOYEE" });
             if (!employeeRole) throw ApiError.notFound("Employee role not found");
 
@@ -112,7 +112,7 @@ const employeeService = {
                     {
                         name,
                         email,
-                        password: hashedPassword,
+                        // password: hashedPassword,
                         phone: phoneNumber,
                         role_id: employeeRole._id,
                         cnic,
@@ -197,7 +197,7 @@ const employeeService = {
                 .populate("salary")
                 .populate("department")
                 .populate("role_id", "name")
-                .select("-password -resetCode -resetCodeExpires");
+                // .select("-password -resetCode -resetCodeExpires");
 
             return createdUser;
         } catch (error) {
@@ -262,7 +262,7 @@ const employeeService = {
             .populate("salary") // get salary details
             .populate("department") // get department details
             .populate("role_id", "name") // get only role name
-            .select("-password -resetCode -resetCodeExpires"); // hide sensitive fields
+            // .select("-password -resetCode -resetCodeExpires"); // hide sensitive fields
 
         // 3️⃣ If no employees found
         if (!employees || employees.length === 0) {
