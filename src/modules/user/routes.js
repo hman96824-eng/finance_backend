@@ -31,12 +31,7 @@ router
   ) // upload the dp photo
   .delete("/remove-avatar", middleware.authenticate, service.removeProfileImage) // remove the dp photo
   // update own profile
-  .put(
-    "/profile",
-    middleware.authenticate,
-    checkPermission(["update_own_profile"]),
-    userController.updateProfile
-  )
+  .put("/profile", middleware.authenticate, userController.updateProfile)
   .put(
     "/toggle-status/:id",
     middleware.authenticate,
