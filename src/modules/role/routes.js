@@ -10,13 +10,13 @@ const router = express.Router();
 router.use(middleware.authenticate);
 router
   .use(checkPermission(["view_users"]))
-  .get("/", roleController.getAllRoles);
+  .get("/", roleController.getAllRoles) // get all roles
+  .get("/:id", roleController.getRoleById); // get role by id
 router
   .use(checkPermission(["assign_roles"]))
-  .post("/add", validate(validation.addRoleValidation), roleController.addRole)
-  .put("/update/:id", roleController.updateRole)
-  .delete("/delete/:id", roleController.deleteRole)
-  .get("/:id", roleController.getRoleById)
-  .put("/update-roleinfo/:id", roleController.updateRoleInfo);
+  .post("/add", validate(validation.addRoleValidation), roleController.addRole) // add role
+  .put("/update/:id", roleController.updateRole) // update role permissions
+  .delete("/delete/:id", roleController.deleteRole) // delete role
+  .put("/update-roleinfo/:id", roleController.updateRoleInfo); // update role info
 
 export default router;

@@ -66,7 +66,7 @@ export const updateRoleInfo = async (id, { name, description }) => {
   const updated = await roleRepo.updateById(
     id,
     {
-      name,
+      name: name.toUpperCase(),
       ...(description !== undefined && { description }), // only update if provided
     },
     { new: true } // return updated document
