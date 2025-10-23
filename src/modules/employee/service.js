@@ -56,16 +56,19 @@ const employeeService = {
                 designation,
                 employeeType,
                 startEmployeeDate,
+                endEmployeeDate,
                 contractType,
                 contractStartDate,
+                contractEndDate,
                 salaryIncome,
                 salaryStartDate,
+                salaryEndDate,
                 emergencyContactName,
                 relation,
-                emergencyPhone,
+                emergencyContactPhone,
                 rating,
                 remarks,
-                joiningDate,
+                avatar,
             } = data;
 
             // 0️⃣ Validation: ensure required fields
@@ -81,7 +84,10 @@ const employeeService = {
             // 1️⃣ Find or create department
             let dept = await DepartmentModel.findOne({ name: department }).session(session);
             if (!dept) {
-                const [newDept] = await DepartmentModel.create([{ name: department }], { session });
+                const [newDept] = await DepartmentModel.create([{
+                    departmentName: department,
+                    designation: designation,
+                }], { session });
                 dept = newDept;
                 created.department = dept;
             } else {
@@ -92,8 +98,9 @@ const employeeService = {
             const [salaryDoc] = await SalaryModel.create(
                 [
                     {
-                        salary: salaryIncome,
-                        startDate: salaryStartDate,
+                        salaryIncome: salaryIncome,
+                        salaryStartDate: salaryStartDate,
+                        salaryEndDate: salaryEndDate,
                     },
                 ],
                 { session }
@@ -119,6 +126,7 @@ const employeeService = {
                         address,
                         department: dept._id,
                         salary: salaryDoc._id,
+                        avatar: avatar || null,
                     },
                 ],
                 { session }
@@ -136,26 +144,32 @@ const employeeService = {
                         user: userDoc._id,
                         department: dept._id,
                         salary: salaryDoc._id,
-                        designation,
                         employeeType,
-                        startEmployeeDate,
-                        contractType,
-                        contractStartDate,
-                        // Map emergency contact into relations subschema
+                        employeeCode,
+                        startEmployeeDate: startEmployeeDate || new Date(),
+                        endEmployeeDate,
+
+
+                        // ✅ Nested object for contract details
+                        contractDetails: {
+                            contractType,
+                            contractStartDate,
+                            contractEndDate,
+                            noticePeriodDays: 30,
+                        },
+
+                        // ✅ Optional array for relations (emergency contact)
                         relations: emergencyContactName
                             ? [
                                 {
                                     name: emergencyContactName,
                                     relation,
-                                    phone: emergencyPhone,
+                                    phone: emergencyContactPhone,
                                 },
                             ]
                             : [],
-                        rating,
-                        remarks,
-                        employeeCode, // ✅ Auto-generated
-                        joiningDate: joiningDate || new Date(), // ✅ Default if not provided
-                        // Add initial performance feedback if rating/remarks present
+
+                        // ✅ Optional performance feedback
                         performanceFeedback:
                             rating || remarks
                                 ? [
@@ -171,6 +185,7 @@ const employeeService = {
                 ],
                 { session }
             );
+
 
             created.employee = employeeDoc;
 

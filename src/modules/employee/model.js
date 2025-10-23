@@ -10,8 +10,8 @@ const contractDetailsSchema = new mongoose.Schema(
             enum: ["permanent", "temporary", "internship", "contract"],
             default: "contract",
         },
-        startDate: { type: Date, required: true },
-        endDate: { type: Date, default: null },
+        contractStartDate: { type: Date, required: true },
+        contractEndDate: { type: Date, default: null },
         noticePeriodDays: { type: Number, default: 30 },
         workHoursPerWeek: { type: Number, default: 40 },
     },
@@ -43,8 +43,8 @@ const employeeSchema = new mongoose.Schema(
             trim: true,
         },
 
-        joiningDate: { type: Date, required: true },
-        probationEndDate: { type: Date, default: null },
+        startEmployeeDate: { type: Date, required: true },
+        endEmployeeDate: { type: Date, default: null },
         isActive: { type: Boolean, default: true },
 
         // Nested sections

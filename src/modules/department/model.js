@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 
 const departmentSchema = new mongoose.Schema(
     {
-        name: { type: String, required: true, trim: true },
+        departmentName: { type: String, required: true, trim: true },
         designation: { type: String, trim: true }, // e.g. "Software Engineer"
         description: { type: String, trim: true, default: null },
         location: { type: String, trim: true, default: null },
