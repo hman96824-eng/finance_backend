@@ -8,13 +8,12 @@ import config from "../../config/index.js";
  * @param {string} email - email of invited user
  */
 export const generateTeamInviteTemplate = (token, role, email, name) => {
-  const inviteUrl = `${
-    config.appConfig.frontEndUrl
-  }/RegisterbyInvitation?token=${encodeURIComponent(
-    token
-  )}&name=${encodeURIComponent(name)}&email=${encodeURIComponent(
-    email
-  )}&role=${encodeURIComponent(role)}`;
+  const inviteUrl = `${config.appConfig.frontEndUrl
+    }/RegisterbyInvitation?token=${encodeURIComponent(
+      token
+    )}&name=${encodeURIComponent(name)}&email=${encodeURIComponent(
+      email
+    )}&role=${encodeURIComponent(role)}`;
 
   const plainText = `
 Hello,
@@ -80,11 +79,6 @@ If you didn’t expect this invitation, please ignore this email.
                         </tr>
                       </tbody>
                     </table>
-
-                    <p style="margin:10px 0;color:#777;font-size:14px;text-align:center;">
-                      If the button above doesn’t work, use this link:<br>
-                      <a href="${inviteUrl}" target="_blank" rel="noopener noreferrer" style="color:#003366;">${inviteUrl}</a>
-                    </p>
 
                     <p style="margin-top:16px;color:#555;text-align:center;font-size:14px;">
                       Didn’t expect this email? You can safely ignore it.

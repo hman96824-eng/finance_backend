@@ -19,7 +19,6 @@ export const checkPermission = (requiredPermissions) => {
       }
 
       const userPermissions = user.role_id.permissions;
-      console.log("User permissions:", userPermissions);
       // check if user has ALL required permissions
       const hasPermission = requiredPermissions.every((perm) =>
         userPermissions.includes(perm)
