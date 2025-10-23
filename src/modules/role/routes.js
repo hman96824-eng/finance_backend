@@ -7,16 +7,43 @@ import roleController from "./controller.js";
 
 const router = express.Router();
 
-router.use(middleware.authenticate);
 router
-  .use(checkPermission(["view_users"]))
-  .get("/", roleController.getAllRoles);
-router
-  .use(checkPermission(["assign_roles"]))
-  .post("/add", validate(validation.addRoleValidation), roleController.addRole)
-  .put("/update/:id", roleController.updateRole)
-  .delete("/delete/:id", roleController.deleteRole)
-  .get("/:id", roleController.getRoleById)
-  .put("/update-roleinfo/:id", roleController.updateRoleInfo);
+  .get(
+    "/",
+    middleware.authenticate,
+    checkPermission(["view_users"]),
+    roleController.getAllRoles
+  )
+  .post(
+    "/add",
+    middleware.authenticate,
+    checkPermission(["assign_roles"]),
+    validate(validation.addRoleValidation),
+    roleController.addRole
+  )
+  .put(
+    "/update/:id",
+    middleware.authenticate,
+    checkPermission(["assign_roles"]),
+    roleController.updateRole
+  )
+  .delete(
+    "/delete/:id",
+    middleware.authenticate,
+    checkPermission(["assign_roles"]),
+    roleController.deleteRole
+  )
+  .get(
+    "/:id",
+    middleware.authenticate,
+    checkPermission(["assign_roles"]), // or skip if public
+    roleController.getRoleById
+  )
+  .put(
+    "/update-roleinfo/:id",
+    middleware.authenticate,
+    checkPermission(["assign_roles"]),
+    roleController.updateRoleInfo
+  );
 
 export default router;
