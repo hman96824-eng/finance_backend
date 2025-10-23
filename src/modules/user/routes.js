@@ -86,7 +86,6 @@ router
     "/passwordChange",
     middleware.authenticate,
     validate(validation.passwordChange),
-    checkPermission(["change_password"]),
     userController.passowrdChange
   )
   .get(
@@ -129,6 +128,6 @@ router
     middleware.authenticate,
     checkPermission(["view_users"]),
     exportUsersExcel
-  ) // export the all user data in excel file
+  ); // export the all user data in excel file
 
 export default router;
