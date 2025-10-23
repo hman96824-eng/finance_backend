@@ -2,15 +2,15 @@ import mongoose from "mongoose";
 
 const salarySchema = new mongoose.Schema(
     {
-        startDate: {
+        salaryStartDate: {
             type: Date,
             required: true
         },
-        endDate: {
+        salaryEndDate: {
             type: Date,
             default: null
         },
-        salary: {
+        salaryIncome: {
             type: Number,
             required: true,
             min: [0, 'Salary cannot be negative']
