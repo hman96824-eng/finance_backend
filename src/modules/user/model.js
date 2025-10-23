@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { required } from "zod/mini";
 
 const userSchema = new mongoose.Schema(
   {
@@ -38,12 +39,9 @@ const userSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    cnic: { type: String, trim: true },
 
     // Optional Fields
-    salary: {
-      type: Number,
-      default: null,
-    },
 
     bio: {
       type: String,
@@ -64,18 +62,6 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
-
-    maritalStatus: {
-      type: String,
-      enum: ["", "Single", "Married"],
-      default: null,
-    },
-
-    department: {
-      type: String,
-      default: null,
-    },
-
     description: {
       type: String,
       default: null,
@@ -85,6 +71,29 @@ const userSchema = new mongoose.Schema(
       url: { type: String },
       public_id: { type: String },
       default_letter: { type: String }, // store first letter of name
+    },
+
+    maritalStatus: {
+      type: String,
+      enum: ["", "Single", "Married"],
+      default: null,
+    },
+    salary: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Salary",
+      required: true,
+    },
+
+    department: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Department",
+      required: true,
+    },
+    // 🔹 Employee reference (for employees only)
+    employee: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Employee",
+      default: null,
     },
 
     // For password reset (optional)

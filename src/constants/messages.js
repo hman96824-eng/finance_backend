@@ -147,6 +147,13 @@ export const messages = {
   ORG_ALREADY_EXISTS: "Organization Already Exists",
   DUPLICATE_FIELD: "Duplicate value provided for field",
   ORG_CODE_EXISTS: "Organization code already exists",
+
+  // employee Messages
+  employeeAdded: "Employee added successfully",
+  employeeList: "Employee list fetched successfully",
+  employeeFound: "Employee fetched successfully",
+  employeeUpdated: "Employee updated successfully",
+  employeeNotFound: "Employee not found",
 };
 
 export default messages;

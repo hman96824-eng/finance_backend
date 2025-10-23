@@ -8,8 +8,13 @@ export default class Repository {
   // ========================
   // 🟢 CREATE
   // ========================
-  async create(data) {
-    return this.model.create(data);
+  async create(data, options = {}) {
+    try {
+        return await this.model.create(data, options);
+    } catch (error) {
+        console.error('Repository create error:', error);
+        throw error;
+    }
   }
 
   async insertMany(dataArray) {

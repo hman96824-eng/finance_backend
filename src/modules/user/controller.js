@@ -7,6 +7,7 @@ import ApiError from "../../utils/ApiError.js";
 export const login = async (req, res, next) => {
   try {
     const data = await userService.login(req.body);
+    // set header for convenience
     res.setHeader("Authorization", `Bearer ${data.accessToken}`);
 
     return successResponse(res, data, messages.LOGIN_MESSAGE);
@@ -14,10 +15,10 @@ export const login = async (req, res, next) => {
     next(err);
   }
 };
+
 export const signup = async (req, res, next) => {
   try {
     const data = await userService.signup(req.body);
-
     return successResponse(res, data, data.notification, messages.USER_CREATED);
   } catch (err) {
     next(err);
@@ -32,6 +33,7 @@ export const forgetpassword = async (req, res, next) => {
     next(err);
   }
 };
+
 export const verifyCode = async (req, res, next) => {
   try {
     const data = await userService.verifyCode(req.body);
@@ -40,6 +42,7 @@ export const verifyCode = async (req, res, next) => {
     next(err);
   }
 };
+
 export const resetPassword = async (req, res, next) => {
   try {
     const data = await userService.resetPassword(req.body);
@@ -48,6 +51,7 @@ export const resetPassword = async (req, res, next) => {
     next(err);
   }
 };
+
 export const passowrdChange = async (req, res, next) => {
   try {
     const { currentPassword, newPassword, confirmNewPassword } = req.body;
@@ -98,6 +102,7 @@ export const getUser = async (req, res, next) => {
     next(err);
   }
 };
+
 export const getUserById = async (req, res, next) => {
   try {
     const user = await userService.getUserById(req.params.id);
@@ -111,6 +116,7 @@ export const getUserById = async (req, res, next) => {
     next(err);
   }
 };
+
 export const getProfile = async (req, res) => {
   try {
     const userId = req?.user?.id;
@@ -130,27 +136,10 @@ export const getProfile = async (req, res) => {
       });
     }
 
-    // ✅ Return user with populated role (no permissions)
+    // ✅ Return user with role (already sanitized in service)
     res.json({
       success: true,
-      data: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        role_id: user.role_id, // populated without permissions
-        status: user.status,
-        salary: user.salary,
-        address: user.address,
-        gender: user.gender,
-        nationality: user.nationality,
-        maritalStatus: user.maritalStatus,
-        department: user.department,
-        description: user.description,
-        avatar: user.avatar,
-        created_at: user.createdAt,
-        updated_at: user.updatedAt,
-      },
+      data: user,
     });
   } catch (err) {
     res.status(500).json({
@@ -159,6 +148,7 @@ export const getProfile = async (req, res) => {
     });
   }
 };
+
 export const updateProfile = async (req, res, next) => {
   try {
     const userId = req?.user?.id;
@@ -171,28 +161,10 @@ export const updateProfile = async (req, res, next) => {
       });
     }
 
-    // ✅ Return response in same structure (just role populated)
+    // Return sanitized user (service already filters)
     res.json({
       success: true,
-      data: {
-        _id: updatedUser._id,
-        name: updatedUser.name,
-        email: updatedUser.email,
-        phone: updatedUser.phone,
-        status: updatedUser.status,
-        role: updatedUser.role_id?.name || null,
-        role_description: updatedUser.role_id?.description || null,
-        address: updatedUser.address,
-        gender: updatedUser.gender,
-        nationality: updatedUser.nationality,
-        maritalStatus: updatedUser.maritalStatus,
-        department: updatedUser.department,
-        salary: updatedUser.salary,
-        description: updatedUser.description,
-        avatar: updatedUser.avatar,
-        created_at: updatedUser.createdAt,
-        updated_at: updatedUser.updatedAt,
-      },
+      data: updatedUser,
     });
   } catch (err) {
     next(err);
@@ -210,20 +182,22 @@ export const toggleUserStatus = async (req, res) => {
       .json({ message: err.message || messages.USER_STATUS_UPDATE_FAILED });
   }
 };
+
 export const dashboard = (req, res, next) => {
   res.json({
     message: `Welcome, ${req.user.email}!`,
     role: req.user.role_id,
   });
 };
+
 export const InactiveUserStatus = async (req, res, next) => {
   try {
     const inactiveUsers = await userService.getInactiveUsers();
 
     const transformedUsers = inactiveUsers.map((user) => {
-      const userObj = user.toObject(); // Convert Mongoose doc to plain object
-      userObj.role_id = userObj.role_id?.name || null;
-      delete userObj.password; // Optional: remove password if needed
+      const userObj = user; // service returns plain objects already
+      userObj.role_id = userObj.role || null;
+      delete userObj.password; // just to be safe
       return userObj;
     });
 
@@ -236,6 +210,7 @@ export const InactiveUserStatus = async (req, res, next) => {
     next(error);
   }
 };
+
 export const ArchiveDeleteUsers = async (req, res) => {
   try {
     const { id } = req.params; // user ID from URL
@@ -252,6 +227,7 @@ export const ArchiveDeleteUsers = async (req, res) => {
     });
   }
 };
+
 export const ArchiveDeleteMultipleUsers = async (req, res) => {
   try {
     const { ids } = req.body; // array of user IDs
@@ -294,6 +270,7 @@ export const changeRole = async (req, res, next) => {
     next(error);
   }
 };
+
 export const deleteUserStatus = async (req, res, next) => {
   try {
     const { id } = req.params;

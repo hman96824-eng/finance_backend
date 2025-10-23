@@ -34,7 +34,7 @@ router
   .put(
     "/profile",
     middleware.authenticate,
-    checkPermission(["update_own_profile"]),
+    checkPermission(["view_own_profile"]),
     userController.updateProfile
   )
   .put(
@@ -86,7 +86,7 @@ router
     "/passwordChange",
     middleware.authenticate,
     validate(validation.passwordChange),
-    checkPermission(["change_password"]),
+    checkPermission(["view_own_profile"]),
     userController.passowrdChange
   )
   .get(

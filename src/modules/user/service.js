@@ -24,22 +24,64 @@ const userRepo = new Repository(UserModel);
 const inviteRepo = new Repository(InviteModel);
 const roleRepo = new Repository(RoleModel);
 
+// --------------------------------------------------
+// 🔹 Helper: Filter user response (remove sensitive + employee)
+// --------------------------------------------------
+const filterUserResponse = (userDoc) => {
+  if (!userDoc) return null;
+  // if it's a mongoose document, convert to plain object
+  const user = userDoc.toObject ? userDoc.toObject() : userDoc;
+
+  // Remove sensitive/internal fields
+  delete user.password;
+  delete user.resetCode;
+  delete user.resetCodeExpires;
+  delete user.employee; // explicitly remove employee reference object
+  // If employee exists as ObjectId, keep it if you want — but per request do not populate or return it
+  if (user.employee && typeof user.employee === "object") delete user.employee;
+
+  // Keep role name if populated, otherwise keep role ObjectId string
+  const roleName = user.role_id?.name || null;
+
+  return {
+    id: user._id,
+    name: user.name,
+    email: user.email,
+    phone: user.phone || null,
+    cnic: user.cnic || null,
+    status: user.status,
+    role: roleName,
+    description: user.description || null,
+    bio: user.bio || null,
+    address: user.address || null,
+    gender: user.gender || null,
+    nationality: user.nationality || null,
+    maritalStatus: user.maritalStatus || null,
+    avatar: user.avatar || null,
+    created_at: user.createdAt,
+    updated_at: user.updatedAt,
+  };
+};
+
+// --------------------------------------------------
+// 🔹 Auth: login
+// --------------------------------------------------
 export const login = async ({ email, password }) => {
-  // ✅ Step 1: Fetch user with role populated (only role name/description)
+  // find user and populate role name/description only; exclude employee and keep password for verification
   const user = await userRepo.findOneWithPopulate(
     { email },
     "role_id",
     "name description"
   );
-  if (user.status !== "active") throw ApiError.unauthorized(messages.IsActive);
-  if (!user) throw ApiError.unauthorized(messages.USER_NOT_FOUND);
 
-  const isMatch = await comparePassword(password, user.password);
-  if (!isMatch) throw ApiError.unauthorized(messages.INVALID_CREDENTIALS);
+  if (!user) throw ApiError.unauthorized(messages.USER_NOT_FOUND);
 
   if (user.status?.toLowerCase() === "inactive") {
     throw ApiError.unauthorized(messages.IsActive);
   }
+
+  const isMatch = await comparePassword(password, user.password);
+  if (!isMatch) throw ApiError.unauthorized(messages.INVALID_CREDENTIALS);
 
   // Prepare JWT payload
   const payload = {
@@ -50,52 +92,25 @@ export const login = async ({ email, password }) => {
 
   const accessToken = jwt.generateToken(payload);
 
-  // Remove sensitive fields
-  const userObj = user.toObject();
-  delete userObj.password;
-  delete userObj.resetCode;
-  delete userObj.resetCodeExpires;
-
-  // Return full user data + role
+  // sanitize and return
+  const filtered = filterUserResponse(user);
   return {
     accessToken,
-    user: {
-      id: userObj._id,
-      name: userObj.name,
-      email: userObj.email,
-      phone: userObj.phone,
-      status: userObj.status,
-      role: userObj.role_id?.name || null,
-      description: userObj?.description || null,
-      salary: userObj.salary,
-      address: userObj.address,
-      gender: userObj.gender,
-      nationality: userObj.nationality,
-      maritalStatus: userObj.maritalStatus,
-      department: userObj.department,
-      avatar: userObj.avatar,
-      created_at: userObj.createdAt,
-      updated_at: userObj.updatedAt,
-    },
+    user: filtered,
   };
 };
-export const signup = async ({
-  name,
-  email,
-  phone,
-  role,
-  password,
-  confirmPassword,
-}) => {
-  const user = await userRepo.findOne({ email });
-  if (user) throw ApiError.unauthorized(messages.USER_EXISTS);
+
+// --------------------------------------------------
+// 🔹 Auth: signup
+// --------------------------------------------------
+export const signup = async ({ name, email, phone, role, password, confirmPassword }) => {
+  const existing = await userRepo.findOne({ email });
+  if (existing) throw ApiError.unauthorized(messages.USER_EXISTS);
 
   const rolecheck = await roleRepo.findOne({ name: role });
   if (!rolecheck) throw ApiError.badRequest(messages.ROLE_NOT_DEFINE);
 
-  // if (password !== confirmPassword)
-  //   throw ApiError.unauthorized(messages.PASSWORD_UNMATCH);
-
+  // hash password
   const hashpassword = await hashPassword(password);
 
   const firstLetter = name.charAt(0).toUpperCase();
@@ -115,7 +130,6 @@ export const signup = async ({
     },
   });
 
-  // ✅ Build the notification data separately
   const notification = {
     id: newUser._id,
     name: newUser.name,
@@ -125,19 +139,21 @@ export const signup = async ({
     avatar: newUser.avatar,
   };
 
-  // ✅ Emit event (no need to assign return)
   io.emit("new_user_registered", notification);
 
-  return { newUser, notification };
+  // return sanitized user + notification
+  const populated = await userRepo.findByIdWithPopulate(newUser._id, "role_id", "name description");
+  return { newUser: filterUserResponse(populated), notification };
 };
 
+// --------------------------------------------------
+// 🔹 forgetpassword
+// --------------------------------------------------
 export const forgetpassword = async ({ email }) => {
   const user = await userRepo.findOne({ email });
   if (!user) throw ApiError.unauthorized(messages.USER_NOT_FOUND);
 
-  const otp = Math.floor(Math.random() * 10000)
-    .toString()
-    .padStart(4, "0");
+  const otp = Math.floor(Math.random() * 10000).toString().padStart(4, "0");
   const expiry = new Date(Date.now() + 15 * 60 * 1000);
 
   user.resetCode = otp;
@@ -149,8 +165,13 @@ export const forgetpassword = async ({ email }) => {
     subject: messages.EMAIL_SENT_SUBJECT,
     html: GenerateOtpEmailTemplate(otp),
   });
+
+  return { message: messages.OTP_SENT_MESSAGE };
 };
 
+// --------------------------------------------------
+// 🔹 verifyCode
+// --------------------------------------------------
 export const verifyCode = async ({ email, code }) => {
   const user = await userRepo.findOne({ email });
   if (!user) throw ApiError.notFound(messages.USER_NOT_FOUND);
@@ -165,84 +186,82 @@ export const verifyCode = async ({ email, code }) => {
   return { message: messages.VERIFIED_OTP };
 };
 
-export const resetPassword = async ({
-  email,
-  newPassword,
-  confirmPassword,
-}) => {
+// --------------------------------------------------
+// 🔹 resetPassword
+// --------------------------------------------------
+export const resetPassword = async ({ email, newPassword, confirmPassword }) => {
   const user = await userRepo.findOne({ email });
   if (!user) throw ApiError.notFound(messages.USER_NOT_FOUND);
 
   const isSame = await comparePassword(newPassword, user.password);
   if (isSame) throw ApiError.badRequest(messages.NEW_PASSWORD);
-  if (newPassword !== confirmPassword)
-    throw ApiError.badRequest(messages.PASSWORD_UNMATCH);
+  if (newPassword !== confirmPassword) throw ApiError.badRequest(messages.PASSWORD_UNMATCH);
 
   const hashpassword = await hashPassword(newPassword);
   user.password = hashpassword;
   await user.save();
+
+  return { message: messages.PASSWORD_RESET };
 };
 
-export const passowrdChange = async (
-  userId,
-  currentPassword,
-  newPassword,
-  confirmNewPassword
-) => {
+// --------------------------------------------------
+// 🔹 passowrdChange
+// --------------------------------------------------
+export const passowrdChange = async (userId, currentPassword, newPassword, confirmNewPassword) => {
   const user = await userRepo.findById(userId);
   if (!user) throw ApiError.notFound(messages.USER_NOT_FOUND);
 
   const isMatch = await comparePassword(currentPassword, user.password);
   if (!isMatch) throw ApiError.badRequest(messages.PASSWORD_UNMATCH);
 
-  if (newPassword === currentPassword)
-    throw ApiError.badRequest(messages.NEW_PASSWORD);
-
-  if (newPassword !== confirmNewPassword)
-    throw ApiError.badRequest(messages.CONFIRM_PASSWORD);
+  if (newPassword === currentPassword) throw ApiError.badRequest(messages.NEW_PASSWORD);
+  if (newPassword !== confirmNewPassword) throw ApiError.badRequest(messages.CONFIRM_PASSWORD);
 
   const passwordhash = await hashPassword(newPassword);
   user.password = passwordhash;
   await user.save();
+
+  return { message: messages.PASSWORD_RESET_SUCCESS };
 };
 
+// --------------------------------------------------
+// 🔹 getUserById
+// --------------------------------------------------
 export const getUserById = async (id) => {
-  // ✅ Populate role_id but exclude permissions field
-  const user = await userRepo.findByIdWithPopulate(
-    id,
-    "role_id",
-    "-permissions"
-  );
-
+  const user = await userRepo.findByIdWithPopulate(id, "role_id", "name description");
   if (!user) {
     throw ApiError.notFound(messages.USER_NOT_FOUND);
   }
 
-  const userObj = user.toObject();
-
-  // ✅ Remove sensitive fields
-  delete userObj.password;
-  delete userObj.resetCode;
-  delete userObj.resetCodeExpires;
-
-  return userObj;
+  return filterUserResponse(user);
 };
+
+// --------------------------------------------------
+// 🔹 getAllUsers
+// --------------------------------------------------
 export const getAllUsers = async (filter = {}) => {
   const baseFilter = {
     status: { $in: ["active", "inactive", "deleted"] },
     ...filter,
   };
-  const users = await userRepo.findWithPopulate(baseFilter, "role_id", "name");
 
-  return users.map((user) => ({
-    ...user._doc,
-    role: user.role_id?.name || null, // extract name
-    role_id: undefined, // hide ObjectId
-  }));
+  // ensure we do not populate employee
+  const users = await userRepo.findWithPopulate(baseFilter, "role_id", "name description");
+
+  // convert and filter each
+  return users.map((u) => filterUserResponse(u));
 };
+
+// --------------------------------------------------
+// 🔹 countUsersByStatus
+// --------------------------------------------------
 export const countUsersByStatus = async (status) => {
   return userRepo.count({ status });
 };
+
+// --------------------------------------------------
+// 🔹 updateProfile
+// --------------------------------------------------
 export const updateProfile = async (userId, updateData) => {
   const allowedFields = [
     "name",
@@ -256,12 +275,10 @@ export const updateProfile = async (userId, updateData) => {
     "description",
   ];
 
-  // ✅ Remove avatar if sent (ignore changes to avatar)
   if ("avatar" in updateData) {
     delete updateData.avatar;
   }
 
-  // ✅ Filter allowed fields only
   const filteredData = Object.keys(updateData)
     .filter((key) => allowedFields.includes(key))
     .reduce((obj, key) => {
@@ -269,36 +286,25 @@ export const updateProfile = async (userId, updateData) => {
       return obj;
     }, {});
 
-  // ✅ Update user profile
   const updatedUser = await userRepo.updateProfile(userId, filteredData);
   if (!updatedUser) throw new Error("User not found");
 
-  // ✅ Fetch again with role populated
-  const userWithRole = await userRepo.findByIdWithPopulate(
-    userId,
-    "role_id",
-    "name description"
-  );
-
+  const userWithRole = await userRepo.findByIdWithPopulate(userId, "role_id", "name description");
   if (!userWithRole) throw new Error("User not found");
 
-  const userObj = userWithRole.toObject();
-  delete userObj.password;
-  delete userObj.resetCode;
-  delete userObj.resetCodeExpires;
-
-  return userObj;
+  return filterUserResponse(userWithRole);
 };
+
+// --------------------------------------------------
+// 🔹 createInvite
+// --------------------------------------------------
 export const createInvite = async (email, role_id) => {
   const cleanEmail = email.trim().toLowerCase();
   const existingUser = await userRepo?.findOne({ email: cleanEmail });
   if (existingUser) {
     throw ApiError?.unauthorized(messages.USER_ALREADY_EXISTS);
   } else {
-    await inviteRepo?.update(
-      { email: cleanEmail },
-      { $set: { accepted: false } }
-    );
+    await inviteRepo?.update({ email: cleanEmail }, { $set: { accepted: false } });
   }
 
   let invite = await inviteRepo?.findOne({ email: cleanEmail });
@@ -327,27 +333,25 @@ export const createInvite = async (email, role_id) => {
     html: templates.generateTeamInviteTemplate(invite?.token, role_id, email),
   });
 
-  console.log("Invite send successfully.");
-
   return invite;
 };
+
+// --------------------------------------------------
+// 🔹 registerUser (invite flow)
+// --------------------------------------------------
 export const registerUser = async (inviteToken, newRole, userData) => {
   const { name, phone, password, confirmPassword } = userData;
-  if (!password || password !== confirmPassword)
-    throw ApiError.unauthorized(messages.PASSWORD_INVALID);
+  if (!password || password !== confirmPassword) throw ApiError.unauthorized(messages.PASSWORD_INVALID);
 
   const NewRole = await roleRepo.findOne({ name: newRole });
   if (!NewRole) throw ApiError.unauthorized(messages.ROLE_NOT_FOUND);
 
   const invite = await inviteRepo.findOne({ token: inviteToken });
   if (!invite) throw ApiError.unauthorized(messages.TOKEN_INVALID);
-  if (!invite.expiresAt || invite.expiresAt < new Date())
-    throw ApiError.badRequest(messages.TOKEN_EXPIRED);
-  // if (invite.accepted && ) throw new Error("Invitation already used.");
+  if (!invite.expiresAt || invite.expiresAt < new Date()) throw ApiError.badRequest(messages.TOKEN_EXPIRED);
 
   const existingUser = await userRepo.findOne({ email: invite.email });
-  if (existingUser && invite.accepted)
-    throw ApiError.unauthorized(messages.USER_ALREADY_EXISTS);
+  if (existingUser && invite.accepted) throw ApiError.unauthorized(messages.USER_ALREADY_EXISTS);
 
   const hashedPassword = await bcrypt.hash(password, 10);
   const newUser = await userRepo.create({
@@ -373,8 +377,11 @@ export const registerUser = async (inviteToken, newRole, userData) => {
       role_id: newUser.role_id,
     },
   };
-  console.log("registeration is successfuly");
 };
+
+// --------------------------------------------------
+// 🔹 toggleUserStatus
+// --------------------------------------------------
 export const toggleUserStatus = async (id) => {
   const user = await userRepo.findById(id);
   if (!user) throw ApiError.notFound(messages.USER_NOT_FOUND);
@@ -382,16 +389,13 @@ export const toggleUserStatus = async (id) => {
   user.status = user.status === "active" ? "inactive" : "active";
   await user.save();
 
-  return {
-    message: messages.USER_STATUS_UPDATED,
-    user: {
-      id: user._id,
-      name: user.name,
-      email: user.email,
-      status: user.status,
-    },
-  };
+  const updatedUser = await userRepo.findByIdWithPopulate(id, "role_id", "name description");
+  return { message: messages.USER_STATUS_UPDATED, user: filterUserResponse(updatedUser) };
 };
+
+// --------------------------------------------------
+// 🔹 getInactiveUsers
+// --------------------------------------------------
 export const getInactiveUsers = async () => {
   try {
     const users = await userRepo.findObj(
@@ -400,11 +404,15 @@ export const getInactiveUsers = async () => {
       {},
       { path: "role_id", select: "name" }
     );
-    return users || [];
+    // return sanitized objects
+    return (users || []).map((u) => filterUserResponse(u));
   } catch (error) {
     throw new Error("Failed to fetch inactive users: " + error.message);
   }
 };
+
+// --------------------------------------------------
+// 🔹 archiveDeleteUser (permanent delete)
 export const archiveDeleteUser = async (userId) => {
   try {
     const user = await userRepo.findOne({ _id: userId, status: "deleted" });
@@ -418,6 +426,10 @@ export const archiveDeleteUser = async (userId) => {
     throw new Error("Failed to remove user: " + error.message);
   }
 };
+
+// --------------------------------------------------
+// 🔹 archiveDeleteMultipleUsers
+// --------------------------------------------------
 export const archiveDeleteMultipleUsers = async (userIds) => {
   try {
     // Find users that match IDs and are in "deleted" status
@@ -445,97 +457,91 @@ export const archiveDeleteMultipleUsers = async (userIds) => {
   }
 };
 
-export const uploadProfileImage = async (req, res, next) => {
-  try {
-    const userId = req.user.id; // get from JWT middleware
-    const user = await userRepo.findById(userId);
+// --------------------------------------------------
+// 🔹 uploadProfileImage
+// --------------------------------------------------
+export const uploadProfileImage = async (reqFile, userId) => {
+  // reqFile is expected to be req.file (multer)
+  const user = await userRepo.findById(userId);
+  if (!user) throw ApiError.notFound(messages.USER_NOT_FOUND);
 
-    // console.log(req, "req");
-    // console.log(req.file, "req file");
-    // console.log(user, "user");
-    // console.log(userId, "user id ");
-    if (!req.file) throw ApiError.badRequest(messages.FILE_NOT_UPLOADED);
+  if (!reqFile) throw ApiError.badRequest(messages.FILE_NOT_UPLOADED);
 
-    // If user already has an image, remove old one
-    if (user.avatar.public_id) {
-      await deleteFromCloudinary(user.avatar.public_id);
-    }
-
-    // Upload new image to cloudinary
-    const result = await uploadToCloudinary(req.file.path, "user_avatars");
-    // console.log(result, "photo upload ouput");
-
-    // Update DB
-    user.avatar = {
-      url: result.secure_url,
-      public_id: result.public_id,
-      default_letter: null,
-    };
-    await user.save();
-
-    // Remove temp file
-    fs.unlinkSync(req.file.path);
-
-    res.json({ message: "Profile image updated", avatar: user.avatar });
-  } catch (err) {
-    next(err);
+  if (user.avatar?.public_id) {
+    await deleteFromCloudinary(user.avatar.public_id);
   }
-};
-export const removeProfileImage = async (req, res, next) => {
+
+  const result = await uploadToCloudinary(reqFile.path, "user_avatars");
+
+  user.avatar = {
+    url: result.secure_url,
+    public_id: result.public_id,
+    default_letter: null,
+  };
+  await user.save();
+
+  // remove temp file
   try {
-    const userId = req.user.id;
-    const user = await userRepo.findById(userId);
-
-    // Delete image from Cloudinary if exists
-    if (user.avatar.public_id) {
-      await deleteFromCloudinary(user.avatar.public_id);
-    }
-
-    const firstLetter = user.name.charAt(0).toUpperCase();
-
-    // ✅ Generate avatar URL using UI Avatars (optional)
-    const avatarUrl = `https://ui-avatars.com/api/?name=${firstLetter}&background=random&color=fff&size=128`;
-
-    // Reset to default letter avatar
-    user.avatar = {
-      url: avatarUrl,
-      public_id: null,
-      default_letter: firstLetter,
-    };
-
-    await user.save();
-
-    res.json({ message: "Profile image removed", avatar: user.avatar });
-  } catch (err) {
-    next(err);
+    fs.unlinkSync(reqFile.path);
+  } catch (e) {
+    // ignore
   }
+
+  const updated = await userRepo.findByIdWithPopulate(userId, "role_id", "name description");
+  return filterUserResponse(updated);
 };
+
+// --------------------------------------------------
+// 🔹 removeProfileImage
+// --------------------------------------------------
+export const removeProfileImage = async (userId) => {
+  const user = await userRepo.findById(userId);
+  if (!user) throw ApiError.notFound(messages.USER_NOT_FOUND);
+
+  if (user.avatar?.public_id) {
+    await deleteFromCloudinary(user.avatar.public_id);
+  }
+
+  const firstLetter = user.name.charAt(0).toUpperCase();
+  const avatarUrl = `https://ui-avatars.com/api/?name=${firstLetter}&background=random&color=fff&size=128`;
+
+  user.avatar = {
+    url: avatarUrl,
+    public_id: null,
+    default_letter: firstLetter,
+  };
+
+  await user.save();
+
+  const updated = await userRepo.findByIdWithPopulate(userId, "role_id", "name description");
+  return filterUserResponse(updated);
+};
+
+// --------------------------------------------------
+// 🔹 assignRole
+// --------------------------------------------------
 export const assignRole = async (id, newRoleName) => {
   const user = await userRepo.findById(id);
   if (!user) throw ApiError.notFound(messages.USER_NOT_FOUND);
   if (!newRoleName) throw ApiError.badRequest(messages.ROLE_NOT_DEFINE);
 
-  // console.log(user, "user");
-
-  // 🔑 Find role by name
   const role = await roleRepo.findOne({ name: newRoleName });
   if (!role) throw ApiError.notFound(messages.ROLE_NOT_FOUND);
-  // console.log(role, "role");
 
   if (user.role_id?.toString() === role._id.toString()) {
     throw ApiError.badRequest(`User already has the role '${newRoleName}'`);
   }
 
-  console.log(user.role_id?.toString(), "user role");
-  console.log(role._id.toString(), "role id ");
-
-  // ✅ Assign role ObjectId
   user.role_id = role._id;
-  // give error if newRoleName is same as the current role
-
   await user.save();
-  return user;
+
+  const updated = await userRepo.findByIdWithPopulate(id, "role_id", "name description");
+  return filterUserResponse(updated);
 };
+
+// --------------------------------------------------
+// 🔹 deleteStatus (soft delete -> status = deleted)
+// --------------------------------------------------
 export const deleteStatus = async (id) => {
   try {
     const user = await userRepo.findById(id);
@@ -549,7 +555,7 @@ export const deleteStatus = async (id) => {
     return {
       success: true,
       message: "User status updated to deleted successfully",
-      data: user,
+      data: filterUserResponse(user),
     };
   } catch (error) {
     console.error("Service deleteUserStatus Error:", error);
@@ -560,19 +566,24 @@ export const deleteStatus = async (id) => {
   }
 };
 
+// --------------------------------------------------
+// 🔹 softDeleteManyUsers
+// --------------------------------------------------
 export const softDeleteManyUsers = async (userIds) => {
   try {
-    let response = await userRepo.updateMany(
+    await userRepo.updateMany(
       { _id: { $in: userIds } },
       { $set: { status: "deleted" } }
     );
-    const updatedDocs = await inviteRepo.find({ _id: { $in: userIds } });
-    return updatedDocs;
+    // return count or some summary
+    return { message: "Users marked as deleted", deletedCount: userIds.length };
   } catch (error) {
-    console.log(error?.message, "eror");
+    throw new Error("Failed to soft delete users: " + error.message);
   }
 };
 
+// --------------------------------------------------
+// 🔹 deleteManyArchivedUsers (permanent)
 export const deleteManyArchivedUsers = async (userIds) => {
   try {
     if (!Array.isArray(userIds) || userIds.length === 0) {
@@ -602,11 +613,13 @@ export default {
   toggleUserStatus,
   getInactiveUsers,
   archiveDeleteUser,
-  countUsersByStatus,
+  archiveDeleteMultipleUsers,
   updateProfile,
   assignRole,
   deleteStatus,
   softDeleteManyUsers,
   deleteManyArchivedUsers,
-  // googleSignup,
+  createInvite,
+  registerUser,
+  // other functions preserved...
 };
