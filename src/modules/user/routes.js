@@ -1,40 +1,166 @@
+// import express from "express";
+// import multer from "multer";
+// import service from "./service.js";
+// import userController from "./controller.js";
+// import { validate } from "../../middleware/validation.middleware.js";
+// import validation from "../../validation/validation.js";
+// import middleware from "../../middleware/auth.middleware.js";
+// // import passport from "../../utils/passport.js";
+// import { checkPermission } from "../../middleware/permissons.js";
+// import { exportUsersExcel } from "../../config/excel.js";
+// import controller from "./controller.js";
+
+// const router = express.Router();
+// const upload = multer({ dest: "uploads/" });
+
+// // public routes
+// router
+//   .post("/login", validate(validation.loginValidation), userController.login) // login
+//   .get("/health", userController.health)
+//   .post(
+//     "/forgetPasswordOtp",
+//     validate(validation.requestOTP),
+//     userController.forgetpassword
+//   ) // request otp for forget password \
+//   .post(
+//     "/ForgetVerifyOtp",
+//     validate(validation.verifyOTP),
+//     userController.verifyCode
+//   ) // verify otp for forget password
+//   .post(
+//     "/forgetPassword",
+//     validate(validation.resetPassword),
+//     userController.resetPassword
+//   ) // reset password
+//   .post(
+//     "/signup",
+//     validate(validation.registerValidation),
+//     userController.signup
+//   ) // register user
+//   .post(
+//     "/passwordChange",
+//     validate(validation.passwordChange),
+//     userController.passowrdChange
+//   ); // change password
+
+// // jwt authentication for routes below
+// router.use(middleware.authenticate);
+
+// // routes need jwt authentication
+// router
+//   .put("/deleteMany", userController.DeleteMany) // delete multiple users
+//   .put("/upload-avatar", upload.single("avatar"), service.uploadProfileImage) // upload dp photo
+//   .delete("/remove-avatar", service.removeProfileImage) // remove the dp photo
+//   .put("/profile", userController.updateProfile) // update own profile
+//   .get("/profile", userController.getProfile) // get own profile
+//   .get("/dashboard", userController.dashboard);
+
+// router
+//   .use(checkPermission(["view_users"]))
+//   .get("/", userController.getUser) // get all users
+//   .get("/inactive", userController.InactiveUserStatus) // get inactive users
+//   .get("/:id", userController.getUserById) // get user by id
+//   .get("/export/excel", exportUsersExcel); // export users to excel
+
+// router
+//   .use(checkPermission(["manage_users"]))
+//   .put("/toggle-status/:id", userController.toggleUserStatus) // activate/deactivate user
+//   .delete("/remove/:id", userController.ArchiveDeleteUsers) // hard delete user
+//   .put("/delete-status/:id", userController.deleteUserStatus); // soft delete user
+
+// router
+//   .use(checkPermission(["assign_roles"]))
+//   .put("/change-role/:id", userController.changeRole); // change user role
+// export default router;
+
 import express from "express";
+import multer from "multer";
+import service from "./service.js";
 import userController from "./controller.js";
-import { validate } from "../../middleware/validation.middleware.js"
+import { validate } from "../../middleware/validation.middleware.js";
 import validation from "../../validation/validation.js";
-import middleware from '../../middleware/auth.middleware.js';
+import middleware from "../../middleware/auth.middleware.js";
+import { checkPermission } from "../../middleware/permissons.js";
+import { exportUsersExcel } from "../../config/excel.js";
 
 const router = express.Router();
+const upload = multer({ dest: "uploads/" });
+
+// PUBLIC ROUTES
 
 router
-  // asim
-  .post("/signup", validate(validation.registerValidation), userController.signup)
   .post("/login", validate(validation.loginValidation), userController.login)
-  .post("/refresh-token", userController.refreshToken)
-  .post("/verifysignup", validate(validation.verifyOTP), userController.verifySignup)
-  .post("/forgetPasswordOtp", validate(validation.requestOTP), userController.forgetpassword)
-  .post("/ForgetVerifyOtp", validate(validation.verifyOTP), userController.verifyCode)
-  .post("/forgetPassword", validate(validation.resetPassword), userController.resetPassword)
-  .post("/changePasswordOtp", middleware.authenticate, validate(validation.requestOTP), userController.requestOtp)
-  .post("/chnageVerifyOtp", middleware.authenticate, validate(validation.verifyOTP), userController.verifyOtp)
-  .post("/changepassword", middleware.authenticate, validate(validation.resetPassword), userController.changePassword)
-
-  // Profile
-  .get("/", middleware.authenticate, middleware.AdminPermission, userController.getUser)
   .get("/health", userController.health)
-  .get("/:id", middleware.authenticate, middleware.AdminPermission, validate(validation.idParam, "params"), userController.getUserById)
-  .get("/profile", middleware.authenticate, userController.getProfile)
+  .post(
+    "/forgetPasswordOtp",
+    validate(validation.requestOTP),
+    userController.forgetpassword
+  )
+  .post(
+    "/ForgetVerifyOtp",
+    validate(validation.verifyOTP),
+    userController.verifyCode
+  )
+  .post(
+    "/forgetPassword",
+    validate(validation.resetPassword),
+    userController.resetPassword
+  )
+  .post(
+    "/signup",
+    validate(validation.registerValidation),
+    userController.signup
+  )
+  .post(
+    "/passwordChange",
+    validate(validation.passwordChange),
+    userController.passowrdChange
+  );
 
-  // User's Status 
-  .get("/inactive", middleware.authenticate, middleware.AdminPermission, userController.InactiveUserStatus)
-  .delete("/remove/:id", middleware.authenticate, middleware.AdminPermission, userController.RemoveUnacceptedUser)
-  .put("/:id", middleware.authenticate, validate(validation.idParam, "params"), validate(validation.toggleUserStatusValidation), middleware.AdminPermission, userController.toggleUserStatus)
+// AUTHENTICATED ROUTES
 
-  // Send Invitation 
-  .post("/invite", middleware.authenticate, middleware.AdminPermission, validate(validation.inviteUserValidation), userController.sendInvitation)
-  .post("/register", validate(validation.completeRegistrationValidation), userController.completeRegistration)
-  .get("/dashboard", middleware.authenticate, userController.dashboard)
+router.use(middleware.authenticate);
 
+// Basic user self operations
+router
+  .put("/upload-avatar", upload.single("avatar"), service.uploadProfileImage)
+  .delete("/remove-avatar", service.removeProfileImage)
+  .put("/profile", userController.updateProfile)
+  .get("/profile", userController.getProfile)
+  .get("/dashboard", userController.dashboard);
 
+// GROUPED PERMISSION ROUTES
+
+// 🟦 VIEW USERS PERMISSION
+const viewRouter = express.Router();
+viewRouter.use(checkPermission(["view_users"]));
+
+viewRouter
+  .get("/", userController.getUser)
+  .get("/:id", userController.getUserById)
+  .get("/inactive", userController.InactiveUserStatus)
+  .get("/export/excel", exportUsersExcel);
+
+router.use("/view", viewRouter);
+
+// 🟧 MANAGE USERS PERMISSION
+const manageRouter = express.Router();
+manageRouter.use(checkPermission(["manage_users"]));
+
+manageRouter
+  .put("/deleteMany", userController.DeleteMany)
+  .put("/toggle-status/:id", userController.toggleUserStatus)
+  .delete("/remove/:id", userController.ArchiveDeleteUsers)
+  .put("/delete-status/:id", userController.deleteUserStatus);
+
+router.use("/manage", manageRouter); // URLs remain unchanged
+
+// 🟥 ASSIGN ROLES PERMISSION
+const assignRouter = express.Router();
+assignRouter.use(checkPermission(["assign_roles"]));
+
+assignRouter.put("/change-role/:id", userController.changeRole);
+
+router.use("/assign", assignRouter);
 
 export default router;

@@ -7,7 +7,7 @@ export const messages = {
   SIGNUP_SUCCESS: "Signed up successfully.",
   SIGNIN_SUCCESS: "Signed in successfully.",
   LOGOUT_SUCCESS: "Logged out successfully.",
-
+  INCORRECT_PASSWORD: "old password is incorrect",
   USER_NOT_FOUND: "User not found",
   USER_EXISTS: "This email is already registered",
   USER_ALREADY_EXISTS: "User already exists.",
@@ -22,7 +22,10 @@ export const messages = {
   TOKEN_EXPIRED: "Invalid or expired token.",
   REFRESH_TOKEN: "Refresh token required",
   ACCESS_TOKEN: "New access token generated",
-  IsActive: "Your status is not Active",
+  IsActive: "you can not login because you are not a active user ",
+  PERMISSON_NOT_GRANTED: "Forbidden: insufficient permissions",
+  FILE_NOT_UPLOADED: "file not uploaded",
+  USER_ALREADY_DELETED: "user is already deleted",
   // ========================
   // PASSWORD & OTP
   // ========================
@@ -34,11 +37,11 @@ export const messages = {
   VERIFIED_OTP: "OTP verified successfully",
   OTP_CHECK: "Invalid OTP code",
 
-  NEW_PASSWORD: "Choose a different password",
+  NEW_PASSWORD: "New password cannot be the same as the old password.",
   PASSWORD_RESET: "Your password has been reset. You can now login again.",
   PASSWORD_CHANGED: "Password changed successfully",
-  PASSWORD_UNMATCH: "Passwords do not match",
-
+  PASSWORD_UNMATCH: "your current password is incorrect",
+  INCORRECT_PASSWORD: "old password is incorrect",
   // ========================
   // VALIDATIONS
   // ========================
@@ -53,10 +56,12 @@ export const messages = {
   REQUIRED_FIELDS_MISSING: "Please fill in all required fields",
   INVALID_INPUT: "Invalid input provided",
   INVALID_USER_ID: "Invalid user ID",
+  INVALID_ROLE: "only admin can login",
   ROLE_CHECK: "Role must be either ADMIN or MANAGER",
   STATUS_CHECK: "Invalid status value",
   CONFIRM_EMAIL: "Verify your email",
-
+  ROLE_NOT_DEFINE: "This role is not defined",
+  INVALID_OTP: "Invalid OTP. Please try again.",
 
   // ========================
   // USER ACTIONS
@@ -80,11 +85,73 @@ export const messages = {
   // ========================
   MESSAGE_SENT_SUCCESS: "Your message has been sent",
   MESSAGE_SEND_FAILED: "Failed to send the message",
-
+  REFRESH_TOKEN: "Refresh token required",
+  ACCESS_TOKEN: "New access token generated",
   // ========================
   // SERVER & SYSTEM
   // ========================
   SERVER_ERROR: "Something went wrong. Please try again later",
+  // ========== ROLE MODULE ==========
+  ROLE_CREATED: "Role created successfully.",
+  ROLE_UPDATED: "Role updated successfully.",
+  ROLE_DELETED: "Role deleted successfully.",
+  ROLE_ALREADY_EXISTS: "A role with this name already exists.",
+  ROLE_NOT_FOUND: "Role not found.",
+  ROLE_LIST: "Roles fetched successfully.",
+  ROLE_NAME_REQUIRED: "Role name is required.",
+  ROLE_DESCRIPTION_REQUIRED: "Role description is required.",
+  ROLE_DESCRIPTION_TOO_LONG:
+    "Role description must be less than 200 characters.",
+  ROLE_NAME_TOO_LONG: "Role name must be less than 50 characters.",
+  PERMISSION_TYPE_ERROR: "Permissions must be an array of strings.",
+
+  ROLE_REQUIRED: "Role is required.",
+  // ROLE_NOT_FOUND: "Selected role does not exist.",
+  ROLE_NAME_REQUIRED: "Role name is required.",
+  ROLE_NAME_TOO_LONG: "Role name must not exceed 50 characters.",
+  ROLE_DESCRIPTION_REQUIRED: "Role description is required.",
+  ROLE_DESCRIPTION_TOO_LONG: "Description must not exceed 200 characters.",
+  PERMISSION_TYPE_ERROR: "Each permission must be a string.",
+  // ========================
+  // Organization Details
+  // ========================
+  ORG_CREATED: "Organization created successfully",
+  ORG_UPDATED: "Organization updated successfully",
+  ORG_DELETED: "Organization deleted successfully",
+  ORG_NOT_FOUND: "Organization not found",
+  ORG_FETCHED: "Organization fetched successfully",
+  ORG_LIST: "Organizations fetched successfully",
+
+  TYPE_CHECK: "Address type is required",
+
+  // Role messages...
+  ROLE_CREATED: "Role created successfully",
+  ROLE_UPDATED: "Role updated successfully",
+  ROLE_NOT_FOUND: "Role not found",
+
+  // ✅ Add these:
+  ORG_CREATED: "Organization created successfully",
+  ORG_UPDATED: "Organization updated successfully",
+  ORG_NOT_FOUND: "Organization not found",
+  ORG_DELETED: "Organization deleted successfully",
+
+  // Common/server
+  SERVER_ERROR: "An unexpected error occurred",
+  NO_ID_PROVIDED: "No User ID provided",
+  // organization
+  ORGANIZATION_CREATED: "Organizaton created successfullys",
+  ORGANIZATION_UPDATED: "Organizaton updated successfullys",
+  MEDIA_UPLOAD_FAILED: "Media upload failed",
+  MEDIA_DELETE_FAILED: "Media delete failed",
+  MEDIA_NOT_FOUND: "Media not found",
+  ORG_ALREADY_EXISTS: "Organization Already Exists",
+  DUPLICATE_FIELD: "Duplicate value provided for field",
+  ORG_CODE_EXISTS: "Organization code already exists",
+
+  // permissions
+  PERMISSION_INVALID: "Permissions array must contain non-empty strings only",
+  PERMISSION_ADDED: "Permission added successfully",
+  ROLE_STRING: "Role name is required and must be a string",
 };
 
 export default messages;

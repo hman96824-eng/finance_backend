@@ -4,7 +4,7 @@ import jwt from "jsonwebtoken";
 // generateToken
 export const generateToken = (payload) => {
   return jwt.sign(payload, config.JWT_SECRET, {
-    expiresIn: config.ACCESS_EXPIRES_IN || "20m",
+    expiresIn: config.ACCESS_EXPIRES_IN || "2d",
   });
 };
 // refresh token
