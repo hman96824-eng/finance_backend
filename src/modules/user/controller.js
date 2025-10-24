@@ -10,7 +10,7 @@ export const login = async (req, res, next) => {
     // set header for convenience
     res.setHeader("Authorization", `Bearer ${data.accessToken}`);
 
-    return successResponse(res, messages.LOGIN_MESSAGE, data);
+    return successResponse(res, data, messages.LOGIN_MESSAGE);
   } catch (err) {
     next(err);
   }
