@@ -55,19 +55,43 @@ export const updateEmployee = async (req, res, next) => {
         return errorResponse(res, error);
     }
 };
-// export const uploadEmployeeAvatar = async (req, res, next) => {
-//     try {
 
-//         const result = await employeeService.uploadEmployeeAvatar(req.params.id, req.file);
-//         return successResponse(res, "Employee avatar uploaded successfully", result);
-//     } catch (error) {
-//         return errorResponse(res, error);
-//     }
-// };
+export const deleteEmployee = async (req, res, next) => {
+    try {
+        const result = await employeeService.deleteEmployee(req.params.id);
+        return successResponse(res, "Employee deleted successfully", result);
+    } catch (error) {
+        return errorResponse(res, error);
+    }
+};
+export const softDeleteEmployee = async (req, res, next) => {
+    try {
+        const result = await employeeService.softDeleteEmployee(req.params.id);
+        return successResponse(res, "Employee marked as deleted successfully", result);
+    } catch (error) {
+        return errorResponse(res, error);
+    }
+};
+
+export const getAllDeletedEmployees = async (req, res, next) => {
+    try {
+        const result = await employeeService.getAllDeletedEmployees();
+        return successResponse(res, "Deleted employees fetched successfully", result);
+    } catch (error) {
+        return errorResponse(res, error);
+    }
+};
+
+
+
+
 
 export default {
     addEmployee,
     getAllEmployees,
     getEmployeeById,
     updateEmployee,
+    deleteEmployee,
+    softDeleteEmployee,
+    getAllDeletedEmployees
 };

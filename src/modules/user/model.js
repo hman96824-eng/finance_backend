@@ -16,7 +16,7 @@ const userSchema = new mongoose.Schema(
     role_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Role",
-      require: true,
+      required: true,
     },
     status: {
       type: String,
@@ -71,13 +71,12 @@ const userSchema = new mongoose.Schema(
     salary: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Salary",
-      required: true,
+      default: null,
     },
 
     department: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Department",
-      required: true,
     },
     // 🔹 Employee reference (for employees only)
     employee: {

@@ -35,6 +35,8 @@ export const sendInvitation = async (req, res) => {
 export const completeRegistration = async (req, res) => {
   const { token } = req.query;
   if (!token) throw ApiError.badRequest(messages.AUTH_INVALID_TOKEN);
+  // console.log(req.body);
+
 
   try {
     const result = await inviteService.registerUser(token, req.body);

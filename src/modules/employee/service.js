@@ -30,10 +30,26 @@ async function generateEmployeeCode() {
     return `EMP${formattedNumber}`;
 }
 
+// create the auto generated employee password and send this to the employee email save this password in the email also and store hashed password in the database
+const generateEmployeePassword = () => {
+    const password = Math.random().toString(36).slice(-8);
+    return password;
+};
+
+// send the email to the employee with the password
+// const sendEmployeeEmail = async (email, password) => {
+//     // use nodemailer or any other email service to send email
+//     await sendEmail({
+//         to: email,
+//         subject: `Invitation to join Onu as ${role.name}`,
+//         html,
+//         text: plainText,
+//     });
+// };
+
+
 const employeeService = {
-    // --------------------------------------------------
-    // 🟢 Create Employee (User + Employee + Salary + Dept)
-    // --------------------------------------------------
+
     createEmployee: async (data) => {
         const session = await mongoose.startSession();
         session.startTransaction();
@@ -47,6 +63,7 @@ const employeeService = {
         };
 
         try {
+            const password = generateEmployeePassword();
             const {
                 name,
                 email,
@@ -75,7 +92,7 @@ const employeeService = {
 
             // 0️⃣ Validation: ensure required fields
             if (!email) throw ApiError.validationError("Email is required");
-            // if (!password) throw ApiError.validationError("Password is required");
+            if (!password) throw ApiError.validationError("Password is required");
 
             // Pre-check: user with same email must not exist
             const existingUser = await UserModel.findOne({ email }).session(session);
@@ -111,7 +128,7 @@ const employeeService = {
             created.salary = salaryDoc;
 
             // 3️⃣ Hash password
-            // const hashedPassword = await bcrypt.hash(password, 10);
+            const hashedPassword = await bcrypt.hash(password, 10);
             const employeeRole = await RoleModel.findOne({ name: "EMPLOYEE" });
             if (!employeeRole) throw ApiError.notFound("Employee role not found");
 
@@ -121,7 +138,7 @@ const employeeService = {
                     {
                         name,
                         email,
-                        // password: hashedPassword,
+                        password: hashedPassword,
                         phone: phoneNumber,
                         role_id: employeeRole._id,
                         cnic,
@@ -262,19 +279,16 @@ const employeeService = {
         }
     },
 
-    // --------------------------------------------------
-    // 🟡 Get All Employees
-    // --------------------------------------------------
-    // --------------------------------------------------
-    // 🟡 Get All Employees (Complete Details)
-    // --------------------------------------------------
     getAllEmployees: async () => {
         // 1️⃣ Find the employee role document
         const employeeRole = await RoleModel.findOne({ name: "EMPLOYEE" });
         if (!employeeRole) throw ApiError.notFound("Employee role not found");
 
-        // 2️⃣ Fetch all users having role_id = EMPLOYEE role
-        const employees = await UserModel.find({ role_id: employeeRole._id })
+        // 2️⃣ Fetch all active users having role_id = EMPLOYEE role
+        const employees = await UserModel.find({
+            role_id: employeeRole._id,
+            status: "active"  // only get users with active status
+        })
             .populate({
                 path: "employee",
                 populate: [
@@ -291,18 +305,14 @@ const employeeService = {
 
         // 3️⃣ If no employees found
         if (!employees || employees.length === 0) {
-            throw ApiError.notFound("No employees found");
+            throw ApiError.notFound("No active employees found");
         }
 
         // 4️⃣ Return response
         return employees;
     },
 
-
-    // --------------------------------------------------
-    // 🟣 Get Employee by ID
-    // --------------------------------------------------
-    async getEmployeeById(id) {
+    getEmployeeById: async (id) => {
         // Use direct model query (nested populate supported) to avoid calling populate on Promise
         const user = await UserModel.findById(id)
             .populate({
@@ -311,52 +321,259 @@ const employeeService = {
                     { path: "performanceFeedback.reviewedBy", select: "name email" },
                 ],
             })
+            .populate("salary")
             .populate("department")
-            .populate("role_id");
+            .populate("role_id", "name");
 
         if (!user) throw ApiError.notFound("Employee not found");
         return user;
     },
 
-    // --------------------------------------------------
-    // 🔵 Update Employee
-    // --------------------------------------------------
-    async updateEmployee(id, updateData) {
-        const user = await userRepository.findById(id);
-        if (!user) throw ApiError.notFound("User not found");
-
+    updateEmployee: async (id, data) => {
         const session = await mongoose.startSession();
         session.startTransaction();
 
         try {
-            await userRepository.updateById(id, updateData, { session, new: true });
+            const user = await UserModel.findById(id)
+                .populate("employee")
+                .populate("salary")
+                .session(session);
 
-            if (updateData.employee && user.employee) {
-                await employeeRepository.updateById(user.employee, updateData.employee, { session, new: true });
+            if (!user) throw ApiError.notFound("User not found");
+
+            // Extract fields from request data
+            const {
+                name,
+                email,
+                phoneNumber,
+                cnic,
+                address,
+                department,
+                designation,
+                employeeType,
+                startEmployeeDate,
+                endEmployeeDate,
+                contractType,
+                contractStartDate,
+                contractEndDate,
+                salaryIncome,
+                salaryStartDate,
+                salaryEndDate,
+                emergencyContactName,
+                relation,
+                emergencyContactPhone,
+                rating,
+                remarks,
+                avatar,
+            } = data;
+
+            // 1️⃣ Update or create department if needed
+            let dept = await DepartmentModel.findOne({ departmentName: department }).session(session);
+            if (!dept) {
+                const [newDept] = await DepartmentModel.create(
+                    [
+                        {
+                            departmentName: department,
+                            designation: designation,
+                        },
+                    ],
+                    { session }
+                );
+                dept = newDept;
             }
 
-            if (updateData.salary && user.salary) {
-                await salaryRepository.updateById(user.salary, updateData.salary, { session, new: true });
+            // 2️⃣ Update salary
+            if (user.salary) {
+                await SalaryModel.findByIdAndUpdate(
+                    user.salary,
+                    {
+                        salaryIncome,
+                        salaryStartDate,
+                        salaryEndDate,
+                    },
+                    { new: true, session }
+                );
+            }
+
+            // 3️⃣ Update user info
+            const userUpdate = {
+                name,
+                email,
+                phone: phoneNumber,
+                cnic,
+                address,
+                department: dept._id,
+            };
+
+            // ✅ Avatar update (if new uploaded)
+            if (avatar) {
+                const media = await mediaRepository.findById(avatar);
+                if (media) {
+                    userUpdate.avatar = {
+                        url: media.url,
+                        public_id: media.public_id,
+                        default_letter: name.charAt(0).toUpperCase(),
+                    };
+                }
+            }
+
+            await UserModel.findByIdAndUpdate(id, userUpdate, { new: true, session });
+
+            // 4️⃣ Update employee details
+            if (user.employee) {
+                const empUpdate = {
+                    employeeType,
+                    startEmployeeDate,
+                    endEmployeeDate,
+                    contractDetails: {
+                        contractType,
+                        contractStartDate,
+                        contractEndDate,
+                        noticePeriodDays: 30,
+                    },
+                    // ✅ Emergency contact
+                    relations: emergencyContactName
+                        ? [
+                            {
+                                name: emergencyContactName,
+                                relation,
+                                phone: emergencyContactPhone,
+                            },
+                        ]
+                        : user.employee.relations || [],
+                };
+
+                // ✅ Performance feedback (append new review)
+                if (rating || remarks) {
+                    empUpdate.$push = {
+                        performanceFeedback: {
+                            reviewDate: new Date(),
+                            rating: rating || undefined,
+                            comments: remarks || undefined,
+                            reviewedBy: id,
+                        },
+                    };
+                }
+
+                await EmployeeModel.findByIdAndUpdate(user.employee._id, empUpdate, {
+                    new: true,
+                    session,
+                });
             }
 
             await session.commitTransaction();
+            session.endSession();
 
-            const updatedUser = await userRepository.findById(id)
+            // 5️⃣ Return updated and populated user
+            const updatedUser = await UserModel.findById(id)
                 .populate({
                     path: "employee",
                     populate: [{ path: "performanceFeedback.reviewedBy", select: "name email" }],
                 })
+                .populate("salary")
                 .populate("department")
-                .populate("role_id");
+                .populate("role_id", "name");
 
             return updatedUser;
         } catch (error) {
             if (session.inTransaction()) await session.abortTransaction();
-            throw new ApiError(500, error.message || "Error updating employee");
-        } finally {
             session.endSession();
+            console.error("❌ Error in updateEmployee:", error);
+            throw ApiError.internal(error.message || "Error updating employee");
         }
     },
+
+    deleteEmployee: async (id) => {
+        const session = await mongoose.startSession();
+        session.startTransaction();
+
+        try {
+            // 1️⃣ Find the user and populate related documents
+            const user = await UserModel.findById(id)
+                .populate("employee")
+                .populate("department")
+                .populate("salary")
+                .session(session);
+
+            if (!user) throw ApiError.notFound("User not found");
+
+            const employeeId = user.employee?._id;
+            const departmentId = user.department?._id;
+            const salaryId = user.salary?._id;
+
+            // 2️⃣ Delete Employee document first
+            if (employeeId) {
+                await EmployeeModel.findByIdAndDelete(employeeId, { session });
+            }
+
+            // 3️⃣ Delete Salary document (if exists)
+            if (salaryId) {
+                await SalaryModel.findByIdAndDelete(salaryId, { session });
+            }
+
+            // 4️⃣ Delete Department (only if no other employees are using it)
+            if (departmentId) {
+                const otherUsers = await UserModel.find({ department: departmentId }).session(session);
+                if (otherUsers.length <= 1) {
+                    await DepartmentModel.findByIdAndDelete(departmentId, { session });
+                }
+            }
+
+            // 5️⃣ Finally, delete User record
+            await UserModel.findByIdAndDelete(id, { session });
+
+            await session.commitTransaction();
+            session.endSession();
+
+            return { message: "Employee and related data deleted successfully" };
+        } catch (error) {
+            if (session.inTransaction()) await session.abortTransaction();
+            session.endSession();
+            console.error("❌ Error deleting employee:", error);
+            throw ApiError.internal(error.message || "Error deleting employee");
+        }
+    },
+
+    softDeleteEmployee: async (id) => {
+        try {
+            // 1️⃣ Find user and check if exists
+            const user = await UserModel.findById(id);
+            if (!user) throw ApiError.notFound("User not found");
+
+            // 2️⃣ Soft delete logic — only update user status
+            const userUpdate = {
+                status: "deleted", // Change status to inactive instead of deleted
+                updatedAt: new Date()
+            };
+
+            await UserModel.findByIdAndUpdate(id, userUpdate);
+
+            return { message: "Employee status updated to deleted successfully" };
+        } catch (error) {
+            console.error("❌ Error updating employee status:", error);
+            throw ApiError.internal(error.message || "Error updating employee status");
+        }
+    },
+
+    getAllDeletedEmployees: async () => {
+        try {
+            // 1️⃣ Find the employee role document
+            const employeeRole = await RoleModel.findOne({ name: "EMPLOYEE" });
+            if (!employeeRole) throw ApiError.notFound("Employee role not found");
+
+            // 2️⃣ Find all users with the employee role
+            const employees = await UserModel.find({
+                role: employeeRole._id,
+                status: "deleted"
+            }).populate("employee");
+
+            return employees;
+        } catch (error) {
+            console.error("❌ Error fetching deleted employees:", error);
+            throw ApiError.internal(error.message || "Error fetching deleted employees");
+        }
+    }
+
 };
 
 export default employeeService;

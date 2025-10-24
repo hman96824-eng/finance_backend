@@ -8,8 +8,8 @@ import { RoleModel } from "../role/model.js";
 import { UserModel } from "../user/model.js";
 import sendEmail from "../../utils/email.js";
 import messages from "../../constants/messages.js";
+import mongoose from "mongoose";
 
-const userRepo = new Repository(UserModel);
 const inviteRepo = new Repository(InviteModel);
 const roleRepo = new Repository(RoleModel);
 
@@ -102,26 +102,54 @@ export const registerUser = async (inviteToken, userData) => {
 
   const role = await roleRepo.findById(invite.role_id);
   if (!role) throw ApiError.unauthorized(messages.ROLE_NOT_FOUND);
+  console.log("Email:", invite.email);
+  console.log("Name:", invite.name);
+  console.log("Role ID:", role._id);
+  console.log("Role ID type:", typeof role._id, role._id instanceof mongoose.Types.ObjectId);
 
-  const existingUser = await userRepo.findOne({ email: invite.email });
+  const existingUser = await UserModel.findOne({ email: invite.email });
+  console.log("Existing user check:", existingUser);
+
   if (existingUser && invite.accepted)
     throw ApiError.unauthorized(messages.USER_ALREADY_EXISTS);
 
-  const hashedPassword = await hashPassword(password);
+  if (!invite.name || !invite.email) {
+    throw new Error("Invite must contain both name and email");
+  }
 
-  const newUser = await userRepo.create({
+  const hashedPassword = await hashPassword(password);
+  if (!hashedPassword) {
+    throw new Error("Failed to hash password");
+  }
+
+  // Create a new instance of the UserModel
+  // Create a new instance of the UserModel directly
+  const newUser = new UserModel({
     name: invite.name,
     email: invite.email,
     phone,
     password: hashedPassword,
     role_id: role._id,
-    status: "active",
+    status: "active"
   });
 
+  console.log("About to save user with data:", {
+    name: newUser.name,
+    email: newUser.email,
+    role_id: newUser.role_id,
+    status: newUser.status
+  });
+
+  // Save the document
+  const savedUser = await newUser.save();
+  console.log("User saved successfully with ID:", savedUser._id);
+
+  // Update invite status
   invite.accepted = true;
   invite.token = null;
   invite.expiresAt = null;
   await invite.save();
+
 
   return {
     message: messages.SIGNUP_SUCCESS,

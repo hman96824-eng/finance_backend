@@ -10,10 +10,10 @@ export default class Repository {
   // ========================
   async create(data, options = {}) {
     try {
-        return await this.model.create(data, options);
+      return await this.model.create(data, options);
     } catch (error) {
-        console.error('Repository create error:', error);
-        throw error;
+      console.error('Repository create error:', error);
+      throw error;
     }
   }
 
