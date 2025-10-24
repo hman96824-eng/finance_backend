@@ -1,0 +1,83 @@
+import EmployeeService from "./service.js";
+import MediaService from "../media/service.js";
+import ApiError from "../../utils/ApiError.js";
+import messages from "../../constants/messages.js";
+
+const EmpController = {
+    // 🟢 Create Employee
+    createEmployee: async (req, res, next) => {
+        try {
+            const userId = req.user?._id;
+            let media = null;
+            if (req.file) {
+                media = await MediaService.uploadMedia(req.file.path, "employee-avatars", userId);
+            }
+            const employee = await EmployeeService.createEmployee(req.body, media?._id || null);
+            res.status(200).json(ApiError.ok(messages.EMPLOYEE_CREATED || "Employee created successfully", employee));
+        } catch (error) {
+            next(error);
+        }
+    },
+
+    // 🟢 Update Employee
+    updateEmployee: async (req, res, next) => {
+        try {
+            const userId = req.user?._id;
+            let media = null;
+            if (req.file) {
+                media = await MediaService.uploadMedia(req.file.path, "employee-avatars", userId);
+            }
+            const updated = await EmployeeService.updateEmployee(req.params.id, req.body, media?._id || null);
+            res.status(200).json(ApiError.ok("Employee updated successfully", updated));
+        } catch (error) {
+            next(error);
+        }
+    },
+
+    getAllEmployees: async (req, res, next) => {
+        try {
+            const employees = await EmployeeService.getAllEmployees();
+            res.status(200).json(ApiError.ok("Employees fetched successfully", employees));
+        } catch (error) {
+            next(error);
+        }
+    },
+
+    getDeletedEmployees: async (req, res, next) => {
+        try {
+            const employees = await EmployeeService.getAllDeletedEmployees();
+            res.status(200).json(ApiError.ok("Deleted employees fetched successfully", employees));
+        } catch (error) {
+            next(error);
+        }
+    },
+
+    getEmployeeById: async (req, res, next) => {
+        try {
+            const employee = await EmployeeService.getEmployeeById(req.params.id);
+            res.status(200).json(ApiError.ok("Employee fetched successfully", employee));
+        } catch (error) {
+            next(error);
+        }
+    },
+
+    softDeleteEmployee: async (req, res, next) => {
+        try {
+            const deleted = await EmployeeService.softDeleteEmployee(req.params.id);
+            res.status(200).json(ApiError.ok("Employee soft deleted", deleted));
+        } catch (error) {
+            next(error);
+        }
+    },
+
+    deleteEmployee: async (req, res, next) => {
+        try {
+            const deleted = await EmployeeService.deleteEmployee(req.params.id);
+            res.status(200).json(ApiError.ok("Employee deleted permanently", deleted));
+        } catch (error) {
+            next(error);
+        }
+    },
+};
+
+export default EmpController;
