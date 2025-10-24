@@ -15,7 +15,7 @@ viewRouter
 router.use("/view", checkPermission(["view_users"]), viewRouter);
 
 const manageRouter = express.Router();
-
+console.log("Setting up role management routes");
 manageRouter
   .post("/add", validate(validation.addRoleValidation), roleController.addRole) // add role
   .put("/update/:id", roleController.updateRole) // update role permissions
