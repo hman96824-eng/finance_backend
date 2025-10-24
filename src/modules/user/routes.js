@@ -36,12 +36,7 @@ router
     "/signup",
     validate(validation.registerValidation),
     userController.signup
-  ) // register user
-  .post(
-    "/passwordChange",
-    validate(validation.passwordChange),
-    userController.passowrdChange
-  ); // change password
+  ); // register user
 
 // jwt authentication for routes below
 router.use(middleware.authenticate);
@@ -53,6 +48,11 @@ router
   .delete("/remove-avatar", service.removeProfileImage) // remove the dp photo
   .put("/profile", userController.updateProfile) // update own profile
   .get("/profile", userController.getProfile) // get own profile
+  .post(
+    "/passwordChange",
+    validate(validation.passwordChange),
+    userController.passowrdChange
+  ) // change password
   .get("/dashboard", userController.dashboard);
 
 router

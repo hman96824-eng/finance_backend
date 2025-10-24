@@ -13,6 +13,7 @@ export const messages = {
   USER_ALREADY_EXISTS: "User already exists.",
   INVALID_CREDENTIALS: "Incorrect email or password",
   AUTH_TOKEN_REQUIRED: "Authorization token required",
+  PASSWORD_RESET_SUCCESS: "Password changed successfully",
   AUTH_INVALID_TOKEN: "Invalid or expired token",
   AUTH_INVALID_EMAIL: "You can change only your password",
   LOGIN_REQUIRED: "Unauthorized: Please login first.",
