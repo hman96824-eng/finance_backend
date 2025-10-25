@@ -43,7 +43,6 @@ router.use(middleware.authenticate);
 
 // routes need jwt authentication
 router
-  .put("/deleteMany", userController.DeleteMany) // delete multiple users
   .put("/upload-avatar", upload.single("avatar"), service.uploadProfileImage) // upload dp photo
   .delete("/remove-avatar", service.removeProfileImage) // remove the dp photo
   .put("/profile", userController.updateProfile) // update own profile
@@ -63,6 +62,7 @@ router
   .get("/export/excel", exportUsersExcel); // export users to excel
 
 router
+  .put("/deleteMany", userController.DeleteMany) // delete multiple users
   .use(checkPermission(["manage_users"]))
   .put("/toggle-status/:id", userController.toggleUserStatus) // activate/deactivate user
   .delete("/remove/:id", userController.ArchiveDeleteUsers) // hard delete user
