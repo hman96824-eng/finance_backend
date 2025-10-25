@@ -27,7 +27,7 @@ const EmployeeService = {
         status: data?.status || "active",
         phone: data?.phoneNumber,
         cnic: data?.cnic,
-        addresses: data?.addresses,
+        addresses: data?.address,
         gender: data?.gender || "male",
         avatar: avatarId || null,
         salary: {
@@ -81,7 +81,7 @@ const EmployeeService = {
             email: data?.email,
             phone: data?.phoneNumber,
             cnic: data?.cnic,
-            addresses: data?.addresses,
+            addresses: data?.address,
             gender: data?.gender,
             avatar: avatarId || undefined,
             salary: {

@@ -22,7 +22,11 @@ router.get(
   EmpController.getDeletedEmployees
 );
 router.get("/:id", middleware.authenticate, EmpController.getEmployeeById);
-router.put("/:id", middleware.authenticate, EmpController.updateEmployee);
+router.put(
+  "/update/:id",
+  middleware.authenticate,
+  EmpController.updateEmployee
+);
 router.put(
   "/delete/:id",
   middleware.authenticate,
