@@ -127,7 +127,7 @@ const EmployeeService = {
   getAllEmployees: async () => {
     try {
       return await EmployeeModel.find({
-        status: { $in: ["active", "inactive"] },
+        status: { $in: ["Active", "Inactive"] },
       }).populate("avatar");
     } catch (error) {
       throw ApiError.badRequest(error.message);
