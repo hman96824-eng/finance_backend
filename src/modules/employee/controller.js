@@ -113,7 +113,7 @@ const EmpController = {
   },
   deleteAllEmployees: async (req, res, next) => {
     try {
-      const { userIds } = req.body;
+      const userIds = req.body;
       const { type } = req.query;
 
       console.log(userIds, "userIds");

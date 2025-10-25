@@ -90,8 +90,8 @@ const EmployeeService = {
               salaryIncome: data?.salaryIncome,
             },
             department: {
-              departmentName: data?.department,
-              designation: data?.designation,
+              departmentName: data?.department.departmentName,
+              designation: data?.department.designation,
             },
             employeeType: data?.employeeType,
             startEmployeeDate: data?.startEmployeeDate,
@@ -197,7 +197,7 @@ const EmployeeService = {
 
   deleteManyArchivedUsers: async (userIds) => {
     try {
-      if (!Array.isArray(userIds) || userIds.length === 0) {
+      if (userIds.length === 0) {
         throw new Error("userIds must be a non-empty array");
       }
 
