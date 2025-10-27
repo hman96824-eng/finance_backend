@@ -107,6 +107,7 @@ const EmployeeService = {
         email: data?.email,
         phone: data?.phone,
         cnic: data?.cnic,
+        status: data?.status,
         addresses: data?.address,
         gender: data?.gender,
         avatar: avatarId || existingEmployee.avatar,
