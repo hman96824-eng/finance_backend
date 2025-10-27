@@ -30,11 +30,13 @@ const EmployeeService = {
         addresses: data?.address,
         gender: data?.gender || "male",
         avatar: avatarId || null,
-        salary: {
-          salaryStartDate: data?.salaryStartDate,
-          salaryEndDate: data?.salaryEndDate,
-          salaryIncome: data?.salaryIncome,
-        },
+        salary: [
+          {
+            salaryStartDate: data?.salaryStartDate,
+            salaryEndDate: data?.salaryEndDate,
+            salaryIncome: data?.salaryIncome,
+          },
+        ],
         department: {
           departmentName: data?.department,
           designation: data?.designation,
@@ -73,50 +75,96 @@ const EmployeeService = {
       if (data.password) data.password = await bcrypt.hash(data.password, 10);
       if (avatarId) data.avatar = avatarId;
 
-      const updated = await EmployeeModel.findByIdAndUpdate(
-        id,
-        {
-          $set: {
-            name: data?.name,
-            email: data?.email,
-            phone: data?.phoneNumber,
-            cnic: data?.cnic,
-            addresses: data?.address,
-            gender: data?.gender,
-            avatar: avatarId || undefined,
-            salary: {
-              salaryStartDate: data?.salaryStartDate,
-              salaryEndDate: data?.salaryEndDate,
-              salaryIncome: data?.salaryIncome,
-            },
-            department: {
-              departmentName: data?.department.departmentName,
-              designation: data?.department.designation,
-            },
-            employeeType: data?.employeeType,
-            startEmployeeDate: data?.startEmployeeDate,
-            endEmployeeDate: data?.endEmployeeDate,
-            contractDetails: {
-              contractType: data?.contractType,
-              contractStartDate: data?.contractStartDate,
-              contractEndDate: data?.contractEndDate,
-              noticePeriodDays: data?.noticePeriodDays || 30,
-            },
-            relations: {
-              name: data?.emergencyContactName,
-              relation: data?.relation,
-              phone: data?.emergencyContactPhone,
-            },
-            performanceFeedback: {
-              rating: data?.rating,
-              comments: data?.remarks,
-            },
-          },
-        },
-        { new: true }
-      ).populate("avatar");
+      console.log(data, "data from forntend");
 
-      if (!updated) throw ApiError.notFound("Employee not found");
+      // 1️⃣ Get current employee to calculate increment
+      const existingEmployee = await EmployeeModel.findById(id);
+      if (!existingEmployee) throw ApiError.notFound("Employee not found");
+
+      console.log(existingEmployee, "existingEmployee from db");
+
+      // 2️⃣ Get current (latest) salary income
+      const lastSalaryEntry = existingEmployee.salary?.at(-1); // last item in array
+      console.log(lastSalaryEntry, " lastSalaryEntry");
+
+      const currentSalary = lastSalaryEntry?.salaryIncome || 0;
+      console.log(currentSalary, " currentSalary");
+      const newSalary = Number(data?.salary[0]?.salaryIncome) || 0;
+      const type = typeof newSalary;
+      console.log(type, " type of new salary");
+      console.log(newSalary, " newSalary");
+
+      const incrementAmount = newSalary - currentSalary;
+      console.log(incrementAmount, " incrementAmount");
+
+      // 3️⃣ Prepare new salary record (only if new salary provided)
+      const newSalaryRecord =
+        data?.salary[0]?.salaryIncome &&
+        data?.salary[0]?.salaryStartDate &&
+        data?.salary[0]?.salaryEndDate
+          ? {
+              salaryStartDate: data.salary[0].salaryStartDate,
+              salaryEndDate: data.salary[0].salaryEndDate,
+              salaryIncome: newSalary,
+              incrementAmount: incrementAmount,
+            }
+          : null;
+
+      // 4️⃣ Update basic fields
+      const updatePayload = {
+        name: data?.name,
+        email: data?.email,
+        phone: data?.phoneNumber,
+        cnic: data?.cnic,
+        addresses: data?.address,
+        gender: data?.gender,
+        avatar: avatarId || undefined,
+        department: {
+          departmentName: data?.department?.departmentName,
+          designation: data?.department?.designation,
+        },
+        employeeType: data?.employeeType,
+        startEmployeeDate: data?.startEmployeeDate,
+        endEmployeeDate: data?.endEmployeeDate,
+        contractDetails: {
+          contractType: data?.contractDetails?.contractType,
+          contractStartDate: data?.contractDetails?.contractStartDate,
+          contractEndDate: data?.contractDetails?.contractEndDate,
+          noticePeriodDays: data?.contractDetails?.noticePeriodDays || 30,
+        },
+        relations: {
+          name: data?.relations?.name,
+          relation: data?.relations?.relation,
+          phone: data?.relations?.phone,
+        },
+        performanceFeedback: {
+          rating: data?.rating,
+          comments: data?.remarks,
+        },
+      };
+
+      // 5️⃣ Execute update
+      let updated;
+      if (newSalaryRecord) {
+        // If salary info provided, push it into history
+        updated = await EmployeeModel.findByIdAndUpdate(
+          id,
+          {
+            $set: updatePayload,
+            $push: { salary: newSalaryRecord },
+          },
+          { new: true }
+        ).populate("avatar");
+      } else {
+        // No salary change — just update other fields
+        updated = await EmployeeModel.findByIdAndUpdate(
+          id,
+          { $set: updatePayload },
+          { new: true }
+        ).populate("avatar");
+      }
+
+      console.log(updated, "updated employee");
       return updated;
     } catch (error) {
       throw ApiError.badRequest(error.message);

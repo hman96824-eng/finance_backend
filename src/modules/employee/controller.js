@@ -51,6 +51,8 @@ const EmpController = {
         req.body,
         media?._id || null
       );
+
+      console.log(updated, "updated");
       res
         .status(200)
         .json(ApiError.ok("Employee updated successfully", updated));
