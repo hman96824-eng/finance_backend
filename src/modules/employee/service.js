@@ -98,13 +98,15 @@ const EmployeeService = {
       console.log(incrementAmount, " incrementAmount");
 
       // 3️⃣ Prepare new salary record (only if new salary provided)
+      const lastIndex = data?.salary?.length - 1;
+
       const newSalaryRecord =
-        data?.salary[0]?.salaryIncome &&
-        data?.salary[0]?.salaryStartDate &&
-        data?.salary[0]?.salaryEndDate
+        data?.salary?.[lastIndex]?.salaryIncome &&
+        data?.salary?.[lastIndex]?.salaryStartDate &&
+        data?.salary?.[lastIndex]?.salaryEndDate
           ? {
-              salaryStartDate: data.salary[0].salaryStartDate,
-              salaryEndDate: data.salary[0].salaryEndDate,
+              salaryStartDate: data.salary[lastIndex].salaryStartDate,
+              salaryEndDate: data.salary[lastIndex].salaryEndDate,
               salaryIncome: newSalary,
               incrementAmount: incrementAmount,
             }
