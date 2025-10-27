@@ -72,34 +72,23 @@ const EmployeeService = {
   // 🟢 UPDATE EMPLOYEE
   updateEmployee: async (id, data, avatarId = null) => {
     try {
+      // 1️⃣ Hash password if provided
       if (data.password) data.password = await bcrypt.hash(data.password, 10);
       if (avatarId) data.avatar = avatarId;
 
-      console.log(data, "data from forntend");
-
-      // 1️⃣ Get current employee to calculate increment
+      // 2️⃣ Fetch existing employee
       const existingEmployee = await EmployeeModel.findById(id);
       if (!existingEmployee) throw ApiError.notFound("Employee not found");
 
-      console.log(existingEmployee, "existingEmployee from db");
-
-      // 2️⃣ Get current (latest) salary income
-      const lastSalaryEntry = existingEmployee.salary?.at(-1); // last item in array
-      console.log(lastSalaryEntry, " lastSalaryEntry");
-
+      // 3️⃣ Get last salary entry
+      const lastSalaryEntry = existingEmployee.salary?.at(-1);
       const currentSalary = lastSalaryEntry?.salaryIncome || 0;
-      console.log(currentSalary, " currentSalary");
-      const newSalary = Number(data?.salary[0]?.salaryIncome) || 0;
-      const type = typeof newSalary;
-      console.log(type, " type of new salary");
-      console.log(newSalary, " newSalary");
 
+      const newSalary = Number(data?.salary?.[0]?.salaryIncome) || 0;
       const incrementAmount = newSalary - currentSalary;
-      console.log(incrementAmount, " incrementAmount");
 
-      // 3️⃣ Prepare new salary record (only if new salary provided)
+      // 4️⃣ Prepare new salary record (only if valid fields exist)
       const lastIndex = data?.salary?.length - 1;
-
       const newSalaryRecord =
         data?.salary?.[lastIndex]?.salaryIncome &&
         data?.salary?.[lastIndex]?.salaryStartDate &&
@@ -108,19 +97,20 @@ const EmployeeService = {
               salaryStartDate: data.salary[lastIndex].salaryStartDate,
               salaryEndDate: data.salary[lastIndex].salaryEndDate,
               salaryIncome: newSalary,
-              incrementAmount: incrementAmount,
+              incrementAmount,
             }
           : null;
 
-      // 4️⃣ Update basic fields
+      // 5️⃣ Prepare update payload
       const updatePayload = {
         name: data?.name,
         email: data?.email,
-        phone: data?.phoneNumber,
+        phone: data?.phone,
         cnic: data?.cnic,
         addresses: data?.address,
         gender: data?.gender,
-        avatar: avatarId || undefined,
+        avatar: avatarId || existingEmployee.avatar,
+        status: data?.status || existingEmployee.status, // ✅ fix for undefined status
         department: {
           departmentName: data?.department?.departmentName,
           designation: data?.department?.designation,
@@ -140,15 +130,25 @@ const EmployeeService = {
           phone: data?.relations?.phone,
         },
         performanceFeedback: {
-          rating: data?.rating,
-          comments: data?.remarks,
+          rating: data?.performanceFeedback?.rating,
+          comments: data?.performanceFeedback?.comments,
+          reviewDate: data?.performanceFeedback?.reviewDate,
         },
       };
 
-      // 5️⃣ Execute update
+      // 6️⃣ Check if salary changed before pushing
+      const lastSalary = existingEmployee.salary?.at(-1);
+      const isNewSalary =
+        newSalaryRecord &&
+        (!lastSalary ||
+          lastSalary.salaryIncome !== newSalaryRecord.salaryIncome ||
+          new Date(lastSalary.salaryEndDate).getTime() !==
+            new Date(newSalaryRecord.salaryEndDate).getTime());
+
+      // 7️⃣ Update employee
       let updated;
-      if (newSalaryRecord) {
-        // If salary info provided, push it into history
+      if (isNewSalary) {
+        // Only push if salary changed
         updated = await EmployeeModel.findByIdAndUpdate(
           id,
           {
@@ -158,7 +158,7 @@ const EmployeeService = {
           { new: true }
         ).populate("avatar");
       } else {
-        // No salary change — just update other fields
+        // No salary change — only update other fields
         updated = await EmployeeModel.findByIdAndUpdate(
           id,
           { $set: updatePayload },
@@ -166,7 +166,6 @@ const EmployeeService = {
         ).populate("avatar");
       }
 
-      console.log(updated, "updated employee");
       return updated;
     } catch (error) {
       throw ApiError.badRequest(error.message);
