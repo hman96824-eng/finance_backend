@@ -107,34 +107,23 @@ const EmployeeService = {
     // 🟢 UPDATE EMPLOYEE
     updateEmployee: async (id, data, avatarId = null) => {
         try {
-
+            // 1️⃣ Hash password if provided
+            if (data.password) data.password = await bcrypt.hash(data.password, 10);
             if (avatarId) data.avatar = avatarId;
 
-            // console.log(data, "data from forntend");
-
-            // 1️⃣ Get current employee to calculate increment
+            // 2️⃣ Fetch existing employee
             const existingEmployee = await EmployeeModel.findById(id);
             if (!existingEmployee) throw ApiError.notFound("Employee not found");
 
-            // console.log(existingEmployee, "existingEmployee from db");
-
-            // 2️⃣ Get current (latest) salary income
-            const lastSalaryEntry = existingEmployee.salary?.at(-1); // last item in array
-            // console.log(lastSalaryEntry, " lastSalaryEntry");
-
+            // 3️⃣ Get last salary entry
+            const lastSalaryEntry = existingEmployee.salary?.at(-1);
             const currentSalary = lastSalaryEntry?.salaryIncome || 0;
-            // console.log(currentSalary, " currentSalary");
-            const newSalary = Number(data?.salary[0]?.salaryIncome) || 0;
-            const type = typeof newSalary;
-            // console.log(type, " type of new salary");
-            // console.log(newSalary, " newSalary");
 
+            const newSalary = Number(data?.salary?.[0]?.salaryIncome) || 0;
             const incrementAmount = newSalary - currentSalary;
-            // console.log(incrementAmount, " incrementAmount");
 
-            // 3️⃣ Prepare new salary record (only if new salary provided)
+            // 4️⃣ Prepare new salary record (only if valid fields exist)
             const lastIndex = data?.salary?.length - 1;
-
             const newSalaryRecord =
                 data?.salary?.[lastIndex]?.salaryIncome &&
                     data?.salary?.[lastIndex]?.salaryStartDate &&
@@ -143,69 +132,15 @@ const EmployeeService = {
                         salaryStartDate: data.salary[lastIndex].salaryStartDate,
                         salaryEndDate: data.salary[lastIndex].salaryEndDate,
                         salaryIncome: newSalary,
-                        incrementAmount: incrementAmount,
+                        incrementAmount,
                     }
-                    : null;
-
-            // 4️⃣ Update basic fields
-            const updatePayload = {
-                name: data?.name,
-                email: data?.email,
-                phone: data?.phoneNumber,
-                cnic: data?.cnic,
-                addresses: data?.address,
-                gender: data?.gender,
-                avatar: avatarId || undefined,
-                department: {
-                    departmentName: data?.department?.departmentName,
-                    designation: data?.department?.designation,
-                },
-                employeeType: data?.employeeType,
-                startEmployeeDate: data?.startEmployeeDate,
-                endEmployeeDate: data?.endEmployeeDate,
-                contractDetails: {
-                    contractType: data?.contractDetails?.contractType,
-                    contractStartDate: data?.contractDetails?.contractStartDate,
-                    contractEndDate: data?.contractDetails?.contractEndDate,
-                    noticePeriodDays: data?.contractDetails?.noticePeriodDays || 30,
-                },
-                relations: {
-                    name: data?.relations?.name,
-                    relation: data?.relations?.relation,
-                    phone: data?.relations?.phone,
-                },
-                performanceFeedback: {
-                    rating: data?.rating,
-                    comments: data?.remarks,
-                },
-            };
-
-            // 5️⃣ Execute update
-            let updated;
-            if (newSalaryRecord) {
-                // If salary info provided, push it into history
-                updated = await EmployeeModel.findByIdAndUpdate(
-                    id,
-                    {
-                        $set: updatePayload,
-                        $push: { salary: newSalaryRecord },
-                    },
-                    { new: true }
-                ).populate("avatar");
-            } else {
-                // No salary change — just update other fields
-                updated = await EmployeeModel.findByIdAndUpdate(
-                    id,
-                    { $set: updatePayload },
-                    { new: true }
-                ).populate("avatar");
-            }
             return updated;
         } catch (error) {
             throw ApiError.badRequest(error.message);
         }
     },
 
+<<<<<<< HEAD
     getAllEmployees: async (req, res, next) => {
         try {
             const employees = await EmployeeModel.find({
@@ -224,6 +159,79 @@ const EmployeeService = {
             throw ApiError.badRequest(error.message);
         }
     },
+=======
+      // 5️⃣ Prepare update payload
+      const updatePayload = {
+        name: data?.name,
+        email: data?.email,
+        phone: data?.phone,
+        cnic: data?.cnic,
+        status: data?.status,
+        addresses: data?.address,
+        gender: data?.gender,
+        avatar: avatarId || existingEmployee.avatar,
+        status: data?.status || existingEmployee.status, // ✅ fix for undefined status
+        department: {
+          departmentName: data?.department?.departmentName,
+          designation: data?.department?.designation,
+        },
+        employeeType: data?.employeeType,
+        startEmployeeDate: data?.startEmployeeDate,
+        endEmployeeDate: data?.endEmployeeDate,
+        contractDetails: {
+          contractType: data?.contractDetails?.contractType,
+          contractStartDate: data?.contractDetails?.contractStartDate,
+          contractEndDate: data?.contractDetails?.contractEndDate,
+          noticePeriodDays: data?.contractDetails?.noticePeriodDays || 30,
+        },
+        relations: {
+          name: data?.relations?.name,
+          relation: data?.relations?.relation,
+          phone: data?.relations?.phone,
+        },
+        performanceFeedback: {
+          rating: data?.performanceFeedback?.rating,
+          comments: data?.performanceFeedback?.comments,
+          reviewDate: data?.performanceFeedback?.reviewDate,
+        },
+      };
+
+      // 6️⃣ Check if salary changed before pushing
+      const lastSalary = existingEmployee.salary?.at(-1);
+      const isNewSalary =
+        newSalaryRecord &&
+        (!lastSalary ||
+          lastSalary.salaryIncome !== newSalaryRecord.salaryIncome ||
+          new Date(lastSalary.salaryEndDate).getTime() !==
+            new Date(newSalaryRecord.salaryEndDate).getTime());
+
+      // 7️⃣ Update employee
+      let updated;
+      if (isNewSalary) {
+        // Only push if salary changed
+        updated = await EmployeeModel.findByIdAndUpdate(
+          id,
+          {
+            $set: updatePayload,
+            $push: { salary: newSalaryRecord },
+          },
+          { new: true }
+        ).populate("avatar");
+      } else {
+        // No salary change — only update other fields
+        updated = await EmployeeModel.findByIdAndUpdate(
+          id,
+          { $set: updatePayload },
+          { new: true }
+        ).populate("avatar");
+      }
+
+      return updated;
+    } catch (error) {
+      throw ApiError.badRequest(error.message);
+    }
+  },
+>>>>>>> b344b0940634d4e4879a324da0b5ac22edda3ae5
 
     // 🟢 GET DELETED EMPLOYEES
     getAllDeletedEmployees: async () => {

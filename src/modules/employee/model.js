@@ -52,7 +52,7 @@ const EmployeeSchema = new mongoose.Schema(
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
     role: { type: String, default: "EMPLOYEE" },
-    status: { type: String, default: "active" },
+    status: { type: String, default: "Active" },
     phone: { type: String, required: true },
     cnic: { type: String, required: true },
     addresses: { type: String },
