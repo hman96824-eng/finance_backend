@@ -7,6 +7,7 @@ import ApiError from "./utils/ApiError.js";
 import finalresponse from "./middleware/response.js";
 import { createServer } from "http"; // ⬅️ import http
 import { Server } from "socket.io"; // ⬅️ import socket.io
+import { initContractNotificationSocket } from "./utils/contractNotification.js"
 
 const port = config.PORT || 5000;
 
@@ -33,14 +34,8 @@ const io = new Server(httpServer, {
   },
 });
 
-// ✅ Listen for socket connections
-io.on("connection", (socket) => {
-  console.log("⚡ Client connected:", socket.id);
-
-  socket.on("disconnect", () => {
-    console.log("❌ Client disconnected:", socket.id);
-  });
-});
+// ✅ Initialize contract notification logic
+initContractNotificationSocket(io);
 
 // Export io so controllers/services can emit events
 export { io, httpServer };
