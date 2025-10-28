@@ -134,13 +134,26 @@ const EmployeeService = {
                         salaryIncome: newSalary,
                         incrementAmount,
                     }
+                    : null;
+
+            // 5️⃣ Update employee data
+            if (newSalaryRecord) {
+                data.salary = [...(existingEmployee.salary || []), newSalaryRecord];
+            }
+
+            const updated = await EmployeeModel.findByIdAndUpdate(
+                id,
+                { $set: data },
+                { new: true }
+            ).populate("avatar");
+
+            if (!updated) throw ApiError.notFound("Employee not found");
             return updated;
         } catch (error) {
             throw ApiError.badRequest(error.message);
         }
     },
 
-<<<<<<< HEAD
     getAllEmployees: async (req, res, next) => {
         try {
             const employees = await EmployeeModel.find({
@@ -159,79 +172,6 @@ const EmployeeService = {
             throw ApiError.badRequest(error.message);
         }
     },
-=======
-      // 5️⃣ Prepare update payload
-      const updatePayload = {
-        name: data?.name,
-        email: data?.email,
-        phone: data?.phone,
-        cnic: data?.cnic,
-        status: data?.status,
-        addresses: data?.address,
-        gender: data?.gender,
-        avatar: avatarId || existingEmployee.avatar,
-        status: data?.status || existingEmployee.status, // ✅ fix for undefined status
-        department: {
-          departmentName: data?.department?.departmentName,
-          designation: data?.department?.designation,
-        },
-        employeeType: data?.employeeType,
-        startEmployeeDate: data?.startEmployeeDate,
-        endEmployeeDate: data?.endEmployeeDate,
-        contractDetails: {
-          contractType: data?.contractDetails?.contractType,
-          contractStartDate: data?.contractDetails?.contractStartDate,
-          contractEndDate: data?.contractDetails?.contractEndDate,
-          noticePeriodDays: data?.contractDetails?.noticePeriodDays || 30,
-        },
-        relations: {
-          name: data?.relations?.name,
-          relation: data?.relations?.relation,
-          phone: data?.relations?.phone,
-        },
-        performanceFeedback: {
-          rating: data?.performanceFeedback?.rating,
-          comments: data?.performanceFeedback?.comments,
-          reviewDate: data?.performanceFeedback?.reviewDate,
-        },
-      };
-
-      // 6️⃣ Check if salary changed before pushing
-      const lastSalary = existingEmployee.salary?.at(-1);
-      const isNewSalary =
-        newSalaryRecord &&
-        (!lastSalary ||
-          lastSalary.salaryIncome !== newSalaryRecord.salaryIncome ||
-          new Date(lastSalary.salaryEndDate).getTime() !==
-            new Date(newSalaryRecord.salaryEndDate).getTime());
-
-      // 7️⃣ Update employee
-      let updated;
-      if (isNewSalary) {
-        // Only push if salary changed
-        updated = await EmployeeModel.findByIdAndUpdate(
-          id,
-          {
-            $set: updatePayload,
-            $push: { salary: newSalaryRecord },
-          },
-          { new: true }
-        ).populate("avatar");
-      } else {
-        // No salary change — only update other fields
-        updated = await EmployeeModel.findByIdAndUpdate(
-          id,
-          { $set: updatePayload },
-          { new: true }
-        ).populate("avatar");
-      }
-
-      return updated;
-    } catch (error) {
-      throw ApiError.badRequest(error.message);
-    }
-  },
->>>>>>> b344b0940634d4e4879a324da0b5ac22edda3ae5
 
     // 🟢 GET DELETED EMPLOYEES
     getAllDeletedEmployees: async () => {
