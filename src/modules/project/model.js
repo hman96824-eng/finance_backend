@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { string } from "zod";
 
 const ProjectSchema = new mongoose.Schema(
     {
@@ -7,9 +8,14 @@ const ProjectSchema = new mongoose.Schema(
             required: true,
             trim: true,
         },
-        projectType: {
+        projectID: {
             type: String,
             required: true,
+            unique: true,
+            trim: true
+        },
+        projectType: {
+            type: String,
             trim: true,
         },
         projectDetails: {

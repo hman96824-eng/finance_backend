@@ -7,10 +7,22 @@ import Repository from "../../utils/repository.js";
 const ProRepo = new Repository(Project);
 const BankRepo = new Repository(Bank);
 
+// make  afunciton in which set the project id  liek PROJ-0001 check existing ids and set the next id
+const generateProjectID = async () => {
+    try {
+        const count = await ProRepo.countAll();
+        return `PROJ-${String(count + 1).padStart(4, '0')}`;
+    } catch (error) {
+        throw ApiError.internal("Error generating project ID");
+    }
+}
+
+
 const ProService = {
 
     addProject: async (data) => {
         try {
+            const projectID = await generateProjectID();
             const {
                 projectName,
                 projectType,
@@ -45,6 +57,7 @@ const ProService = {
             const project = await ProRepo.create({
                 projectName,
                 projectType,
+                projectID,
                 projectDetails,
                 clientName,
                 projectManager,
