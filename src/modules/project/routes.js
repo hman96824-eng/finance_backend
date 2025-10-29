@@ -6,27 +6,24 @@ import { checkPermission } from "../../middleware/permissons.js";
 const router = express.Router();
 
 
-router.use(Middleware.authenticate, checkPermission("manage_project"));
+// router.use(Middleware.authenticate, checkPermission("manage_project"));
+
+/** 🔹 FETCH DELETED PROJECTS - Must be before /:id route */
+router.get("/deleted", ProController.getDeletedProjects);
 
 router
-    .route("/")
-    .post(ProController.createProject)       // ➕ Create Project
-    .get(ProController.getAllProjects);      // 📜 Get All Projects
+    .post('/create', ProController.createProject)       // ➕ Create Project
+    .get('/all', ProController.getAllProjects);      // 📜 Get All Projects
 
 router
-    .route("/:id")
-    .get(ProController.getProjectById)       // 🔍 Get Project by ID
-    .put(ProController.updateProject);       // ✏️ Update Project
+    .get('/:id', ProController.getProjectById)       // 🔍 Get Project by ID
+    .put('/update/:id', ProController.updateProject);       // ✏️ Update Project
 
 
 /** 🔹 SOFT DELETE (Mark as Deleted) */
 router
     .put("/soft-delete/:id", ProController.deleteProjectSoft)
     .put("/soft-delete-all", ProController.deleteAllProjectsSoft);
-
-
-/** 🔹 FETCH DELETED PROJECTS */
-router.get("/deleted", ProController.getDeletedProjects);
 
 
 /** 🔹 PERMANENT DELETE (From Archive) */

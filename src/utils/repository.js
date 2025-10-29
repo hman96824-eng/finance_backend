@@ -42,8 +42,13 @@ export default class Repository {
 
   /**
    * Find multiple documents based on a filter.
+   * Supports chaining of Mongoose operations like populate, sort, etc.
+   * @param {Object} query - The filter criteria
+   * @param {Object} projection - Fields to include/exclude
+   * @param {Object} options - Additional options including populate, sort, etc.
+   * @returns {Query} - Mongoose query that can be chained
    */
-  async find(query = {}, projection = {}, options = {}) {
+  find(query = {}, projection = {}, options = {}) {
     if (!query || typeof query !== "object") {
       throw new Error(
         `Invalid input: expected object, received ${typeof query}`
@@ -128,6 +133,15 @@ export default class Repository {
     return this.model.findByIdAndUpdate(id, { $set: updateData }, options);
   }
 
+  async findByIdAndUpdate(id, updateData, options = { new: true }) {
+    if (!id) throw new Error('ID is required');
+    return this.model.findByIdAndUpdate(
+      id,
+      updateData,
+      { new: true, runValidators: true, ...options }
+    );
+  }
+
   async updateMany(query, updateData, options = {}) {
     return this.model.updateMany(query, { $set: updateData }, options);
   }
@@ -142,6 +156,11 @@ export default class Repository {
 
   async deleteById(id) {
     return this.model.findByIdAndDelete(id);
+  }
+
+  async findByIdAndDelete(id, options = {}) {
+    if (!id) throw new Error('ID is required');
+    return this.model.findByIdAndDelete(id, options);
   }
 
   async deleteMany(query = {}) {
@@ -219,18 +238,80 @@ export default class Repository {
   // 🟢 POPULATE HELPERS
   // ========================
 
+  /**
+   * Populate fields in a document or array of documents
+   * @param {Document|Document[]} docs - Mongoose document(s) to populate
+   * @param {String|Object|Array} fields - Fields to populate
+   * @returns {Promise<Document|Document[]>}
+   */
+  async populate(docs, fields) {
+    return this.model.populate(docs, fields);
+  }
+
+  /**
+   * Find documents and populate specified fields
+   * @param {Object} query - Query to find documents
+   * @param {String|Object|Array} populateFields - Fields to populate
+   * @param {Object} options - Additional query options (sort, limit, etc.)
+   */
+  async findAndPopulate(query = {}, populateFields, options = {}) {
+    let queryBuilder = this.model.find(query);
+
+    // Handle population
+    if (Array.isArray(populateFields)) {
+      populateFields.forEach(field => {
+        queryBuilder = queryBuilder.populate(field);
+      });
+    } else {
+      queryBuilder = queryBuilder.populate(populateFields);
+    }
+
+    // Apply sorting
+    if (options.sort) {
+      queryBuilder = queryBuilder.sort(options.sort);
+    }
+
+    // Apply limit
+    if (options.limit) {
+      queryBuilder = queryBuilder.limit(options.limit);
+    }
+
+    // Apply skip for pagination
+    if (options.skip) {
+      queryBuilder = queryBuilder.skip(options.skip);
+    }
+
+    return queryBuilder.exec();
+  }
+
+  /**
+   * Find one document and populate specified fields
+   * @param {Object} query - Query to find the document
+   * @param {String|Object|Array} populateFields - Fields to populate
+   */
+  async findOneAndPopulate(query = {}, populateFields) {
+    return this.model.findOne(query).populate(populateFields).exec();
+  }
+
+  /**
+   * Find document by ID and populate specified fields
+   * @param {String|ObjectId} id - Document ID
+   * @param {String|Object|Array} populateFields - Fields to populate
+   */
+  async findByIdAndPopulate(id, populateFields) {
+    return this.model.findById(id).populate(populateFields).exec();
+  }
+
+  // Keeping the old methods for backward compatibility
   async findWithPopulate(query = {}, populateField, selectFields = "") {
-    return this.model
-      .find(query)
-      .populate(populateField, selectFields)
-      .sort({ updatedAt: 1 });
+    return this.findAndPopulate(query, populateField, { sort: { updatedAt: 1 } });
   }
 
   async findOneWithPopulate(query = {}, populateField, selectFields = "") {
-    return this.model.findOne(query).populate(populateField, selectFields);
+    return this.findOneAndPopulate(query, populateField);
   }
 
   async findByIdWithPopulate(id, populateField, selectFields = "") {
-    return this.model.findById(id).populate(populateField, selectFields);
+    return this.findByIdAndPopulate(id, populateField);
   }
 }

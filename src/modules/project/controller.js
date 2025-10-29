@@ -7,7 +7,7 @@ const ProController = {
     createProject: async (req, res) => {
         try {
             const data = await ProService.addProject(req.body);
-            successResponse(res, messages.PROJECT_CREATED_SUCCESSFULLY, data);
+            successResponse(res, data);
         } catch (err) {
             throw ApiError.badRequest(err.message);
         }
@@ -16,7 +16,7 @@ const ProController = {
     getAllProjects: async (req, res) => {
         try {
             const data = await ProService.getProjects();
-            successResponse(res, messages.PROJECTS_FETCHED_SUCCESSFULLY, data);
+            successResponse(res, data);
         } catch (err) {
             throw ApiError.badRequest(err.message);
         }
@@ -25,7 +25,7 @@ const ProController = {
     getProjectById: async (req, res) => {
         try {
             const data = await ProService.getProjectById(req.params.id);
-            successResponse(res, messages.PROJECT_FETCHED_SUCCESSFULLY, data);
+            successResponse(res, data);
         } catch (err) {
             throw ApiError.badRequest(err.message);
         }
@@ -34,7 +34,7 @@ const ProController = {
     updateProject: async (req, res) => {
         try {
             const data = await ProService.updateProject(req.params.id, req.body);
-            successResponse(res, messages.PROJECT_UPDATED_SUCCESSFULLY, data);
+            successResponse(res, data);
         } catch (err) {
             throw ApiError.badRequest(err.message);
         }
@@ -43,7 +43,7 @@ const ProController = {
     deleteProjectSoft: async (req, res) => {
         try {
             const data = await ProService.deleteProjectSoft(req.params.id);
-            successResponse(res, messages.PROJECT_SOFT_DELETED_SUCCESSFULLY, data);
+            successResponse(res, data);
         } catch (err) {
             throw ApiError.badRequest(err.message);
         }
@@ -52,7 +52,7 @@ const ProController = {
     deleteAllProjectsSoft: async (req, res) => {
         try {
             const data = await ProService.deleteAllProjectsSoft();
-            successResponse(res, messages.ALL_PROJECTS_SOFT_DELETED_SUCCESSFULLY, data);
+            successResponse(res, data);
         } catch (err) {
             throw ApiError.badRequest(err.message);
         }
@@ -61,7 +61,7 @@ const ProController = {
     getDeletedProjects: async (req, res) => {
         try {
             const data = await ProService.getDeletedProjects();
-            successResponse(res, messages.DELETED_PROJECTS_FETCHED_SUCCESSFULLY, data);
+            successResponse(res, data);
         } catch (err) {
             throw ApiError.badRequest(err.message);
         }
@@ -70,7 +70,7 @@ const ProController = {
     deleteProjectPermanent: async (req, res) => {
         try {
             const data = await ProService.deleteProjectPermanent(req.params.id);
-            successResponse(res, messages.PROJECT_PERMANENTLY_DELETED_SUCCESSFULLY, data);
+            successResponse(res, data);
         } catch (err) {
             throw ApiError.badRequest(err.message);
         }
@@ -79,7 +79,7 @@ const ProController = {
     deleteAllDeletedProjectsPermanent: async (req, res) => {
         try {
             const data = await ProService.deleteAllDeletedProjectsPermanent();
-            successResponse(res, messages.ALL_DELETED_PROJECTS_PERMANENTLY_DELETED_SUCCESSFULLY, data);
+            successResponse(res, data);
         } catch (err) {
             throw ApiError.badRequest(err.message);
         }
