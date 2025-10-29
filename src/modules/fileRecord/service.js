@@ -1,4 +1,3 @@
-// services/fileRecord.service.js
 import fs from "fs";
 import Media from "../media/model.js";
 import FileRecord from "./modal.js";
@@ -6,7 +5,6 @@ import { uploadToCloudinary } from "../../config/cloud.js";
 import ApiError from "../../utils/ApiError.js";
 import { deleteFromCloudinary } from "../../config/cloud.js";
 import mongoose from "mongoose";
-import messages from "../../constants/messages.js";
 
 export const createFileRecordService = async (data, files, userId) => {
   const { title, description, category } = data;
@@ -17,64 +15,82 @@ export const createFileRecordService = async (data, files, userId) => {
   }
 
   if (files.length > 5) {
-    // cleanup any temp files already written
     files.forEach((f) => fs.existsSync(f.path) && fs.unlinkSync(f.path));
     throw ApiError.badRequest("You can upload a maximum of 5 files at once.");
   }
 
   const uploadedMedia = [];
 
-  for (const file of files) {
-    // ✅ 2. Validate file size (10MB limit)
-    const maxFileSize = 10 * 1024 * 1024; // 10 MB in bytes
-    if (file.size > maxFileSize) {
-      // cleanup all temp files
-      files.forEach((f) => fs.existsSync(f.path) && fs.unlinkSync(f.path));
-      throw ApiError.badRequest(
-        `File "${file.originalname}" exceeds the 10MB limit.`
-      );
+  try {
+    for (const file of files) {
+      // ✅ 2. Validate file size (10MB limit)
+      const maxFileSize = 10 * 1024 * 1024; //10 MB
+      if (file.size > maxFileSize) {
+        files.forEach((f) => fs.existsSync(f.path) && fs.unlinkSync(f.path));
+        throw ApiError.badRequest(
+          `File "${file.originalname}" exceeds the 10MB limit.`
+        );
+      }
+
+      //       // ✅ 3. Upload file to Cloudinary
+      const result = await uploadToCloudinary(file.path, "documents");
+
+      //       // ✅ 4. Save media record in DB
+      const media = await Media.create({
+        url: result.secure_url,
+        public_id: result.public_id,
+        format: result.format,
+        resource_type: result.resource_type,
+        folder: result.folder,
+        size: result.bytes,
+        uploadedBy: userId,
+      });
+
+      uploadedMedia.push(media._id);
+
+      //       // ✅ 5. Delete local temp file
+      fs.unlinkSync(file.path);
     }
 
-    // ✅ 3. Upload file to Cloudinary
-    const result = await uploadToCloudinary(file.path, "documents");
-
-    // ✅ 4. Save media record
-    const media = await Media.create({
-      url: result.secure_url,
-      public_id: result.public_id,
-      format: result.format,
-      resource_type: result.resource_type,
-      folder: result.folder,
-      size: result.bytes,
-      uploadedBy: userId,
+    //     // ✅ 6. Create FileRecord entry
+    const record = new FileRecord({
+      title,
+      description,
+      category,
+      mediaFiles: uploadedMedia,
+      createdBy: userId,
     });
 
-    uploadedMedia.push(media._id);
+    await record.save();
 
-    // ✅ 5. Delete local temp file
-    fs.unlinkSync(file.path);
+    //     // ✅ 7. Populate data (cleanest + most reliable)
+    const populatedRecord = await FileRecord.findById(record._id)
+      .populate({
+        path: "mediaFiles",
+        select:
+          "url format resource_type folder size uploadedBy createdAt updatedAt",
+      })
+      .populate({ path: "createdBy", select: "name email role" })
+      .lean(); // convert to plain JS object for safe JSON response
+
+    //     // ✅ 8. Add backend-based view URLs
+    const BASE_URL = process.env.BASE_URL || "http://localhost:5000";
+    populatedRecord.mediaFiles = populatedRecord.mediaFiles.map((m) => {
+      console.log(m, "nnsjcuew"); // ✅ log each media object here
+
+      return {
+        ...(m.toObject?.() || m), // ensure it's a plain object if it's a Mongoose doc
+        viewUrl: `${BASE_URL}/api/v1/files/view/${m._id}`,
+      };
+    });
+    console.log(populatedRecord.mediaFiles, "populatedRecord.mediaFiles");
+
+    return populatedRecord;
+  } catch (error) {
+    //     // Cleanup local files in case of failure
+    files.forEach((f) => fs.existsSync(f.path) && fs.unlinkSync(f.path));
+    throw ApiError.internal(error.message || "File upload failed.");
   }
-
-  // ✅ 6. Create FileRecord
-  const record = await FileRecord.create({
-    title,
-    description,
-    category,
-    mediaFiles: uploadedMedia,
-    createdBy: userId,
-  });
-
-  // ✅ 7. Populate related data for response
-  await record.populate([
-    {
-      path: "mediaFiles",
-      select:
-        "url format resource_type folder size uploadedBy createdAt updatedAt",
-    },
-    { path: "createdBy", select: "name email role" },
-  ]);
-
-  return record;
 };
 
 export const getAllFileRecordsService = async () => {
@@ -175,6 +191,8 @@ export const removeMediaFromRecordService = async (
   if (!mongoose.Types.ObjectId.isValid(recordId)) {
     throw ApiError.badRequest("Invalid recordId");
   }
+  console.log(recordId, "recordId");
+  console.log(mediaIds, "mediaIds");
 
   // Ensure each mediaId is valid
   const invalid = mediaIds.some((id) => !mongoose.Types.ObjectId.isValid(id));
@@ -235,4 +253,33 @@ export const removeMediaFromRecordService = async (
   ]);
 
   return updatedRecord;
+};
+
+export const deleteFileRecordsService = async (fileRecordIds) => {
+  const deleted = [];
+
+  for (const id of fileRecordIds) {
+    const fileRecord = await FileRecord.findById(id).populate("mediaFiles");
+
+    if (!fileRecord) continue;
+
+    // 🧹 Delete each media file from Cloudinary + DB
+    for (const media of fileRecord.mediaFiles) {
+      if (media.cloudinaryPublicId) {
+        try {
+          await deleteFromCloudinary(media.cloudinaryPublicId);
+        } catch (err) {
+          console.error(`❌ Failed to delete from Cloudinary: ${err.message}`);
+        }
+      }
+
+      await Media.findByIdAndDelete(media._id);
+    }
+
+    // 🧹 Delete the FileRecord itself
+    await FileRecord.findByIdAndDelete(id);
+    deleted.push(id);
+  }
+
+  return { deletedCount: deleted.length, deletedIds: deleted };
 };

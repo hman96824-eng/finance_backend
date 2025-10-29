@@ -2,6 +2,12 @@ import dotenv from "dotenv";
 dotenv.config();
 
 export const config = {
+  SUPABASE_URL: process.env.SUPABASE_URL,
+  SUPABASE_KEY: process.env.SUPABASE_KEY,
+  SUPABASE_BUCKET: process.env.SUPABASE_BUCKET,
+  BASE_URL: process.env.BASE_URL,
+  SIGNED_URL_EXPIRY_SECONDS: process.env.SIGNED_URL_EXPIRY_SECONDS,
+
   PORT: process.env.PORT, //
   MONGO_URI: process.env.MONGO_URI, //
   JWT_SECRET: process.env.JWT_SECRET, //
@@ -26,7 +32,7 @@ export const config = {
     origin: process.env.CORS_ORIGIN || "http://localhost:3000",
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true,
-  }
+  },
 };
 
 export default config;
