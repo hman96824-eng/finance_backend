@@ -51,6 +51,8 @@ const EmpController = {
         req.body,
         media?._id || null
       );
+
+      console.log(updated, "updated");
       res
         .status(200)
         .json(ApiError.ok("Employee updated successfully", updated));
@@ -113,7 +115,7 @@ const EmpController = {
   },
   deleteAllEmployees: async (req, res, next) => {
     try {
-      const { userIds } = req.body;
+      const userIds = req.body;
       const { type } = req.query;
 
       console.log(userIds, "userIds");
