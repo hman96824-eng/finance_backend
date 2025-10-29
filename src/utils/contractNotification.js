@@ -1,4 +1,5 @@
 import { EmployeeModel } from "../modules/employee/model.js";
+import moment from "moment";
 
 /**
  * Initialize Socket.IO room and start periodic contract expiry checks.
@@ -38,7 +39,14 @@ export const initContractNotificationSocket = (io) => {
             });
 
             if (expiringContracts.length > 0) {
-                const formattedEmployees = expiringContracts.map((emp) => ({
+                // First populate all employees with their avatars
+                const populatedEmployees = await EmployeeModel.populate(expiringContracts, {
+                    path: 'avatar',
+                    select: 'url'
+                });
+
+                const formattedEmployees = populatedEmployees.map((emp) => ({
+                    _id: emp._id,
                     name: emp.name,
                     email: emp.email,
                     employeeCode: emp.employeeCode,
@@ -46,9 +54,8 @@ export const initContractNotificationSocket = (io) => {
                     designation: emp.department?.designation || "N/A",
                     contractType: emp.contractDetails.contractType,
                     contractEndDate: emp.contractDetails.contractEndDate,
-                    avatar: emp.avatar,
+                    avatar: emp.avatar?.url || null
                 }));
-
                 // Emit to HR room
                 io.to("hr_notifications").emit("contract_expiry_alert", formattedEmployees);
                 console.log(`🚨 Sent ${formattedEmployees.length} contract expiry alerts to HR`);
@@ -59,5 +66,8 @@ export const initContractNotificationSocket = (io) => {
     };
 
     // Run every 12 hours
-    setInterval(checkContractExpiries, 1000 * 60 * 60 * 12);
+    // setInterval(checkContractExpiries, 1000 * 60 * 60 * 12);
+
+    // run every mint for testing purpose
+    setInterval(checkContractExpiries, 1000 * 60);
 };

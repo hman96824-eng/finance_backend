@@ -160,6 +160,12 @@ export const messages = {
   EMPLOYEE_UPDATED: "Employee updated successfully",
   EMPLOYEE_NOT_FOUND: "Employee not found",
   EMPLOYEE_DELETED: "Employee deleted successfully",
+
+
+  // project
+  PROJECT_CREATED_SUCCESSFULLY: "Project created successfully",
+  PROJECTS_FETCHED_SUCCESSFULLY: "Projects fetched successfully",
+
 };
 
 export default messages;

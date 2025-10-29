@@ -3,6 +3,7 @@ import roleRoutes from "../modules/role/routes.js"
 import inviteRoutes from "../modules/invites/routes.js"
 import orgRoutes from '../modules/organization/routes.js'
 import empRoutes from '../modules/employee/routes.js'
+import proRoutes from '../modules/project/routes.js'
 import express from "express";
 
 const app = express();
@@ -15,6 +16,7 @@ export default (app) => {
   apiRoute.use("/", inviteRoutes)
   apiRoute.use('/organizations', orgRoutes)
   apiRoute.use('/employees', empRoutes)
+  apiRoute.use('/projects', proRoutes)
 
   app.use("/api/v1", apiRoute);
 };
