@@ -45,7 +45,8 @@ const ExpiringEmployees = async () => {
 // the do the staus epired function call afatr every day
 // setInterval(ExpiringEmployees, 24 * 60 * 60 * 1000); // 24 hours in milliseconds
 // for testing purpose run after every minute
-setInterval(ExpiringEmployees, 60 * 1000); // 1 minute in milliseconds
+// setInterval(ExpiringEmployees, 60 * 1000); // 1 minute in milliseconds
+
 
 
 const EmployeeService = {
@@ -157,7 +158,7 @@ const EmployeeService = {
     getAllEmployees: async (req, res, next) => {
         try {
             const employees = await EmployeeModel.find({
-                status: { $in: ["Active", "Inactive", "Expired"] },
+                status: { $in: ["Active", "Inactive"] },
             }).populate("avatar");
 
             // Add remaining days for each employee
@@ -176,7 +177,7 @@ const EmployeeService = {
     // 🟢 GET DELETED EMPLOYEES
     getAllDeletedEmployees: async () => {
         try {
-            return await EmployeeModel.find({ status: "deleted" }).populate("avatar");
+            return await EmployeeModel.find({ status: "Deleted" }).populate("avatar");
         } catch (error) {
             throw ApiError.badRequest(error.message);
         }
@@ -198,7 +199,7 @@ const EmployeeService = {
         try {
             const deleted = await EmployeeModel.findByIdAndUpdate(
                 id,
-                { status: "deleted" },
+                { status: "Deleted" },
                 { new: true }
             ).populate("avatar");
 
@@ -225,7 +226,7 @@ const EmployeeService = {
         try {
             let response = await EmpRepo.updateMany(
                 { _id: { $in: userIds } },
-                { $set: { status: "deleted" } }
+                { $set: { status: "Deleted" } }
             );
             const updatedDocs = await EmpRepo.find({ _id: { $in: userIds } });
             return updatedDocs;
