@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 
 const FileRecordSchema = new mongoose.Schema(
   {
-    title: { type: String, required: true },
+    title: { type: String },
     description: { type: String },
     category: { type: String },
     mediaFiles: [{ type: mongoose.Schema.Types.ObjectId, ref: "Media" }],

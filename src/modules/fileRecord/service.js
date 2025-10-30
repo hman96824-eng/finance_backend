@@ -115,38 +115,37 @@ export const getAllFileRecordsService = async () => {
   return records;
 };
 
-// ✅ Update file record and append new files
+// ✅ Update file record and append new files (files only)
 export const updateFileRecordByIdService = async (
   recordId,
-  data,
+  _data,
   files,
   userId
 ) => {
   const record = await FileRecord.findById(recordId);
   if (!record) throw ApiError.notFound("File record not found.");
 
-  // Update title/description if provided
-  if (data.title) record.title = data.title;
-  if (data.description) record.description = data.description;
-
   const uploadedMedia = [];
 
-  // Handle new files (if any)
+  // ✅ Handle new files (if any)
   if (files && files.length > 0) {
+    // Limit: Max 5 files per update
     if (files.length > 5) {
       files.forEach((f) => fs.existsSync(f.path) && fs.unlinkSync(f.path));
       throw ApiError.badRequest("You can upload a maximum of 5 files at once.");
     }
 
+    const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB per file
+
     for (const file of files) {
-      const maxFileSize = 10 * 1024 * 1024; // 10MB
-      if (file.size > maxFileSize) {
+      if (file.size > MAX_FILE_SIZE) {
         files.forEach((f) => fs.existsSync(f.path) && fs.unlinkSync(f.path));
         throw ApiError.badRequest(
           `File "${file.originalname}" exceeds the 10MB limit.`
         );
       }
 
+      // ✅ Upload to Cloudinary (or Supabase if you switch)
       const result = await uploadToCloudinary(file.path, "documents");
 
       const media = await Media.create({
@@ -161,15 +160,17 @@ export const updateFileRecordByIdService = async (
 
       uploadedMedia.push(media._id);
 
-      fs.unlinkSync(file.path);
+      // Remove temp file after upload
+      fs.existsSync(file.path) && fs.unlinkSync(file.path);
     }
 
-    // Append new media IDs to existing array
+    // ✅ Append new files to existing array
     record.mediaFiles = [...record.mediaFiles, ...uploadedMedia];
   }
 
   await record.save();
 
+  // ✅ Populate media + creator info before returning
   await record.populate([
     {
       path: "mediaFiles",
