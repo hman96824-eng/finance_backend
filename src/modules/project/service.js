@@ -10,8 +10,21 @@ const BankRepo = new Repository(Bank);
 // make  afunciton in which set the project id  liek PROJ-0001 check existing ids and set the next id
 const generateProjectID = async () => {
     try {
-        const count = await ProRepo.countAll();
-        return `PROJ-${String(count + 1).padStart(4, '0')}`;
+        // Find the project with the highest ID number
+        const lastProject = await ProRepo.findOne(
+            {},
+            { projectID: 1 },
+            { sort: { projectID: -1 } }
+        );
+
+        let nextNumber = 1;
+        if (lastProject && lastProject.projectID) {
+            // Extract the number from the last project ID (e.g., "PROJ-0006" -> 6)
+            const lastNumber = parseInt(lastProject.projectID.split('-')[1]);
+            nextNumber = lastNumber + 1;
+        }
+
+        return `PROJ-${String(nextNumber).padStart(4, '0')}`;
     } catch (error) {
         throw ApiError.internal("Error generating project ID");
     }
@@ -175,12 +188,14 @@ const ProService = {
         }
     },
 
-    deleteAllProjectsSoft: async () => {
+    softDeleteManyProjects: async (projectIds) => {
         try {
-            return await ProRepo.updateMany(
-                { status: { $ne: "Deleted" } },
+            const response = await ProRepo.updateMany(
+                { _id: { $in: projectIds } },
                 { $set: { status: "Deleted" } }
             );
+            const updatedDocs = await ProRepo.find({ _id: { $in: projectIds } });
+            return updatedDocs;
         } catch (error) {
             throw ApiError.badRequest(error.message);
         }
@@ -212,16 +227,16 @@ const ProService = {
         }
     },
 
-    deleteAllDeletedProjectsPermanent: async () => {
+    deleteAllDeletedProjectsPermanent: async (projectIDs) => {
         try {
-            const deletedProjects = await ProRepo.find({ status: "Deleted" });
+            const deletedProjects = await ProRepo.find({ _id: { $in: projectIDs } });
             const bankIds = deletedProjects.map((p) => p.bank).filter(Boolean);
 
             if (bankIds.length > 0) {
                 await BankRepo.deleteMany({ _id: { $in: bankIds } });
             }
 
-            await ProRepo.deleteMany({ status: "Deleted" });
+            await ProRepo.deleteMany({ _id: { $in: projectIDs } });
             return { success: true };
         } catch (error) {
             throw ApiError.badRequest(error.message);

@@ -49,12 +49,14 @@ const ProController = {
         }
     },
 
-    deleteAllProjectsSoft: async (req, res) => {
+    deleteAllProjects: async (req, res, next) => {
         try {
-            const data = await ProService.deleteAllProjectsSoft();
-            successResponse(res, data);
+            const projectIds = req.body; // array of IDs
+            const result = await ProService.softDeleteManyProjects(projectIds);
+
+            return successResponse(res, result);
         } catch (err) {
-            throw ApiError.badRequest(err.message);
+            next(err);
         }
     },
 
@@ -78,12 +80,14 @@ const ProController = {
 
     deleteAllDeletedProjectsPermanent: async (req, res) => {
         try {
-            const data = await ProService.deleteAllDeletedProjectsPermanent();
+            const projectIDs = req.body; // ✅ now this will contain your array
+            const data = await ProService.deleteAllDeletedProjectsPermanent(projectIDs);
             successResponse(res, data);
         } catch (err) {
             throw ApiError.badRequest(err.message);
         }
     },
+
 };
 
 export default ProController;
