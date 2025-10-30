@@ -154,7 +154,6 @@ export const messages = {
   PERMISSION_ADDED: "Permission added successfully",
   ROLE_STRING: "Role name is required and must be a string",
 
-
   // employee EMPLOYEE_CREATED: "Employee created successfully",
   EMPLOYEE_CREATED: "Employee created successfully",
   EMPLOYEE_UPDATED: "Employee updated successfully",
@@ -166,6 +165,9 @@ export const messages = {
   PROJECT_CREATED_SUCCESSFULLY: "Project created successfully",
   PROJECTS_FETCHED_SUCCESSFULLY: "Projects fetched successfully",
 
+  // media
+  FILES_UPLOADED: "Files Uploaded successfully",
+  ONLY_5_FILES_ALLOWED: "Only 5 files are allowed",
 };
 
 export default messages;
