@@ -7,7 +7,7 @@ import ApiError from "./utils/ApiError.js";
 import finalresponse from "./middleware/response.js";
 import { createServer } from "http"; // ⬅️ import http
 import { Server } from "socket.io"; // ⬅️ import socket.io
-import { initContractNotificationSocket } from "./utils/contractNotification.js"
+import { initContractNotificationSocket } from "./utils/contractNotification.js";
 
 const port = config.PORT || 5000;
 
@@ -48,7 +48,7 @@ const startServer = async () => {
       console.log(`✅ Server running on http://localhost:${port}`);
     });
   } catch (err) {
-    throw new ApiError(404, err.message);
+    throw ApiError.badRequest(err.message);
   }
 };
 
