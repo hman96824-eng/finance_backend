@@ -8,7 +8,7 @@ import {
   removeMediaFromRecordService,
   deleteFileRecordsService,
 } from "./service.js";
-
+console.log("controllers of filerecord ");
 export const addFileRecord = async (req, res, next) => {
   try {
     const userId = req.user?._id; // from auth middleware
