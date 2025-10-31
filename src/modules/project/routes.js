@@ -23,7 +23,7 @@ router
 /** 🔹 SOFT DELETE (Mark as Deleted) */
 router
     .put("/soft-delete/:id", ProController.deleteProjectSoft)
-    .put("/soft-delete-all", ProController.deleteAllProjectsSoft);
+    .put("/soft-delete-all", ProController.deleteAllProjects);
 
 
 /** 🔹 PERMANENT DELETE (From Archive) */
