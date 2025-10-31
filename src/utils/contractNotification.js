@@ -6,68 +6,101 @@ import moment from "moment";
  * @param {Server} io - Socket.IO server instance
  */
 export const initContractNotificationSocket = (io) => {
-    // When a new client connects
-    io.on("connection", (socket) => {
-        console.log("⚡ Socket connected:", socket.id);
+  // When a new client connects
+  io.on("connection", (socket) => {
+    console.log("⚡ Socket connected:", socket.id);
 
-        // HR joins the special notification room
-        socket.on("join_hr_room", (hrUserId) => {
-            socket.join("hr_notifications");
-            console.log(`👤 HR user (${hrUserId}) joined the HR notifications room`);
-        });
-
-        socket.on("disconnect", () => {
-            console.log("❌ Socket disconnected:", socket.id);
-        });
+    // HR joins the special notification room
+    socket.on("join_hr_room", (hrUserId) => {
+      socket.join("hr_notifications");
+      console.log(`👤 HR user (${hrUserId}) joined the HR notifications room`);
     });
 
-    /**
-     * Periodically check employee contracts that are about to expire
-     * and notify HR room if found.
-     */
-    const checkContractExpiries = async () => {
-        try {
-            const today = moment();
-            const threshold = moment().add(7, "days"); // 7 days before expiry
+    socket.on("disconnect", () => {
+      console.log("❌ Socket disconnected:", socket.id);
+    });
+  });
 
-            // Find employees whose contract end date is within 7 days
-            const expiringContracts = await EmployeeModel.find({
-                "contractDetails.contractEndDate": {
-                    $lte: threshold.toDate(),
-                    $gte: today.toDate(),
-                },
-            });
+  /**
+   * Periodically check employee contracts that are about to expire
+   * and notify HR room if found.
+   */
+  const checkContractExpiries = async () => {
+    try {
+      const today = moment();
+      const threshold = moment().add(7, "days"); // up to next 7 days
 
-            if (expiringContracts.length > 0) {
-                // First populate all employees with their avatars
-                const populatedEmployees = await EmployeeModel.populate(expiringContracts, {
-                    path: 'avatar',
-                    select: 'url'
-                });
+      // ✅ Include:
+      // - Active employees expiring within 7 days
+      // - Expired employees (end date before today)
+      const expiringContracts = await EmployeeModel.find({
+        $or: [
+          {
+            // status: { $in: "Active" },
+            "contractDetails.contractEndDate": {
+              $lte: threshold.toDate(),
+              $gte: today.toDate(),
+            },
+          },
+          {
+            status: { $regex: /^expired$/i },
+            "contractDetails.contractEndDate": { $lt: today.toDate() }, // already expired
+          },
+        ],
+      });
 
-                const formattedEmployees = populatedEmployees.map((emp) => ({
-                    _id: emp._id,
-                    name: emp.name,
-                    email: emp.email,
-                    employeeCode: emp.employeeCode,
-                    department: emp.department?.departmentName || "N/A",
-                    designation: emp.department?.designation || "N/A",
-                    contractType: emp.contractDetails.contractType,
-                    contractEndDate: emp.contractDetails.contractEndDate,
-                    avatar: emp.avatar?.url || null
-                }));
-                // Emit to HR room
-                io.to("hr_notifications").emit("contract_expiry_alert", formattedEmployees);
-                console.log(`🚨 Sent ${formattedEmployees.length} contract expiry alerts to HR`);
-            }
-        } catch (err) {
-            console.error("❌ Error checking contracts:", err);
-        }
-    };
+      console.log(
+        `🧾 Found ${expiringContracts.length} employees (active expiring soon + expired)`
+      );
 
-    // Run every 12 hours
-    // setInterval(checkContractExpiries, 1000 * 60 * 60 * 12);
+      if (expiringContracts.length > 0) {
+        // Populate avatars
+        const populatedEmployees = await EmployeeModel.populate(
+          expiringContracts,
+          {
+            path: "avatar",
+            select: "url",
+          }
+        );
 
-    // run every mint for testing purpose
-    setInterval(checkContractExpiries, 1000 * 60);
+        // Format employee data and calculate expiry days
+        const formattedEmployees = populatedEmployees.map((emp) => {
+          const endDate = moment(emp.contractDetails.contractEndDate).endOf(
+            "day"
+          );
+          const diffDays = endDate.diff(today, "days");
+          const isExpired = diffDays < 0;
+
+          return {
+            _id: emp._id,
+            name: emp.name,
+            email: emp.email,
+            employeeCode: emp.employeeCode,
+            department: emp.department?.departmentName || "N/A",
+            designation: emp.department?.designation || "N/A",
+            contractType: emp.contractDetails.contractType,
+            contractEndDate: emp.contractDetails.contractEndDate,
+            avatar: emp.avatar?.url || null,
+            daysRemaining: isExpired ? 0 : diffDays, // show remaining days for active
+            status: emp.status,
+          };
+        });
+
+        // Emit to HR room
+        io.to("hr_notifications").emit(
+          "contract_expiry_alert",
+          formattedEmployees
+        );
+
+        console.log(
+          `🚨 Sent ${formattedEmployees.length} contract expiry alerts to HR`
+        );
+      }
+    } catch (err) {
+      console.error("❌ Error checking contracts:", err);
+    }
+  };
+
+  // Check every minute
+  setInterval(checkContractExpiries, 1000 * 60);
 };
