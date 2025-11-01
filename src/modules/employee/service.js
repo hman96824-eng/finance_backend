@@ -145,28 +145,33 @@ const EmployeeService = {
       const lastSalaryEntry = existingEmployee.salary?.at(-1);
       const currentSalary = lastSalaryEntry?.salaryIncome || 0;
 
-      const newSalary = Number(data?.salary?.[0]?.salaryIncome) || 0;
-      const incrementAmount = newSalary - currentSalary;
+      // 4️⃣ Get new salary (if provided)
+      const newSalary =
+        Number(data?.salary?.[0]?.salaryIncome) || currentSalary;
 
-      // 4️⃣ Prepare new salary record (only if valid fields exist)
-      const lastIndex = data?.salary?.length - 1;
-      const newSalaryRecord =
-        data?.salary?.[lastIndex]?.salaryIncome &&
-        data?.salary?.[lastIndex]?.salaryStartDate &&
-        data?.salary?.[lastIndex]?.salaryEndDate
-          ? {
-              salaryStartDate: data.salary[lastIndex].salaryStartDate,
-              salaryEndDate: data.salary[lastIndex].salaryEndDate,
-              salaryIncome: newSalary,
-              incrementAmount,
-            }
-          : null;
+      // 5️⃣ Only create new salary record if salary actually changed
+      let newSalaryRecord = null;
+      if (newSalary !== currentSalary) {
+        const lastIndex = data?.salary?.length - 1;
+        const incrementAmount = newSalary - currentSalary;
 
-      // 5️⃣ Update employee data
-      if (newSalaryRecord) {
+        // ✅ Create a new salary record
+        newSalaryRecord = {
+          salaryStartDate:
+            data.salary[lastIndex]?.salaryStartDate || new Date(),
+          salaryEndDate: data.salary[lastIndex]?.salaryEndDate || null,
+          salaryIncome: newSalary,
+          incrementAmount,
+        };
+
+        // Append the new record
         data.salary = [...(existingEmployee.salary || []), newSalaryRecord];
+      } else {
+        // Salary did not change → keep old salary history
+        delete data.salary;
       }
 
+      // 6️⃣ Update the employee
       const updated = await EmployeeModel.findByIdAndUpdate(
         id,
         { $set: data },
