@@ -13,11 +13,11 @@ export const initContractNotificationSocket = (io) => {
     // HR joins the special notification room
     socket.on("join_hr_room", (hrUserId) => {
       socket.join("hr_notifications");
-      console.log(`👤 HR user (${hrUserId}) joined the HR notifications room`);
+      // console.log(`👤 HR (${hrUserId}) joined `);
     });
 
     socket.on("disconnect", () => {
-      console.log("❌ Socket disconnected:", socket.id);
+      // console.log("❌ Socket disconnected:", socket.id);
     });
   });
 
@@ -49,9 +49,7 @@ export const initContractNotificationSocket = (io) => {
         ],
       });
 
-      console.log(
-        `🧾 Found ${expiringContracts.length} employees (active expiring soon + expired)`
-      );
+      console.log(`🧾 Found ${expiringContracts.length} `);
 
       if (expiringContracts.length > 0) {
         // Populate avatars
