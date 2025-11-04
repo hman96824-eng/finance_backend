@@ -294,13 +294,10 @@ const ProService = {
           });
 
           // 🏦 Create new bank if not found
-          if (!bank) {
-            bank = await Bank.create({
-              ...normalizedBank,
-              totalBankBalance: 0,
-              paymentHistory: [],
-            });
-          }
+          if (!bank)
+            throw ApiError.badRequest(
+              "Bank not found for the provided details"
+            );
 
           // 💰 Add this new payment
           bank.paymentHistory.push({
