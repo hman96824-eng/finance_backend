@@ -1,76 +1,10 @@
-// import mongoose from "mongoose";
-
-// const BankSchema = new mongoose.Schema(
-//   {
-//     bankName: { type: String, required: true, trim: true },
-//     accountTitle: { type: String, required: true, trim: true },
-//     accountNumber: { type: String, required: true, trim: true },
-//     ibanNumber: { type: String, trim: true },
-//     budget: { type: Number, required: true },
-//     advanceAmount: { type: Number, required: true },
-//     pendingAmount: { type: Number, default: 0 },
-//   },
-//   { timestamps: true }
-// );
-
-// export default mongoose.model("Bank", BankSchema);
-
-// import mongoose from "mongoose";
-
-// const ProjectPaymentSchema = new mongoose.Schema(
-//   {
-//     project: {
-//       type: mongoose.Schema.Types.ObjectId,
-//       ref: "Project",
-//       required: true,
-//     },
-//     amount: { type: Number, required: true },
-//     type: { type: String, enum: ["credit", "debit"], default: "credit" },
-//     note: { type: String, trim: true },
-//     date: { type: Date, default: Date.now },
-//   },
-//   { _id: false }
-// );
-
-// const BankSchema = new mongoose.Schema(
-//   {
-//     bankName: { type: String, required: true, trim: true },
-//     accountTitle: { type: String, required: true, trim: true },
-//     accountNumber: { type: String, required: true, trim: true },
-//     ibanNumber: { type: String, trim: true },
-
-//     // 💰 Combined total of all project payments under this bank
-//     totalBankBalance: { type: Number, default: 0 },
-
-//     // 📜 All payments made from all projects
-//     paymentHistory: [ProjectPaymentSchema],
-//   },
-//   { timestamps: true }
-// );
-
-// // 🧮 Auto-calculate bank balance
-// BankSchema.pre("save", function (next) {
-//   this.totalBankBalance = this.paymentHistory.reduce(
-//     (sum, tx) => sum + (tx.type === "credit" ? tx.amount : -tx.amount),
-//     0
-//   );
-//   next();
-// });
-
-// export default mongoose.model("Bank", BankSchema);
-
 import mongoose from "mongoose";
 
-const ProjectPaymentSchema = new mongoose.Schema(
+const PaymentSchema = new mongoose.Schema(
   {
-    project: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Project",
-      required: true,
-    },
+    project: { type: mongoose.Schema.Types.ObjectId, ref: "Project" },
     amount: { type: Number, required: true },
     type: { type: String, enum: ["credit", "debit"], default: "credit" },
-    note: { type: String, trim: true },
     date: { type: Date, default: Date.now },
   },
   { _id: false }
@@ -78,21 +12,33 @@ const ProjectPaymentSchema = new mongoose.Schema(
 
 const BankSchema = new mongoose.Schema(
   {
-    bankName: { type: String, trim: true, lowercase: true },
-    accountTitle: { type: String, trim: true, lowercase: true },
-    accountNumber: { type: String, trim: true },
-    ibanNumber: { type: String, trim: true, uppercase: true },
+    bankName: { type: String, trim: true, required: true },
+    accountTitle: { type: String, trim: true, required: true },
+    accountNumber: { type: String, trim: true, required: true },
+    branchCode: { type: String, trim: true },
+    ibanNumber: { type: String, trim: true },
+    accountType: { type: String, enum: ["Current", "Saving"], default: "Current" },
+    currency: { type: String, default: "PKR" },
+    openingDate: { type: Date },
+    balance: { type: Number, default: 0 },
+    status: { type: String, enum: ["Active", "Closed"], default: "Active" },
 
+    // 🔹 Aggregate balance from transactions
     totalBankBalance: { type: Number, default: 0 },
-    paymentHistory: [ProjectPaymentSchema],
+
+    // 🔹 All payment history
+    paymentHistory: [PaymentSchema],
+
+    // 🔹 Ownership tracking
+    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
   },
   { timestamps: true }
 );
 
-// 🧩 Ensure uniqueness for same bank account + IBAN
-BankSchema.index({ accountNumber: 1, ibanNumber: 1 }, { unique: true });
+// --- Indexing (no duplicate accounts per user) ---
+BankSchema.index({ accountNumber: 1, createdBy: 1 }, { unique: true, sparse: true });
 
-// 💰 Auto-calculate bank balance before save
+// --- Balance auto-update ---
 BankSchema.pre("save", function (next) {
   this.totalBankBalance = this.paymentHistory.reduce(
     (sum, tx) => sum + (tx.type === "credit" ? tx.amount : -tx.amount),
@@ -101,4 +47,4 @@ BankSchema.pre("save", function (next) {
   next();
 });
 
-export default mongoose.model("Bank", BankSchema);
+export default mongoose.models.Bank || mongoose.model("Bank", BankSchema);

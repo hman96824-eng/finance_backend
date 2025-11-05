@@ -168,6 +168,14 @@ export const messages = {
   // media
   FILES_UPLOADED: "Files Uploaded successfully",
   ONLY_5_FILES_ALLOWED: "Only 5 files are allowed",
+
+
+  // bank
+  BANK_NOT_FOUND: "Bank not found",
+  BANK_CREATED: "Bank created successfully",
+  BANK_UPDATED: "Bank updated successfully",
+  BANK_DELETED: "Bank deleted successfully",
+
 };
 
 export default messages;

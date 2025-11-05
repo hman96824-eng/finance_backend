@@ -70,9 +70,7 @@ const ReactivateEmployees = async () => {
   }
 };
 // call the reactivate function after every day
-// setInterval(ReactivateEmployees, 24 * 60 * 60 * 1000); // 24 hours in milliseconds
-// for testing purpose run after every minute
-setInterval(ReactivateEmployees, 1000); // 1 second in milliseconds
+setInterval(ReactivateEmployees, 24 * 60 * 60 * 1000); // 24 hours in milliseconds
 
 const EmployeeService = {
   // 🟢 CREATE EMPLOYEE

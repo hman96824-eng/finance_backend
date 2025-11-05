@@ -189,8 +189,8 @@ const ProService = {
         const banksArray = Array.isArray(proj.banks)
           ? proj.banks
           : proj.banks
-          ? [proj.banks]
-          : [];
+            ? [proj.banks]
+            : [];
         proj.banks = banksArray.map((b) => ({
           ...b,
           paymentHistory: (Array.isArray(b.paymentHistory)
