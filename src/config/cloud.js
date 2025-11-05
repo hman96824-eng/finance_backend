@@ -9,36 +9,62 @@ cloudinary.config({
 
 export default cloudinary;
 
-export const uploadToCloudinary = async (filePath, folder, options = {}) => {
-  const uploadOptions = {
-    folder: folder || "user_avatars",
-    resource_type: options.resource_type || "raw",
-  };
+/**
+ * Upload file to Cloudinary (default: resource_type=raw, folder=documents)
+ */
+export const uploadToCloudinary = async (
+  filePath,
+  folder = "documents",
+  options = {}
+) => {
+  try {
+    const uploadOptions = {
+      folder,
+      resource_type: options.resource_type || "raw",
+      use_filename: true,
+      unique_filename: false,
+      access_mode: "public",
+    };
 
-  // 1️⃣ Upload first
-  const result = await cloudinary.uploader.upload(filePath, {
-    resource_type: "raw",
-    folder: "documents",
-    use_filename: true,
-    unique_filename: false,
-    access_mode: "public", // ensures public access
-  });
+    const result = await cloudinary.uploader.upload(filePath, uploadOptions);
 
-  const viewUrl = result.secure_url.replace("/raw/upload/", "/upload/");
-  // 2️⃣ Generate signed URL (useful for PDFs or raw files)
-  const signedUrl = cloudinary.url(result.public_id, {
-    resource_type: uploadOptions.resource_type,
-    type: "upload",
-    sign_url: true,
-  });
+    // Generate a viewable URL (for raw files)
+    const viewUrl = result.secure_url.replace("/raw/upload/", "/upload/");
 
-  // 3️⃣ Return both
-  return {
-    ...result,
-    signed_url: signedUrl,
-  };
+    // Generate a signed URL
+    const signedUrl = cloudinary.url(result.public_id, {
+      resource_type: uploadOptions.resource_type,
+      type: "upload",
+      sign_url: true,
+    });
+
+    return {
+      ...result,
+      signed_url: signedUrl,
+      view_url: viewUrl,
+    };
+  } catch (err) {
+    console.error("❌ Cloudinary upload failed:", err.message);
+    throw err;
+  }
 };
 
-export const deleteFromCloudinary = async (publicId) => {
-  return await cloudinary.uploader.destroy(publicId);
+/**
+ * Delete file from Cloudinary with full logging & type awareness
+ */
+export const deleteFromCloudinary = async (publicId, resourceType = "raw") => {
+  try {
+    const result = await cloudinary.uploader.destroy(publicId, {
+      resource_type: resourceType,
+    });
+
+    if (result.result === "not found") {
+      console.warn("⚠️ File not found on Cloudinary:", publicId);
+    }
+
+    return result;
+  } catch (err) {
+    console.error("❌ Cloudinary delete error:", err.message);
+    throw err;
+  }
 };
