@@ -5,16 +5,11 @@ import ApiError from "../utils/ApiError.js";
 export const checkPermission = (requiredPermissions) => {
   return async (req, res, next) => {
     try {
-      console.log(requiredPermissions, "requiredPermissions");
-
       const user = await UserModel.findById(req?.user?.id).populate("role_id");
 
       if (!user) throw ApiError.unauthorized(messages.USER_NOT_FOUND);
 
       if (!user.role_id || !Array.isArray(user.role_id.permissions)) {
-        console.log("Role or permissions not found:", {
-          role: user.role_id?._id,
-        });
         throw ApiError.unauthorized(messages.PERMISSON_NOT_GRANTED);
       }
 
@@ -23,7 +18,6 @@ export const checkPermission = (requiredPermissions) => {
       const hasPermission = requiredPermissions.every((perm) =>
         userPermissions.includes(perm)
       );
-      console.log(hasPermission, "hasPermission");
 
       if (!hasPermission)
         throw ApiError.unauthorized(messages.PERMISSON_NOT_GRANTED);

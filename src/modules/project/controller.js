@@ -6,7 +6,7 @@ import ProService from "./service.js";
 const ProController = {
   createProject: async (req, res) => {
     try {
-      console.log({ reqBody: req.body }, "req.body");
+  
 
       const data = await ProService.addProject(req.body);
 
@@ -36,13 +36,13 @@ const ProController = {
 
   updateProject: async (req, res) => {
     try {
-      ("check 1");
+  
       const projectId = req.params.id;
       const data = req.body;
-      console.log(data, "data in request body");
+
 
       const updatedProject = await ProService.updateProject(projectId, data);
-      console.log(req.body, "req.body");
+   
 
       successResponse(res, updatedProject);
     } catch (err) {

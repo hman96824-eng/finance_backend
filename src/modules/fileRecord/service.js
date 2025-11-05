@@ -6,8 +6,13 @@ import ApiError from "../../utils/ApiError.js";
 import { deleteFromCloudinary } from "../../config/cloud.js";
 import mongoose from "mongoose";
 
-export const createFileRecordService = async (data, files, userId) => {
+export const createFileRecordService = async (data, files, user) => {
   const { title, description, category } = data;
+
+  // Validate user ID
+  if (!user || !mongoose.Types.ObjectId.isValid(user)) {
+    throw ApiError.badRequest("Invalid user ID provided");
+  }
 
   // ✅ 1. Validate number of files
   if (!files || files.length === 0) {
@@ -32,10 +37,10 @@ export const createFileRecordService = async (data, files, userId) => {
         );
       }
 
-      //       // ✅ 3. Upload file to Cloudinary
+      // ✅ 3. Upload file to Cloudinary
       const result = await uploadToCloudinary(file.path, "documents");
 
-      //       // ✅ 4. Save media record in DB
+      // ✅ 4. Save media record in DB with ObjectId
       const media = await Media.create({
         url: result.secure_url,
         public_id: result.public_id,
@@ -43,22 +48,22 @@ export const createFileRecordService = async (data, files, userId) => {
         resource_type: result.resource_type,
         folder: result.folder,
         size: result.bytes,
-        uploadedBy: userId,
+        uploadedBy: new mongoose.Types.ObjectId(user), // Convert to ObjectId
       });
 
       uploadedMedia.push(media._id);
 
-      //       // ✅ 5. Delete local temp file
+      // ✅ 5. Delete local temp file
       fs.unlinkSync(file.path);
     }
 
-    //     // ✅ 6. Create FileRecord entry
+    // Create FileRecord with the user ID
     const record = new FileRecord({
       title,
       description,
       category,
       mediaFiles: uploadedMedia,
-      createdBy: userId,
+      createdBy: new mongoose.Types.ObjectId(user), // Also ensure createdBy is ObjectId
     });
 
     await record.save();
@@ -76,14 +81,11 @@ export const createFileRecordService = async (data, files, userId) => {
     //     // ✅ 8. Add backend-based view URLs
     const BASE_URL = process.env.BASE_URL || "http://localhost:5000";
     populatedRecord.mediaFiles = populatedRecord.mediaFiles.map((m) => {
-      console.log(m, "nnsjcuew"); // ✅ log each media object here
-
       return {
         ...(m.toObject?.() || m), // ensure it's a plain object if it's a Mongoose doc
         viewUrl: `${BASE_URL}/api/v1/files/view/${m._id}`,
       };
     });
-    console.log(populatedRecord.mediaFiles, "populatedRecord.mediaFiles");
 
     return populatedRecord;
   } catch (error) {
@@ -122,6 +124,11 @@ export const updateFileRecordByIdService = async (
   files,
   userId
 ) => {
+  // Validate user ID first
+  if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
+    throw ApiError.badRequest("Invalid user ID provided");
+  }
+
   const record = await FileRecord.findById(recordId);
   if (!record) throw ApiError.notFound("File record not found.");
 
@@ -137,51 +144,66 @@ export const updateFileRecordByIdService = async (
 
     const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB per file
 
-    for (const file of files) {
-      if (file.size > MAX_FILE_SIZE) {
-        files.forEach((f) => fs.existsSync(f.path) && fs.unlinkSync(f.path));
-        throw ApiError.badRequest(
-          `File "${file.originalname}" exceeds the 10MB limit.`
-        );
+    try {
+      for (const file of files) {
+        if (file.size > MAX_FILE_SIZE) {
+          files.forEach((f) => fs.existsSync(f.path) && fs.unlinkSync(f.path));
+          throw ApiError.badRequest(
+            `File "${file.originalname}" exceeds the 10MB limit.`
+          );
+        }
+
+        // ✅ Upload to Cloudinary
+        const result = await uploadToCloudinary(file.path, "documents");
+
+        const media = await Media.create({
+          url: result.secure_url,
+          public_id: result.public_id,
+          format: result.format,
+          resource_type: result.resource_type,
+          folder: result.folder,
+          size: result.bytes,
+          uploadedBy: new mongoose.Types.ObjectId(userId), // Convert to ObjectId
+        });
+
+        uploadedMedia.push(media._id);
+
+        // Remove temp file after upload
+        fs.existsSync(file.path) && fs.unlinkSync(file.path);
       }
 
-      // ✅ Upload to Cloudinary (or Supabase if you switch)
-      const result = await uploadToCloudinary(file.path, "documents");
-
-      const media = await Media.create({
-        url: result.secure_url,
-        public_id: result.public_id,
-        format: result.format,
-        resource_type: result.resource_type,
-        folder: result.folder,
-        size: result.bytes,
-        uploadedBy: userId,
-      });
-
-      uploadedMedia.push(media._id);
-
-      // Remove temp file after upload
-      fs.existsSync(file.path) && fs.unlinkSync(file.path);
+      // ✅ Append new files to existing array
+      record.mediaFiles = [...record.mediaFiles, ...uploadedMedia];
+    } catch (error) {
+      // Cleanup any remaining temp files
+      files.forEach((f) => fs.existsSync(f.path) && fs.unlinkSync(f.path));
+      throw ApiError.internal(error.message || "File update failed");
     }
-
-    // ✅ Append new files to existing array
-    record.mediaFiles = [...record.mediaFiles, ...uploadedMedia];
   }
 
   await record.save();
 
   // ✅ Populate media + creator info before returning
-  await record.populate([
-    {
-      path: "mediaFiles",
-      select:
-        "url format resource_type folder size uploadedBy createdAt updatedAt",
-      populate: { path: "uploadedBy", select: "name email role" },
-    },
-    { path: "createdBy", select: "name email role" },
-  ]);
+  const populatedRecord = await FileRecord.findById(record._id)
+    .populate([
+      {
+        path: "mediaFiles",
+        select:
+          "url format resource_type folder size uploadedBy createdAt updatedAt",
+        populate: { path: "uploadedBy", select: "name email role" },
+      },
+      { path: "createdBy", select: "name email role" },
+    ])
+    .lean();
 
-  return record;
+  // Add viewUrl to each media file
+  const BASE_URL = process.env.BASE_URL || "http://localhost:5000";
+  populatedRecord.mediaFiles = populatedRecord.mediaFiles.map((m) => ({
+    ...m,
+    viewUrl: `${BASE_URL}/api/v1/files/view/${m._id}`,
+  }));
+
+  return populatedRecord;
 };
 
 export const removeMediaFromRecordService = async (
@@ -192,8 +214,6 @@ export const removeMediaFromRecordService = async (
   if (!mongoose.Types.ObjectId.isValid(recordId)) {
     throw ApiError.badRequest("Invalid recordId");
   }
-  console.log(recordId, "recordId");
-  console.log(mediaIds, "mediaIds");
 
   // Ensure each mediaId is valid
   const invalid = mediaIds.some((id) => !mongoose.Types.ObjectId.isValid(id));

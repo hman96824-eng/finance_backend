@@ -39,10 +39,7 @@ export const createInvite = async (name, email, roleName) => {
 
   const existUser = await userRepo.findOne({ email: cleanEmail });
   if (existUser) throw ApiError.unauthorized(messages.USER_ALREADY_EXISTS);
-  // console.log(name, "name");
-  // console.log(email, "email");
-  // console.log(roleName, "roleName");
-  // console.log(existUser, "existUser");
+ 
 
   // 🔹 Step 1: Find role by name
   const role = await RoleModel.findOne({ name: roleName });

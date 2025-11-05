@@ -52,7 +52,7 @@ const EmpController = {
         media?._id || null
       );
 
-      console.log(updated, "updated");
+     
       res
         .status(200)
         .json(ApiError.ok("Employee updated successfully", updated));
@@ -118,8 +118,7 @@ const EmpController = {
       const userIds = req.body;
       const { type } = req.query;
 
-      console.log(userIds, "userIds");
-      console.log(type, "type");
+     
 
       // Call appropriate service
       let result;
@@ -129,7 +128,7 @@ const EmpController = {
         result = await EmployeeService.deleteManyArchivedUsers(userIds);
       }
 
-      console.log(result, "result ");
+
 
       return successResponse(res, result, messages.USER_DELETED);
     } catch (err) {
