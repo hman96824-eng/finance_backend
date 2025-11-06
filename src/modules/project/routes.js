@@ -6,24 +6,27 @@ import { checkPermission } from "../../middleware/permissons.js";
 const router = express.Router();
 
 
-// router.use(Middleware.authenticate, checkPermission("manage_project"));
+/** First, define specific routes */
+router.post('/create', ProController.createProject)       // ➕ Create Project
+    .get('/all', ProController.getAllProjects)     // 📜 Get All Projects
+    .get('/deleted', ProController.getDeletedProjects)    // 🗑️ Get Deleted Projects
+    .put("/soft-delete-all", ProController.deleteAllProjects)
+    .delete("/archive-delete-all", ProController.deleteAllDeletedProjectsPermanent);
 
-/** 🔹 FETCH DELETED PROJECTS - Must be before /:id route */
-router.get("/deleted", ProController.getDeletedProjects);
+/** Then, define routes with parameters */
+router.get('/:id', ProController.getProjectById)       // 🔍 Get Project by ID
+    .put('/update/:id', ProController.updateProject)    // ✏️ Update Project
+    .put("/soft-delete/:id", ProController.deleteProjectSoft)
+    .delete("/archive-delete/:id", ProController.deleteProjectPermanent);
+
+router.use(Middleware.authenticate);
+router
 
 router
-    .post('/create', ProController.createProject)       // ➕ Create Project
-    .get('/all', ProController.getAllProjects);      // 📜 Get All Projects
-
-router
-    .get('/:id', ProController.getProjectById)       // 🔍 Get Project by ID
-    .put('/update/:id', ProController.updateProject);       // ✏️ Update Project
 
 
 /** 🔹 SOFT DELETE (Mark as Deleted) */
 router
-    .put("/soft-delete/:id", ProController.deleteProjectSoft)
-    .put("/soft-delete-all", ProController.deleteAllProjects);
 
 
 /** 🔹 PERMANENT DELETE (From Archive) */

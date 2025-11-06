@@ -11,16 +11,14 @@ const BankController = {
             next(err);
         }
     },
-
     getAllBanks: async (req, res, next) => {
         try {
-            const banks = await BankService.getAllBanks(req.user._id);
+            const banks = await BankService.getAllBanks(req.user.id);
             return successResponse(res, banks);
         } catch (err) {
             next(err);
         }
     },
-
     getBankById: async (req, res, next) => {
         try {
             const bank = await BankService.getBankById(req.params.id, req.user.id);
@@ -29,7 +27,6 @@ const BankController = {
             next(err);
         }
     },
-
     updateBank: async (req, res, next) => {
         try {
             const bank = await BankService.updateBank(req.params.id, req.body, req.user.id);
@@ -55,7 +52,6 @@ const BankController = {
             next(err);
         }
     },
-
     getPayments: async (req, res, next) => {
         try {
             const payments = await BankService.getPayments(req.params.id, req.user.id);
@@ -64,6 +60,15 @@ const BankController = {
             next(err);
         }
     },
+    deleteManyBanks: async (req, res, next) => {
+        try {
+            const bankIds = req.body;
+            const result = await BankService.deleteManyBanks(bankIds, req.user.id);
+            return successResponse(res, result);
+        } catch (err) {
+            next(err);
+        }
+    }
 };
 
 export default BankController;

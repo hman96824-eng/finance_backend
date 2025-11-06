@@ -8,7 +8,7 @@ const ProController = {
     try {
       console.log({ reqBody: req.body }, "req.body");
 
-      const data = await ProService.addProject(req.body);
+      const data = await ProService.addProject(req.body, req.user?._id);
 
       successResponse(res, data);
     } catch (err) {

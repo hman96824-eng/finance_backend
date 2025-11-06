@@ -8,13 +8,18 @@ const router = express.Router();
 
 router.use(Middleware.authenticate);
 
-router.post("/create", validate(validation.bankSchema), BankController.createBank);
-router.get("/all", BankController.getAllBanks);
-router.get("/:id", BankController.getBankById);
-router.put("/update/:id", BankController.updateBank);
-router.delete("/delete/:id", BankController.deleteBank);
+router
+    .post("/create", validate(validation.bankSchema), BankController.createBank)
+    .get("/all", BankController.getAllBanks)
+    .get("/:id", BankController.getBankById)
+    .put("/update/:id", BankController.updateBank)
+    .delete("/delete/:id", BankController.deleteBank)
+    .delete("/delete-many", BankController.deleteManyBanks)
 
-router.post("/payment/:id", BankController.addPayment);
-router.get("/payment/:id", BankController.getPayments);
+router
+    .post("/payment/:id", BankController.addPayment)
+    .get("/payment/:id", BankController.getPayments)
+
+
 
 export default router;
