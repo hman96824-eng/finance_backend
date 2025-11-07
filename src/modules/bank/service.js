@@ -11,6 +11,9 @@ const BankRepo = new repository(BankModel);
 class BankService {
   static createBank = async (data, userId) => {
     try {
+      const balance = data.balance || 0;
+      console.log(balance, "balanace");
+
       // Do not allow nested payment history during initial create in general (optional)
       // Validate if provided
       if (
@@ -92,14 +95,14 @@ class BankService {
     userId,
     { amount, type = "credit", note, project }
   ) => {
-    console.log(project, "projects");
-
     const session = await mongoose.startSession();
     session.startTransaction();
     try {
-      // if (!mongoose.Types.ObjectId.isValid(project)) {
-      //     throw ApiError.badRequest(messages.INVALID_PROJECT_ID || "Invalid project ID format");
-      // }
+      if (!mongoose.Types.ObjectId.isValid(project)) {
+        throw ApiError.badRequest(
+          messages.INVALID_PROJECT_ID || "Invalid project ID format"
+        );
+      }
 
       // Fetch bank (owned by user) with session
       const bank = await BankModel.findOne({
@@ -127,8 +130,6 @@ class BankService {
 
       // Fetch project and validate
       const projectDoc = await ProjectModel.findById(project).session(session);
-      console.log(projectDoc, "projectDoc");
-
       if (!projectDoc) throw ApiError.notFound(messages.PROJECT_NOT_FOUND);
 
       const amt = Number(amount) || 0;
@@ -146,9 +147,8 @@ class BankService {
       // Push payment to bank
       bank.paymentHistory.push(paymentEntry);
 
-      // Update bank.totalBankBalance (pre-save hook will also recalc; explicit update keeps consistency)
-      bank.totalBankBalance =
-        Number(bank.totalBankBalance || 0) + (type === "credit" ? amt : -amt);
+      // The pre-save hook will handle the balance update
+      // No need to manually update balance here
 
       // Ensure project.bankPayments array exists and push a bankPayment snapshot
       projectDoc.bankPayments = Array.isArray(projectDoc.bankPayments)

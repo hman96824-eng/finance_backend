@@ -181,6 +181,11 @@ export const messages = {
   BANK_DELETED: "Bank deleted successfully",
   NO_BANKS_SELECTED: "No banks selected for deletion",
 
+  ASSET_NOT_FOUND: "Asset not found",
+  ASSET_CREATED: "Asset created successfully",
+  ASSET_UPDATED: "Asset updated successfully",
+  ASSET_DELETED: "Asset deleted successfully",
+
 };
 
 export default messages;

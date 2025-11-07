@@ -50,8 +50,6 @@ const BankController = {
   },
   addPayment: async (req, res, next) => {
     try {
-      console.log(req.body, "req.body");
-
       const bank = await BankService.addPayment(
         req.params.id,
         req.user.id,
