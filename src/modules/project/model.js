@@ -1,36 +1,21 @@
-// import mongoose from "mongoose";
-// import { string } from "zod";
-
-// const ProjectSchema = new mongoose.Schema(
-//   {
-//     projectName: { type: String, required: true, trim: true },
-//     projectID: { type: String, required: true, unique: true, trim: true },
-//     projectType: { type: String, trim: true },
-//     projectDetails: { type: String, trim: true },
-//     clientName: { type: String, trim: true },
-//     projectManager: { type: String, trim: true },
-//     teamMembers: { type: [String], default: [] },
-//     startDate: { type: Date },
-//     endDate: { type: Date },
-//     status: {
-//       type: String,
-//       enum: ["Pending", "Completed", "Deleted"],
-//       default: "Pending",
-//     },
-
-//     // Reference to Bank Schema
-//     bank: {
-//       type: mongoose.Schema.Types.ObjectId,
-//       ref: "Bank",
-//       required: false,
-//     },
-//   },
-//   { timestamps: true }
-// );
-
-// export default mongoose.model("Project", ProjectSchema);
-
 import mongoose from "mongoose";
+
+const BankPaymentSchema = new mongoose.Schema(
+  {
+    bank: { type: mongoose.Schema.Types.ObjectId, ref: "Bank", },
+    amount: { type: Number, },
+    type: { type: String, enum: ["credit", "debit"], default: "credit" },
+    note: { type: String },
+    date: { type: Date, default: Date.now },
+    // store a snapshot of bank details that might be useful in project views
+    bankSnapshot: {
+      bankName: { type: String },
+      accountNumber: { type: String },
+      accountTitle: { type: String }
+    }
+  },
+  { _id: false }
+);
 
 const ProjectSchema = new mongoose.Schema(
   {
@@ -46,7 +31,7 @@ const ProjectSchema = new mongoose.Schema(
     status: {
       type: String,
       enum: ["Pending", "In Progress", "Completed", "Deleted"],
-      default: "Pending",
+      default: "Pending"
     },
 
     // Financial fields per project
@@ -55,15 +40,27 @@ const ProjectSchema = new mongoose.Schema(
     totalPaid: { type: Number, default: 0 },
     pendingAmount: { type: Number, default: 0 },
 
-    // Reference to shared bank
+    // Reference to many banks (IDs)
     banks: [
       {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "Bank",
-      },
+        ref: "Bank"
+      }
     ],
+
+    // New: Keep a per-project list of payments that came via banks (quick access)
+    bankPayments: [BankPaymentSchema]
   },
   { timestamps: true }
 );
 
-export default mongoose.model("Project", ProjectSchema);
+ProjectSchema.set("toJSON", {
+  transform: (doc, ret) => {
+    ret.id = ret._id;
+    delete ret._id;
+    delete ret.__v;
+    return ret;
+  }
+});
+
+export default mongoose.models.Project || mongoose.model("Project", ProjectSchema);

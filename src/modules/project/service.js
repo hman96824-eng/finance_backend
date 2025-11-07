@@ -1,4 +1,3 @@
-// services.js
 import Project from "./model.js";
 import Bank from "../bank/model.js";
 import ApiError from "../../utils/ApiError.js";
@@ -32,7 +31,7 @@ const generateProjectID = async () => {
 };
 
 const ProService = {
-  addProject: async (data) => {
+  addProject: async (data, userId) => {
     try {
       const projectID = await generateProjectID();
 
@@ -47,22 +46,17 @@ const ProService = {
         endDate,
         status,
         budget = 0,
-        payments = [], // ensure default
+        payments = [] // payments: optional initial payments that may include bank info
       } = data || {};
 
-      // Defensive guards
       const safePayments = Array.isArray(payments) ? payments : [];
-      const safeBudget =
-        typeof budget === "number" ? budget : Number(budget) || 0;
+      const safeBudget = typeof budget === "number" ? budget : Number(budget) || 0;
 
-      // 💰 1️⃣ Calculate totals
-      const totalPaid = safePayments.reduce(
-        (sum, p) => sum + (Number(p?.amount) || 0),
-        0
-      );
+      // Calculate totals based on initial payments if they have amounts
+      const totalPaid = safePayments.reduce((sum, p) => sum + (Number(p?.amount) || 0), 0);
       const pendingAmount = Math.max(safeBudget - totalPaid, 0);
 
-      // 📁 2️⃣ Create project first (without banks)
+      // Create project first (without banks/payments)
       const project = await Project.create({
         projectName,
         projectID,
@@ -78,30 +72,23 @@ const ProService = {
         totalPaid,
         pendingAmount,
         banks: [],
+        bankPayments: []
       });
 
-      // 🏦 3️⃣ Process each payment and update or create banks
+      // Process each initial payment, create or update banks, and add bankPayments entry
       for (const payment of safePayments) {
-        const { bankName, accountTitle, accountNumber, ibanNumber, amount } =
-          payment || {};
+        const { bankName, accountTitle, accountNumber, ibanNumber, amount, note } = payment || {};
 
         const normalizedBank = {
           bankName: bankName ? String(bankName).trim() : undefined,
           accountTitle: accountTitle ? String(accountTitle).trim() : undefined,
-          accountNumber: accountNumber
-            ? String(accountNumber).trim()
-            : undefined,
-          ibanNumber: ibanNumber
-            ? String(ibanNumber).trim().toUpperCase()
-            : undefined,
+          accountNumber: accountNumber ? String(accountNumber).trim() : undefined,
+          ibanNumber: ibanNumber ? String(ibanNumber).trim().toUpperCase() : undefined
         };
 
-        // Require accountNumber or ibanNumber to match/create bank
         const findQuery = {};
-        if (normalizedBank.accountNumber)
-          findQuery.accountNumber = normalizedBank.accountNumber;
-        if (normalizedBank.ibanNumber)
-          findQuery.ibanNumber = normalizedBank.ibanNumber;
+        if (normalizedBank.accountNumber) findQuery.accountNumber = normalizedBank.accountNumber;
+        if (normalizedBank.ibanNumber) findQuery.ibanNumber = normalizedBank.ibanNumber;
 
         let bank = null;
         if (Object.keys(findQuery).length > 0) {
@@ -116,29 +103,40 @@ const ProService = {
             ibanNumber: normalizedBank.ibanNumber || "",
             totalBankBalance: 0,
             paymentHistory: [],
+            // createdBy field is required; if you have a current user context pass it in. For now leave it empty if not known.
           });
         }
 
-        // Ensure paymentHistory exists before pushing
-        bank.paymentHistory = Array.isArray(bank.paymentHistory)
-          ? bank.paymentHistory
-          : [];
-
-        // Add payment history for this project in that bank
         const amt = Number(amount) || 0;
         if (amt > 0) {
+          // add payment entry to bank
+          bank.paymentHistory = Array.isArray(bank.paymentHistory) ? bank.paymentHistory : [];
           bank.paymentHistory.push({
             project: project._id,
             amount: amt,
             type: "credit",
-            note: "Initial project payment",
+            note: note || "Initial project payment",
+            date: new Date()
           });
-          // update bank totalBankBalance if model expects that
           bank.totalBankBalance = (Number(bank.totalBankBalance) || 0) + amt;
           await bank.save();
+
+          // add bankPayments entry on project
+          project.bankPayments = Array.isArray(project.bankPayments) ? project.bankPayments : [];
+          project.bankPayments.push({
+            bank: bank._id,
+            amount: amt,
+            type: "credit",
+            note: note || "Initial project payment",
+            date: new Date(),
+            bankSnapshot: {
+              bankName: bank.bankName,
+              accountNumber: bank.accountNumber,
+              accountTitle: bank.accountTitle
+            }
+          });
         }
 
-        // Attach this bank to the project if not already added
         if (!project.banks.some((b) => b.toString() === bank._id.toString())) {
           project.banks.push(bank._id);
         }
@@ -146,24 +144,14 @@ const ProService = {
 
       await project.save();
 
-      // 🧩 4️⃣ Populate with filtered bank data
-      const populatedProject = await Project.findById(project._id)
-        .populate("banks")
-        .lean();
+      // Populate banks but filter each bank’s paymentHistory for this project only
+      const populatedProject = await Project.findById(project._id).populate("banks").lean();
 
-      // Filter each bank’s payment history for this project only (guarded)
-      populatedProject.banks = (
-        Array.isArray(populatedProject.banks) ? populatedProject.banks : []
-      ).map((b) => ({
+      populatedProject.banks = (Array.isArray(populatedProject.banks) ? populatedProject.banks : []).map((b) => ({
         ...b,
-        paymentHistory: (Array.isArray(b.paymentHistory)
-          ? b.paymentHistory
-          : []
-        ).filter(
-          (tx) =>
-            tx.project &&
-            tx.project.toString() === populatedProject._id.toString()
-        ),
+        paymentHistory: (Array.isArray(b.paymentHistory) ? b.paymentHistory : []).filter((tx) =>
+          tx.project && tx.project.toString() === populatedProject._id.toString()
+        )
       }));
 
       return populatedProject;
@@ -178,69 +166,115 @@ const ProService = {
         status: { $in: ["Pending", "Completed"] },
         isDeleted: { $ne: true },
       })
-        .populate("banks")
         .sort({ createdAt: -1 })
         .lean();
 
-      // ensure array
       if (!Array.isArray(projects)) projects = projects ? [projects] : [];
 
-      const filteredProjects = projects.map((proj) => {
-        const banksArray = Array.isArray(proj.banks)
-          ? proj.banks
-          : proj.banks
-          ? [proj.banks]
-          : [];
-        proj.banks = banksArray.map((b) => ({
-          ...b,
-          paymentHistory: (Array.isArray(b.paymentHistory)
-            ? b.paymentHistory
-            : []
-          ).filter(
-            (tx) => tx.project && tx.project.toString() === proj._id.toString()
-          ),
-        }));
-        return proj;
-      });
+      // To avoid N+1, load all banks referenced by these projects once
+      const allBankIds = projects.flatMap(p => Array.isArray(p.banks) ? p.banks : (p.banks ? [p.banks] : []));
+      const uniqueBankIds = [...new Set(allBankIds.map(String))];
+      const banksById = {};
+      if (uniqueBankIds.length > 0) {
+        const banks = await Bank.find({ _id: { $in: uniqueBankIds } }).lean();
+        for (const b of banks) banksById[b._id.toString()] = b;
+      }
 
-      return filteredProjects;
+      const results = await Promise.all(projects.map(async (proj) => {
+        const banksArray = Array.isArray(proj.banks) ? proj.banks : proj.banks ? [proj.banks] : [];
+
+        const processedBanks = banksArray
+          .map((bId) => {
+            const b = banksById[String(bId)];
+            if (!b) return null;
+            return {
+              ...b,
+              paymentHistory: (Array.isArray(b.paymentHistory) ? b.paymentHistory : []).filter(
+                (tx) => tx && tx.project && tx.project.toString() === proj._id.toString()
+              )
+            };
+          })
+          .filter(Boolean);
+
+        // Calculate total paid from processedBanks
+        const totalPaid = processedBanks.reduce((sum, bank) => {
+          return sum + (bank.paymentHistory || []).reduce((bankSum, payment) => {
+            const amount = Number(payment.amount) || 0;
+            return bankSum + (payment.type === 'credit' ? amount : -amount);
+          }, 0);
+        }, 0);
+
+        const budget = Number(proj.budget) || 0;
+        const pendingAmount = Math.max(budget - totalPaid, 0);
+
+        // Persist totals back to DB (keeps DB consistent with bank payments)
+        await Project.findByIdAndUpdate(proj._id, {
+          totalPaid,
+          pendingAmount
+        }, { new: true });
+
+        return {
+          ...proj,
+          banks: processedBanks,
+          totalPaid,
+          pendingAmount
+        };
+      }));
+
+      return results;
     } catch (error) {
       throw ApiError.badRequest(error?.message || "Failed to fetch projects");
     }
   },
 
-  getProjects: async () => {
+  getProjectById: async (id) => {
     try {
-      const projects = await Project.find({
+      const project = await Project.findOne({
+        _id: id,
         status: { $in: ["Pending", "Completed"] },
-        isDeleted: { $ne: true },
-      })
-        .sort({ createdAt: -1 })
-        .lean();
+        isDeleted: { $ne: true }
+      }).lean();
 
-      const allBanks = await Bank.find().lean();
+      if (!project) {
+        throw ApiError.notFound("Project not found");
+      }
 
-      const result = projects.map((proj) => {
-        const banksForProject = allBanks
-          .map((bank) => {
-            const payments = (bank.paymentHistory || []).filter(
-              (tx) =>
-                tx.project && tx.project.toString() === proj._id.toString()
-            );
+      // Load banks associated with the project
+      const banks = await Bank.find({ _id: { $in: project.banks || [] } }).lean();
 
-            if (payments.length > 0) {
-              return { ...bank, paymentHistory: payments };
-            }
-            return null;
-          })
-          .filter(Boolean);
+      const processedBanks = banks.map(bank => ({
+        ...bank,
+        paymentHistory: (bank.paymentHistory || []).filter(
+          tx => tx && tx.project && tx.project.toString() === id.toString()
+        )
+      }));
 
-        return { ...proj, banks: banksForProject };
-      });
+      // Calculate total paid from processed banks
+      const totalPaid = processedBanks.reduce((sum, bank) => {
+        return sum + (bank.paymentHistory || []).reduce((bankSum, payment) => {
+          const amount = Number(payment.amount) || 0;
+          return bankSum + (payment.type === 'credit' ? amount : -amount);
+        }, 0);
+      }, 0);
 
-      return result;
+      const budget = Number(project.budget) || 0;
+      const pendingAmount = Math.max(budget - totalPaid, 0);
+
+      // Persist totals back to DB
+      await Project.findByIdAndUpdate(id, {
+        totalPaid,
+        pendingAmount
+      }, { new: true });
+
+      return {
+        ...project,
+        banks: processedBanks,
+        totalPaid,
+        pendingAmount
+      };
+
     } catch (error) {
-      throw ApiError.badRequest(error?.message || "Failed to fetch projects");
+      throw ApiError.badRequest(error?.message || "Failed to fetch project");
     }
   },
 

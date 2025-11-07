@@ -202,6 +202,51 @@ export const organizationValidation = z
     { message: messages.ORG_ALREADY_EXISTS }
   );
 
+// Bank validation schema
+export const bankSchema = z.object({
+  bankName: z.string().trim().min(1, { message: "Bank name is required" }),
+  accountTitle: z.string().trim().min(1, { message: "Account title is required" }),
+  accountNumber: z.string().trim().min(1, { message: "Account number is required" }),
+  branchCode: z.string().trim().optional(),
+  ibanNumber: z.string().trim().optional(),
+  accountType: z.enum(["Current", "Saving"], {
+    message: "Account type must be either Current or Saving"
+  }),
+  currency: z.string().default("PKR"),
+  openingDate: z.string().optional(),
+  balance: z.number().nonnegative().optional(),
+  status: z.enum(["Active", "Closed"], {
+    message: "Status must be either Active or Closed"
+  }).default("Active"),
+});
+
+// Validation middleware
+const validateRequest = (schema) => async (req, res, next) => {
+  try {
+    // ✅ Validate body, params, or query
+    if (req.body && Object.keys(req.body).length > 0) {
+      await schema.parseAsync(req.body);
+    } else if (req.params && Object.keys(req.params).length > 0) {
+      await schema.parseAsync(req.params);
+    } else if (req.query && Object.keys(req.query).length > 0) {
+      await schema.parseAsync(req.query);
+    }
+
+    next();
+  } catch (error) {
+    if (error.errors) {
+      return res.status(400).json({
+        success: false,
+        message: error.errors[0].message,
+        errors: error.errors,
+      });
+    }
+
+    next(error);
+  }
+};
+
+
 // ===============================
 // 📤 EXPORT ALL
 // ===============================
@@ -225,4 +270,6 @@ export default {
   addRoleValidation,
   // Organization validation
   organizationValidation,
+  validateRequest,
+  bankSchema
 };

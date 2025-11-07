@@ -164,10 +164,23 @@ export const messages = {
   // project
   PROJECT_CREATED_SUCCESSFULLY: "Project created successfully",
   PROJECTS_FETCHED_SUCCESSFULLY: "Projects fetched successfully",
+  PROJECT_UPDATED_SUCCESSFULLY: "Project updated successfully",
+  PROJECT_DELETED_SUCCESSFULLY: "Project deleted successfully",
+  PROJECT_NOT_FOUND: "Project not found",
+  INVALID_PROJECT_ID: "Invalid project ID",
 
   // media
   FILES_UPLOADED: "Files Uploaded successfully",
   ONLY_5_FILES_ALLOWED: "Only 5 files are allowed",
+
+
+  // bank
+  BANK_NOT_FOUND: "Bank not found",
+  BANK_CREATED: "Bank created successfully",
+  BANK_UPDATED: "Bank updated successfully",
+  BANK_DELETED: "Bank deleted successfully",
+  NO_BANKS_SELECTED: "No banks selected for deletion",
+
 };
 
 export default messages;
