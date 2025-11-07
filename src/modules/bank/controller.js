@@ -46,6 +46,7 @@ const BankController = {
     },
     addPayment: async (req, res, next) => {
         try {
+
             const bank = await BankService.addPayment(req.params.id, req.user.id, req.body);
             return successResponse(res, bank);
         } catch (err) {
@@ -68,7 +69,8 @@ const BankController = {
         } catch (err) {
             next(err);
         }
-    }
+    },
+
 };
 
 export default BankController;

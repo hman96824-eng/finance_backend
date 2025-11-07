@@ -5,12 +5,16 @@ import ApiError from "../../utils/ApiError.js";
 import repository from "../../utils/repository.js";
 import messages from "../../constants/messages.js";
 
+
 const projectRepo = new repository(ProjectModel);
 const BankRepo = new repository(BankModel);
 
 class BankService {
     static createBank = async (data, userId) => {
         try {
+            const balance = data.balance || 0;
+            console.log(balance, "balanace");
+
             // Do not allow nested payment history during initial create in general (optional)
             // Validate if provided
             if (Array.isArray(data.paymentHistory) && data.paymentHistory.length > 0) {
@@ -88,7 +92,7 @@ class BankService {
             if (!Array.isArray(bank.paymentHistory)) {
                 bank.paymentHistory = [];
             }
-            
+
             const validPayments = [];
             for (const payment of bank.paymentHistory) {
                 if (payment && payment.project && mongoose.Types.ObjectId.isValid(String(payment.project))) {
@@ -115,8 +119,8 @@ class BankService {
             // Push payment to bank
             bank.paymentHistory.push(paymentEntry);
 
-            // Update bank.totalBankBalance (pre-save hook will also recalc; explicit update keeps consistency)
-            bank.totalBankBalance = Number(bank.totalBankBalance || 0) + (type === "credit" ? amt : -amt);
+            // The pre-save hook will handle the balance update
+            // No need to manually update balance here
 
             // Ensure project.bankPayments array exists and push a bankPayment snapshot
             projectDoc.bankPayments = Array.isArray(projectDoc.bankPayments) ? projectDoc.bankPayments : [];
@@ -185,6 +189,8 @@ class BankService {
             throw ApiError.badRequest(error.message);
         }
     };
+
+
 }
 
 export default BankService;

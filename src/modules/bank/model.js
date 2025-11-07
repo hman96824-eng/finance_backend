@@ -29,9 +29,6 @@ const BankSchema = new mongoose.Schema(
     balance: { type: Number, default: 0 },
     status: { type: String, enum: ["Active", "Closed"], default: "Active" },
 
-    // Aggregate balance from transactions
-    totalBankBalance: { type: Number, default: 0 },
-
     // All payment history (subdocuments)
     paymentHistory: [PaymentSchema],
 
@@ -46,10 +43,17 @@ BankSchema.index({ accountNumber: 1, createdBy: 1 }, { unique: true, sparse: tru
 
 // --- Balance auto-update on save (recalculate from paymentHistory) ---
 BankSchema.pre("save", function (next) {
-  this.totalBankBalance = this.paymentHistory.reduce(
-    (sum, tx) => sum + (tx.type === "credit" ? Number(tx.amount || 0) : -Number(tx.amount || 0)),
-    0
-  );
+  if (this.isNew) {
+    // For new bank documents, use the initial balance
+    this.balance = Number(this.balance || 0);
+  } else {
+    // For existing documents, calculate from the latest payment
+    const latestPayment = this.paymentHistory[this.paymentHistory.length - 1];
+    if (latestPayment) {
+      this.balance = Number(this.balance || 0) +
+        (latestPayment.type === "credit" ? Number(latestPayment.amount || 0) : -Number(latestPayment.amount || 0));
+    }
+  }
   next();
 });
 
