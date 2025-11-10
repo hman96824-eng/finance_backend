@@ -1,4 +1,4 @@
-import { successResponse } from "../../utils/response.helper.js";
+import { errorResponse, successResponse } from "../../utils/response.helper.js";
 import userService from "./service.js";
 import inviteservice from "../invites/service.js";
 import { messages } from "../../constants/messages.js";
@@ -15,7 +15,17 @@ export const login = async (req, res, next) => {
     next(err);
   }
 };
+export const refreshToken = async (req, res) => {
+  try {
+    const { refreshToken } = req.body;
 
+    const accessToken = await userService.refreshAccessToken(refreshToken);
+
+    successResponse(res, accessToken, "new access token ");
+  } catch (error) {
+    errorResponse(res, 400, error.message);
+  }
+};
 export const signup = async (req, res, next) => {
   try {
     const data = await userService.signup(req.body);
@@ -320,6 +330,7 @@ export const health = async (req, res) => {
 
 export default {
   login,
+  refreshToken,
   signup,
   forgetpassword,
   verifyCode,

@@ -32,7 +32,6 @@ export const login = async ({ email, password }) => {
     "name description"
   );
 
-  
   if (!user) throw ApiError.unauthorized(messages.USER_NOT_FOUND);
   if (user.status !== "active") throw ApiError.unauthorized(messages.IsActive);
 
@@ -52,10 +51,8 @@ export const login = async ({ email, password }) => {
     role_id: user.role_id?._id || null,
   };
 
- 
-
   const accessToken = jwt.generateToken(payload);
-
+  const refreshToken = jwt.generateRefreshToken(payload);
   // Remove sensitive fields
   const userObj = user.toObject();
   delete userObj.password;
@@ -65,6 +62,7 @@ export const login = async ({ email, password }) => {
   // Return full user data + role
   return {
     accessToken,
+    refreshToken,
     user: {
       id: userObj._id,
       name: userObj.name,
@@ -84,6 +82,42 @@ export const login = async ({ email, password }) => {
       updated_at: userObj.updatedAt,
     },
   };
+};
+
+export const refreshAccessToken = async (refreshToken) => {
+  if (!refreshToken) throw new Error("No refresh token provided");
+
+  let decoded;
+  try {
+    decoded = jwt.verifyRefreshToken(refreshToken);
+    
+  } catch (err) {
+    throw new Error("Invalid or expired refresh token");
+  }
+
+  const user = await userRepo.findOneWithPopulate(
+    { _id: decoded.id },
+    "role_id",
+    "name description"
+  );
+ 
+
+  if (!user) throw new Error("User not found");
+
+  // Optional: verify DB-stored refresh token matches
+  // if (user.refreshToken !== refreshToken)
+  //   throw new Error("Refresh token does not match");
+  const payload = {
+    id: user._id,
+    name: user.name,
+    role: user.role_id?.name || "UNKNOWN",
+    email: user.email,
+    role_id: user.role_id?._id || null,
+  };
+
+  const newAccessToken = jwt.generateToken(payload);
+
+  return newAccessToken;
 };
 export const signup = async ({
   name,
@@ -333,7 +367,6 @@ export const createInvite = async (email, role_id) => {
     html: templates.generateTeamInviteTemplate(invite?.token, role_id, email),
   });
 
-
   return invite;
 };
 export const registerUser = async (inviteToken, newRole, userData) => {
@@ -378,7 +411,6 @@ export const registerUser = async (inviteToken, newRole, userData) => {
       role_id: newUser.role_id,
     },
   };
-  
 };
 export const toggleUserStatus = async (id) => {
   const user = await userRepo.findById(id);
@@ -455,7 +487,6 @@ export const uploadProfileImage = async (req, res, next) => {
     const userId = req.user.id; // get from JWT middleware
     const user = await userRepo.findById(userId);
 
- 
     if (!req.file) throw ApiError.badRequest(messages.FILE_NOT_UPLOADED);
 
     // If user already has an image, remove old one
@@ -465,7 +496,6 @@ export const uploadProfileImage = async (req, res, next) => {
 
     // Upload new image to cloudinary
     const result = await uploadToCloudinary(req.file.path, "user_avatars");
-  
 
     // Update DB
     user.avatar = {
@@ -516,8 +546,6 @@ export const assignRole = async (id, newRoleName) => {
   const user = await userRepo.findById(id);
   if (!user) throw ApiError.notFound(messages.USER_NOT_FOUND);
   if (!newRoleName) throw ApiError.badRequest(messages.ROLE_NOT_DEFINE);
-
-
 
   // 🔑 Find role by name
   const role = await roleRepo.findOne({ name: newRoleName });
@@ -587,6 +615,7 @@ export const deleteManyArchivedUsers = async (userIds) => {
 
 export default {
   login,
+  refreshAccessToken,
   uploadProfileImage,
   removeProfileImage,
   signup,

@@ -16,6 +16,7 @@ const upload = multer({ dest: "uploads/" });
 // public routes
 router
   .post("/login", validate(validation.loginValidation), userController.login) // login
+  .post("/refresh-token", userController.refreshToken)
   .get("/health", userController.health)
   .post(
     "/forgetPasswordOtp",

@@ -10,11 +10,17 @@ export const generateToken = (payload) => {
 // refresh token
 export const generateRefreshToken = (payload) => {
   return jwt.sign(payload, config.JWT_REFRESH_SECRET, {
-    expiresIn: config.REFRESH_EXPIRES_IN || "7d",
+    expiresIn: config.REFRESH_EXPIRES_IN || "30d",
   }); // long lived
 };
 // verifyToken
 export const verifyToken = (token, secret = config.JWT_SECRET) => {
+  return jwt.verify(token, secret);
+};
+export const verifyRefreshToken = (
+  token,
+  secret = config.JWT_REFRESH_SECRET
+) => {
   return jwt.verify(token, secret);
 };
 
@@ -22,4 +28,5 @@ export default {
   generateToken,
   generateRefreshToken,
   verifyToken,
+  verifyRefreshToken,
 };
