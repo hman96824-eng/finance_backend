@@ -6,7 +6,7 @@ const BankController = {
   createBank: async (req, res, next) => {
     try {
       const bank = await BankService.createBank(req.body, req.user.id);
-      return successResponse(res, bank);
+      return successResponse(res, bank, "Bank created Successfully");
     } catch (err) {
       next(err);
     }
@@ -43,7 +43,7 @@ const BankController = {
     try {
       const bank = await BankService.deleteBank(req.params.id, req.user.id);
 
-      return successResponse(res, bank);
+      return successResponse(res, bank, "Bank deleted Successfully");
     } catch (err) {
       next(err);
     }
@@ -75,7 +75,7 @@ const BankController = {
     try {
       const bankIds = req.body;
       const result = await BankService.deleteManyBanks(bankIds, req.user.id);
-      return successResponse(res, result);
+      return successResponse(res, result, "Banks deleted Successfully");
     } catch (err) {
       next(err);
     }

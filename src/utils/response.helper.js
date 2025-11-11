@@ -5,4 +5,3 @@ export const successResponse = (res, data, message = "Success") => {
 export const errorResponse = (res, statusCode, message) => {
   return res.status(statusCode).json({ success: false, message });
 };
-

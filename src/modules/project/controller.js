@@ -6,11 +6,9 @@ import ProService from "./service.js";
 const ProController = {
   createProject: async (req, res) => {
     try {
-  
-
       const data = await ProService.addProject(req.body, req.user?._id);
 
-      successResponse(res, data);
+      successResponse(res, data, "Project Created Successfully");
     } catch (err) {
       throw ApiError.badRequest(err.message);
     }
@@ -36,15 +34,12 @@ const ProController = {
 
   updateProject: async (req, res) => {
     try {
-  
       const projectId = req.params.id;
       const data = req.body;
 
-
       const updatedProject = await ProService.updateProject(projectId, data);
-   
 
-      successResponse(res, updatedProject);
+      successResponse(res, updatedProject, "Project Updated Successfully");
     } catch (err) {
       throw ApiError.badRequest(err.message);
     }
@@ -64,7 +59,7 @@ const ProController = {
       const projectIds = req.body; // array of IDs
       const result = await ProService.softDeleteManyProjects(projectIds);
 
-      return successResponse(res, result);
+      return successResponse(res, result, "Project Deleted Successfully");
     } catch (err) {
       next(err);
     }
@@ -82,7 +77,7 @@ const ProController = {
   deleteProjectPermanent: async (req, res) => {
     try {
       const data = await ProService.deleteProjectPermanent(req.params.id);
-      successResponse(res, data);
+      successResponse(res, data, "Project Deleted Successfully");
     } catch (err) {
       throw ApiError.badRequest(err.message);
     }
@@ -94,7 +89,7 @@ const ProController = {
       const data = await ProService.deleteAllDeletedProjectsPermanent(
         projectIDs
       );
-      successResponse(res, data);
+      successResponse(res, data, "Project Deleted Successfully");
     } catch (err) {
       throw ApiError.badRequest(err.message);
     }
