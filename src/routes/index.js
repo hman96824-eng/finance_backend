@@ -6,6 +6,7 @@ import empRoutes from "../modules/employee/routes.js";
 import proRoutes from "../modules/project/routes.js";
 import fileRoutes from "../modules/fileRecord/routes.js";
 import bankRoutes from "../modules/bank/routes.js";
+import assetRoutes from "../modules/expenses/asset/route.js";
 import express from "express";
 
 const app = express();
@@ -21,6 +22,7 @@ export default (app) => {
   apiRoute.use("/projects", proRoutes);
   apiRoute.use("/files", fileRoutes);
   apiRoute.use("/banks", bankRoutes);
+  apiRoute.use("/assets", assetRoutes);
 
   app.use("/api/v1", apiRoute);
 };
