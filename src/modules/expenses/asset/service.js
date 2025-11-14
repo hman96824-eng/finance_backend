@@ -22,7 +22,13 @@ class AssetService {
                 balance: bank.balance - body.amount,
             });
 
-            return await AssetRepo.create(body);
+            const createdAsset = await AssetRepo.create(body);
+
+            // Populate bank and attachments before returning
+            return await Asset.findById(createdAsset._id)
+                .populate("bank", "bankName accountNumber")
+                .populate("attachments", "url")
+                .lean();
         } catch (err) {
             throw ApiError.badRequest(err.message);
         }

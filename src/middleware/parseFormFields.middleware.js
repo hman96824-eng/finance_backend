@@ -13,9 +13,20 @@ export default function parseFormFields(req, res, next) {
             return value;
         };
 
+        // Parse arrays and objects
         ["emails", "tags", "addresses", "address"].forEach((key) => {
             if (req.body[key] !== undefined) {
                 req.body[key] = tryParse(req.body[key]);
+            }
+        });
+
+        // Convert numeric fields from string to number
+        ["amount", "balance", "salary"].forEach((key) => {
+            if (req.body[key] !== undefined) {
+                const num = Number(req.body[key]);
+                if (!isNaN(num)) {
+                    req.body[key] = num;
+                }
             }
         });
 

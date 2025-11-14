@@ -220,6 +220,61 @@ export const bankSchema = z.object({
   }).default("Active"),
 });
 
+// Business Expense validation schema
+export const businessExpenseSchema = z.object({
+  title: z.string().trim().min(1, { message: "Expense title is required" }),
+  description: z.string().trim().optional(),
+  amount: z.number().positive({ message: "Amount must be a positive number" }),
+  paidBy: z.string().trim().min(1, { message: "Paid by field is required" }),
+  bankName: z.string().regex(/^[a-f\d]{24}$/i, { message: "Invalid bank ID" }),
+});
+
+// Business Expense update validation (all fields optional)
+export const businessExpenseUpdateSchema = z.object({
+  title: z.string().trim().min(1, { message: "Expense title is required" }).optional(),
+  description: z.string().trim().optional(),
+  amount: z.number().positive({ message: "Amount must be a positive number" }).optional(),
+  paidBy: z.string().trim().min(1, { message: "Paid by field is required" }).optional(),
+  bankName: z.string().regex(/^[a-f\d]{24}$/i, { message: "Invalid bank ID" }).optional(),
+});
+
+// Delete many validation
+export const deleteManySchema = z.object({
+  ids: z.array(z.string().regex(/^[a-f\d]{24}$/i, { message: "Invalid ID format" })).min(1, { message: "At least one ID is required" }),
+});
+
+// Delete attachments validation
+export const deleteAttachmentsSchema = z.object({
+  ids: z.array(z.string().regex(/^[a-f\d]{24}$/i, { message: "Invalid attachment ID" })).min(1, { message: "At least one attachment ID is required" }),
+}).or(z.object({
+  attachmentIds: z.array(z.string().regex(/^[a-f\d]{24}$/i, { message: "Invalid attachment ID" })).min(1, { message: "At least one attachment ID is required" }),
+}));
+
+// Upload attachments validation (checks if files are present)
+export const uploadAttachmentsSchema = z.object({
+  // This will be checked in controller middleware
+});
+
+// Asset Expense validation schema
+export const assetExpenseSchema = z.object({
+  title: z.string().trim().min(1, { message: "Asset title is required" }),
+  description: z.string().trim().optional(),
+  amount: z.number().positive({ message: "Amount must be a positive number" }),
+  purchaseBy: z.string().trim().min(1, { message: "Purchase by field is required" }),
+  purchaseDate: z.string().min(1, { message: "Purchase date is required" }),
+  bank: z.string().regex(/^[a-f\d]{24}$/i, { message: "Invalid bank ID" }),
+});
+
+// Asset Expense update validation (all fields optional)
+export const assetExpenseUpdateSchema = z.object({
+  title: z.string().trim().min(1, { message: "Asset title is required" }).optional(),
+  description: z.string().trim().optional(),
+  amount: z.number().positive({ message: "Amount must be a positive number" }).optional(),
+  purchaseBy: z.string().trim().min(1, { message: "Purchase by field is required" }).optional(),
+  purchaseDate: z.string().min(1, { message: "Purchase date is required" }).optional(),
+  bank: z.string().regex(/^[a-f\d]{24}$/i, { message: "Invalid bank ID" }).optional(),
+});
+
 // Validation middleware
 const validateRequest = (schema) => async (req, res, next) => {
   try {
@@ -234,11 +289,11 @@ const validateRequest = (schema) => async (req, res, next) => {
 
     next();
   } catch (error) {
-    if (error.errors) {
+    if (error.errors && error.errors.length > 0) {
+      // Return only the first error message for better UX
       return res.status(400).json({
         success: false,
         message: error.errors[0].message,
-        errors: error.errors,
       });
     }
 
@@ -271,5 +326,14 @@ export default {
   // Organization validation
   organizationValidation,
   validateRequest,
-  bankSchema
+  bankSchema,
+  // Business Expense
+  businessExpenseSchema,
+  businessExpenseUpdateSchema,
+  deleteManySchema,
+  deleteAttachmentsSchema,
+  uploadAttachmentsSchema,
+  // Asset Expense
+  assetExpenseSchema,
+  assetExpenseUpdateSchema
 };

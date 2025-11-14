@@ -104,6 +104,15 @@ const BusinessExpenseController = {
 
     uploadAttachments: async (req, res, next) => {
         try {
+            // Validate that files are present
+            if (!req.files || req.files.length === 0) {
+                return res.status(400).json({
+                    success: false,
+                    error: "Validation error",
+                    message: "At least one attachment file is required"
+                });
+            }
+
             const userId = req.user.id;
             let attachmentIds = [];
             if (req.files?.length > 0) {

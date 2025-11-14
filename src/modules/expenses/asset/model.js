@@ -3,13 +3,13 @@ import mongoose from "mongoose";
 const AssetSchema = new mongoose.Schema(
     {
         // Main fields matching frontend
-        title: { type: String, required: true },        // Expense Name
-        description: { type: String },                   // Description
-        amount: { type: Number, required: true },       // Amount (PKR)
-        category: { type: String, required: true },     // Category
-        purchaseBy: { type: String, required: true },   // Purchase By (person name)
-        purchaseDate: { type: Date, required: true },   // Purchase date
-        status: { type: String, enum: ["Active", "Inactive"], default: "Active" }, // Status
+        title: { type: String, required: true },
+        description: { type: String },
+        amount: { type: Number, required: true },
+        category: { type: String },
+        purchaseBy: { type: String, required: true },
+        purchaseDate: { type: Date, required: true },
+        status: { type: String, enum: ["Active", "Inactive"], default: "Active" },
 
         // 🔗 Connected bank (for bankName in frontend)
         bank: { type: mongoose.Schema.Types.ObjectId, ref: "Bank", required: true },

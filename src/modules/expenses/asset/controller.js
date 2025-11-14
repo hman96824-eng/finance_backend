@@ -41,7 +41,7 @@ const AssetController = {
             });
 
             return successResponse(res, {
-                ...result.toObject(),
+                ...result,
                 uploadedBy: userInfo.name,  // Add for frontend
                 user: userInfo,
             }, "Asset created successfully");
@@ -164,6 +164,15 @@ const AssetController = {
     },
     uploadAttachments: async (req, res, next) => {
         try {
+            // Validate that files are present
+            if (!req.files || req.files.length === 0) {
+                return res.status(400).json({
+                    success: false,
+                    error: "Validation error",
+                    message: "At least one attachment file is required"
+                });
+            }
+
             const userId = req.user.id;
             // ⭐ Step 1: Upload new attachments first (if any)
             let attachmentIds = [];
