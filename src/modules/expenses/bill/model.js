@@ -1,0 +1,32 @@
+import mongoose from "mongoose";
+
+const BillingExpenseSchema = new mongoose.Schema(
+    {
+        title: { type: String, required: true },          // Expense Name
+        description: { type: String },                    // Description
+        amount: { type: Number, required: true },         // Amount (PKR)
+        paidBy: { type: String, required: true },         // Paid By (Cash, Bank, etc.)
+        billDate: { type: Date, required: true },         // Bill Date
+
+        // Bank reference (for bankName in frontend)
+        bankName: { type: mongoose.Schema.Types.ObjectId, ref: "Bank", required: true },
+
+        // Who entered this expense (User reference)
+        enteredBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+
+        // uploadedBy: store uploader display name (string) so frontend can show it quickly
+        uploadedBy: { type: String },
+
+        // Attachments
+        attachments: [{ type: mongoose.Schema.Types.ObjectId, ref: "Media" }],
+
+        // Status and soft delete
+        status: { type: String, enum: ["Active", "Inactive"], default: "Active" },
+        isDeleted: { type: Boolean, default: false },
+    },
+    { timestamps: true, versionKey: false }
+);
+
+const BillingExpenseModel = mongoose.model("BillingExpense", BillingExpenseSchema);
+
+export default BillingExpenseModel;

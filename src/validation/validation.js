@@ -275,6 +275,26 @@ export const assetExpenseUpdateSchema = z.object({
   bank: z.string().regex(/^[a-f\d]{24}$/i, { message: "Invalid bank ID" }).optional(),
 });
 
+// Billing Expense validation schema
+export const billingExpenseSchema = z.object({
+  title: z.string().trim().min(1, { message: "Bill title is required" }),
+  description: z.string().trim().optional(),
+  amount: z.number().positive({ message: "Amount must be a positive number" }),
+  paidBy: z.string().trim().min(1, { message: "Paid by field is required" }),
+  billDate: z.string().min(1, { message: "Bill date is required" }),
+  bankName: z.string().regex(/^[a-f\d]{24}$/i, { message: "Invalid bank ID" }),
+});
+
+// Billing Expense update validation (all fields optional)
+export const billingExpenseUpdateSchema = z.object({
+  title: z.string().trim().min(1, { message: "Bill title is required" }).optional(),
+  description: z.string().trim().optional(),
+  amount: z.number().positive({ message: "Amount must be a positive number" }).optional(),
+  paidBy: z.string().trim().min(1, { message: "Paid by field is required" }).optional(),
+  billDate: z.string().min(1, { message: "Bill date is required" }).optional(),
+  bankName: z.string().regex(/^[a-f\d]{24}$/i, { message: "Invalid bank ID" }).optional(),
+});
+
 // Validation middleware
 const validateRequest = (schema) => async (req, res, next) => {
   try {
@@ -335,5 +355,8 @@ export default {
   uploadAttachmentsSchema,
   // Asset Expense
   assetExpenseSchema,
-  assetExpenseUpdateSchema
+  assetExpenseUpdateSchema,
+  // Billing Expense
+  billingExpenseSchema,
+  billingExpenseUpdateSchema
 };
