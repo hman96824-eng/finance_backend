@@ -23,6 +23,7 @@ router
     )
     .delete("/delete-attachments/:id", middleware.authenticate, AssetController.deleteAttachments)
     .put("/upload-attachments/:id", middleware.authenticate, upload.array("attachments"), AssetController.uploadAttachments)
+
     .put("/soft-delete/:id", middleware.authenticate, AssetController.softDeleteAsset)
     .put("/soft-delete-many", middleware.authenticate, AssetController.softDeleteMany)
 

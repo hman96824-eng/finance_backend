@@ -1,0 +1,29 @@
+import express from "express";
+import middleware from "../../../middleware/auth.middleware.js";
+import upload from "../../../middleware/upload.middleware.js";
+import parseFormFields from "../../../middleware/parseFormFields.middleware.js";
+import BusinessExpenseController from "./controller.js";
+
+const router = express.Router();
+
+// Middleware stack for routes that include file uploads
+const uploadMiddleware = [middleware.authenticate, upload.array("attachments"), parseFormFields];
+
+// ---------- Business Expense Routes ----------
+
+router
+    .post("/create", uploadMiddleware, BusinessExpenseController.createExpense)
+    .get("/all", middleware.authenticate, BusinessExpenseController.getAllExpenses)
+    .get("/:id", middleware.authenticate, BusinessExpenseController.getExpenseById)
+
+    .put("/update/:id", uploadMiddleware, BusinessExpenseController.updateExpense)
+    .put("/soft-delete/:id", middleware.authenticate, BusinessExpenseController.softDeleteExpense)
+    .put("/soft-delete-many", middleware.authenticate, BusinessExpenseController.softDeleteMany)
+
+    .delete("/delete/:id", middleware.authenticate, BusinessExpenseController.deleteExpense)
+    .delete("/delete-many", middleware.authenticate, BusinessExpenseController.deleteManyExpense)
+
+    .delete("/delete-attachments/:id", middleware.authenticate, BusinessExpenseController.deleteAttachments)
+    .put("/upload-attachments/:id", uploadMiddleware, BusinessExpenseController.uploadAttachments)
+
+export default router;

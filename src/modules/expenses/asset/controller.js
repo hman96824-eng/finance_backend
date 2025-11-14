@@ -188,11 +188,11 @@ const AssetController = {
         try {
             const assetId = req.params.id;
             const attachmentIds = req.body.ids || req.body.attachmentIds;
-            
+
             if (!attachmentIds || !Array.isArray(attachmentIds) || attachmentIds.length === 0) {
                 throw new Error("Please provide valid attachment IDs in 'ids' array");
             }
-            
+
             const updated = await AssetService.deleteAttachments(
                 assetId,
                 attachmentIds

@@ -1,0 +1,138 @@
+import BusinessExpenseService from "./service.js";
+import { uploadMedia } from "../../media/service.js";
+import { UserModel } from "../../user/model.js";
+import { successResponse } from "../../../utils/response.helper.js";
+
+const BusinessExpenseController = {
+    createExpense: async (req, res, next) => {
+        try {
+            const userId = req.user.id;
+
+            let attachmentIds = [];
+            if (req.files?.length > 0) {
+                for (const file of req.files) {
+                    const media = await uploadMedia(file.path, "business-expense", userId);
+                    attachmentIds.push(media._id);
+                }
+            }
+
+            const user = await UserModel.findById(userId)
+                .select("name email");
+
+            const result = await BusinessExpenseService.createExpense({
+                ...req.body,
+                attachments: attachmentIds,
+                enteredBy: userId,
+            });
+
+            // Get populated response for create
+            const populated = await BusinessExpenseService.getExpenseById(result._id);
+
+            return successResponse(res, populated, "Business Expense created");
+        } catch (err) {
+            next(err);
+        }
+    },
+
+    updateExpense: async (req, res, next) => {
+        try {
+            const userId = req.user.id;
+
+            let attachmentIds = [];
+            if (req.files?.length > 0) {
+                for (const file of req.files) {
+                    const media = await uploadMedia(file.path, "business-expense", userId);
+                    attachmentIds.push(media._id);
+                }
+            }
+
+            const updateData = { ...req.body };
+            if (attachmentIds.length > 0) updateData.attachments = attachmentIds;
+
+            const updated = await BusinessExpenseService.updateExpense(req.params.id, updateData);
+
+            return successResponse(res, {
+                ...updated,
+                bankName: updated.bankName?.bankName || null,
+            }, "Business Expense updated successfully");
+        } catch (err) {
+            next(err);
+        }
+    },
+
+    softDeleteExpense: async (req, res, next) => {
+        try {
+            const result = await BusinessExpenseService.softDelete(req.params.id);
+            return successResponse(res, result, "Business Expense moved to trash");
+        } catch (err) { next(err); }
+    },
+
+    softDeleteMany: async (req, res, next) => {
+        try {
+            const result = await BusinessExpenseService.softDeleteMany(req.body.ids);
+            return successResponse(res, result, "Business Expenses moved to trash");
+        } catch (err) { next(err); }
+    },
+
+    deleteExpense: async (req, res, next) => {
+        try {
+            const result = await BusinessExpenseService.deleteExpense(req.params.id);
+            return successResponse(res, result, "Business Expense deleted permanently");
+        } catch (err) { next(err); }
+    },
+
+    deleteManyExpense: async (req, res, next) => {
+        try {
+            const result = await BusinessExpenseService.deleteMany(req.body.ids);
+            return successResponse(res, result, "Business Expenses deleted permanently");
+        } catch (err) { next(err); }
+    },
+
+    getAllExpenses: async (req, res, next) => {
+        try {
+            const data = await BusinessExpenseService.getAllExpenses();
+            return successResponse(res, data);
+        } catch (err) { next(err); }
+    },
+
+    getExpenseById: async (req, res, next) => {
+        try {
+            const data = await BusinessExpenseService.getExpenseById(req.params.id);
+            return successResponse(res, data);
+        } catch (err) { next(err); }
+    },
+
+    uploadAttachments: async (req, res, next) => {
+        try {
+            const userId = req.user.id;
+            let attachmentIds = [];
+            if (req.files?.length > 0) {
+                for (const file of req.files) {
+                    const media = await uploadMedia(file.path, "business-expense", userId);
+                    attachmentIds.push(media._id);
+                }
+            }
+
+            // This will merge with existing attachments via the service updateExpense method
+            const updated = await BusinessExpenseService.updateExpense(req.params.id, { attachments: attachmentIds });
+
+            return successResponse(res, updated, "Attachments uploaded successfully");
+        } catch (err) { next(err); }
+    },
+
+    deleteAttachments: async (req, res, next) => {
+        try {
+            const expenseId = req.params.id;
+            const attachmentIds = req.body.ids || req.body.attachmentIds;
+
+            if (!attachmentIds || !Array.isArray(attachmentIds) || attachmentIds.length === 0) {
+                throw new Error("Please provide valid attachment IDs in 'ids' array");
+            }
+
+            const updated = await BusinessExpenseService.deleteAttachments(expenseId, attachmentIds);
+            return successResponse(res, updated, "Attachments deleted from business expense successfully");
+        } catch (err) { next(err); }
+    }
+};
+
+export default BusinessExpenseController;
