@@ -13,7 +13,6 @@ const port = config.PORT || 5000;
 
 const app = express();
 
-// ✅ CORS must be applied BEFORE routes
 console.log("CORS ORIGIN:", config.corsSettings.origin);
 
 app.use(cors(config.corsSettings));
@@ -59,7 +58,8 @@ const startServer = async () => {
   try {
     await connectDB();
     httpServer.listen(port, () => {
-      console.log(`✅ Server running on http://localhost:${port}`);
+      console.log(`✅ Server running `);
+      console.log(config.corsSettings.origin, "setting here");
     });
   } catch (err) {
     throw ApiError.badRequest(err.message);
