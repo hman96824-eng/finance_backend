@@ -19,7 +19,6 @@ class GeneralExpenseService {
 
         return await GeneralExpenseRepo.create(body);
     };
-
     static updateExpense = async (id, body) => {
         if (body.attachments && body.attachments.length > 0) {
             const existing = await GeneralExpenseModel.findById(id).select("attachments");
@@ -36,26 +35,21 @@ class GeneralExpenseService {
             .populate("createdBy", "name email")
             .lean();
     };
-
     static softDelete = async (id) => {
         return await GeneralExpenseRepo.updateById(id, { status: "Inactive", isDeleted: true });
     };
-
     static softDeleteMany = async (ids) => {
         return await GeneralExpenseModel.updateMany(
             { _id: { $in: ids } },
             { status: "Inactive", isDeleted: true }
         );
     };
-
     static deleteExpense = async (id) => {
         return await GeneralExpenseRepo.deleteById(id);
     };
-
     static deleteMany = async (ids) => {
         return await GeneralExpenseRepo.deleteMany({ _id: { $in: ids } });
     };
-
     static getAllExpenses = async () => {
         const expenses = await GeneralExpenseModel.find({ isDeleted: false })
             .populate("bankName", "bankName accountNumber balance")
@@ -70,7 +64,6 @@ class GeneralExpenseService {
             date: exp.date ? new Date(exp.date).toISOString().split('T')[0] : null,
         }));
     };
-
     static getExpenseById = async (id) => {
         const exp = await GeneralExpenseModel.findById(id)
             .populate("bankName", "bankName accountNumber balance")
@@ -87,7 +80,6 @@ class GeneralExpenseService {
             date: exp.date ? new Date(exp.date).toISOString().split('T')[0] : null,
         };
     };
-
     static deleteAttachments = async (id, attachmentIds) => {
         const expense = await GeneralExpenseModel.findById(id);
         if (!expense) throw ApiError.notFound("Expense not found");

@@ -322,6 +322,7 @@ export const generalExpenseSchema = z.object({
   category: z.enum(["office", "utility", "travel", "food", "maintenance", "misc"], {
     message: "Invalid category"
   }),
+  purchaseBy: z.string().trim().min(1, { message: "Purchase by field is required" }),
   amount: z.number().positive({ message: "Amount must be positive" }),
   description: z.string().trim().optional(),
   date: z.string().optional(), // Optional, will default to now if not provided
@@ -333,6 +334,7 @@ export const generalExpenseUpdateSchema = z.object({
   category: z.enum(["office", "utility", "travel", "food", "maintenance", "misc"], {
     message: "Invalid category"
   }).optional(),
+  purchaseBy: z.string().trim().min(1, { message: "Purchase by field is required" }).optional(),
   amount: z.number().positive({ message: "Amount must be positive" }).optional(),
   description: z.string().trim().optional(),
   date: z.string().optional(),

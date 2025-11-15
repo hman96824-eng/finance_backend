@@ -6,6 +6,7 @@ const GeneralExpenseController = {
     createExpense: async (req, res, next) => {
         try {
             const userId = req.user.id;
+            const purchaseBy = req.body.purchaseBy || "";
 
             let attachmentIds = [];
             if (req.files?.length > 0) {
@@ -15,14 +16,13 @@ const GeneralExpenseController = {
                 }
             }
 
-            const payload = { ...req.body, attachments: attachmentIds, createdBy: userId };
+            const payload = { ...req.body, attachments: attachmentIds, createdBy: userId, purchaseBy };
             const result = await GeneralExpenseService.createExpense(payload);
             const populated = await GeneralExpenseService.getExpenseById(result._id);
 
             return successResponse(res, populated, "General Expense created successfully");
         } catch (err) { next(err); }
     },
-
     updateExpense: async (req, res, next) => {
         try {
             const userId = req.user.id;
@@ -43,49 +43,42 @@ const GeneralExpenseController = {
             return successResponse(res, updated, "General Expense updated successfully");
         } catch (err) { next(err); }
     },
-
     softDeleteExpense: async (req, res, next) => {
         try {
             const result = await GeneralExpenseService.softDelete(req.params.id);
             return successResponse(res, result, "Expense moved to trash");
         } catch (err) { next(err); }
     },
-
     softDeleteMany: async (req, res, next) => {
         try {
             const result = await GeneralExpenseService.softDeleteMany(req.body.ids);
             return successResponse(res, result, "Expenses moved to trash");
         } catch (err) { next(err); }
     },
-
     deleteExpense: async (req, res, next) => {
         try {
             const result = await GeneralExpenseService.deleteExpense(req.params.id);
             return successResponse(res, result, "Expense deleted permanently");
         } catch (err) { next(err); }
     },
-
     deleteManyExpense: async (req, res, next) => {
         try {
             const result = await GeneralExpenseService.deleteMany(req.body.ids);
             return successResponse(res, result, "Expenses deleted permanently");
         } catch (err) { next(err); }
     },
-
     getAllExpenses: async (req, res, next) => {
         try {
             const data = await GeneralExpenseService.getAllExpenses();
             return successResponse(res, data);
         } catch (err) { next(err); }
     },
-
     getExpenseById: async (req, res, next) => {
         try {
             const data = await GeneralExpenseService.getExpenseById(req.params.id);
             return successResponse(res, data);
         } catch (err) { next(err); }
     },
-
     uploadAttachments: async (req, res, next) => {
         try {
             if (!req.files || req.files.length === 0) {
@@ -103,7 +96,6 @@ const GeneralExpenseController = {
             return successResponse(res, updated, "Attachments uploaded successfully");
         } catch (err) { next(err); }
     },
-
     deleteAttachments: async (req, res, next) => {
         try {
             const attachmentIds = req.body.ids || req.body.attachmentIds;

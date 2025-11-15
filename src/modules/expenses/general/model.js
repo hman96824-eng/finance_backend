@@ -27,7 +27,11 @@ const GeneralExpenseSchema = new mongoose.Schema({
     },
     date: {
         type: Date,
-        default: Date.now
+    },
+    purchaseBy: {
+        type: String,
+        default: "",
+        required: true
     },
     bankName: {
         type: mongoose.Schema.Types.ObjectId,
