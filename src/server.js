@@ -12,14 +12,16 @@ import { initContractNotificationSocket } from "./utils/contractNotification.js"
 const port = config.PORT || 5000;
 
 const app = express();
+
+// ✅ CORS must be applied BEFORE routes
+app.use(cors(config.corsSettings));
+
 // app.use(express.json());
 app.use(express.json({ limit: "10mb" })); // default is 100kb
 app.use(express.urlencoded({ limit: "10mb", extended: true }));
 
-const corssetting = { ...config.corsSettings };
-app.use(cors(corssetting));
-
 routes(app);
+
 app.use(finalresponse);
 
 // ✅ Create http server from express
