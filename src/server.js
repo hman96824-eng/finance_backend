@@ -13,7 +13,7 @@ const port = config.PORT || 5000;
 
 const app = express();
 
-console.log("CORS ORIGIN:", config.corsSettings.origin);
+// console.log("CORS ORIGIN:", config.corsSettings.origin);
 
 app.use(cors(config.corsSettings));
 
@@ -58,8 +58,8 @@ const startServer = async () => {
   try {
     await connectDB();
     httpServer.listen(port, () => {
-      console.log(`✅ Server running `);
-      console.log(config.corsSettings.origin, "setting here");
+      console.log(`✅ Server running http://localhost:${port} `);
+      // console.log(config.corsSettings.origin, "setting here");
     });
   } catch (err) {
     throw ApiError.badRequest(err.message);

@@ -66,6 +66,7 @@ class BillingExpenseService {
         return expenses.map((exp) => ({
             ...exp,
             bankName: exp.bankName?.bankName || null,
+            billDate: exp.billDate ? new Date(exp.billDate).toISOString().split('T')[0] : null,
         }));
     };
     static getExpenseById = async (id) => {
@@ -81,6 +82,7 @@ class BillingExpenseService {
         return {
             ...exp,
             bankName: exp.bankName?.bankName || null,
+            billDate: exp.billDate ? new Date(exp.billDate).toISOString().split('T')[0] : null,
         };
     };
     static deleteAttachments = async (id, attachmentIds) => {

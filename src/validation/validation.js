@@ -314,6 +314,31 @@ export const donationExpenseUpdateSchema = z.object({
   donationDate: z.string().min(1).optional(),
   bankName: z.string().regex(/^[a-f\d]{24}$/i).optional(),
 });
+// ===============================
+// 🧾 GENERAL EXPENSE VALIDATION
+// ===============================
+export const generalExpenseSchema = z.object({
+  title: z.string().trim().min(1, { message: "Expense title is required" }),
+  category: z.enum(["office", "utility", "travel", "food", "maintenance", "misc"], {
+    message: "Invalid category"
+  }),
+  amount: z.number().positive({ message: "Amount must be positive" }),
+  description: z.string().trim().optional(),
+  date: z.string().optional(), // Optional, will default to now if not provided
+  bankName: z.string().regex(/^[a-f\d]{24}$/i, { message: "Invalid bank ID" }),
+});
+
+export const generalExpenseUpdateSchema = z.object({
+  title: z.string().trim().min(1, { message: "Expense title is required" }).optional(),
+  category: z.enum(["office", "utility", "travel", "food", "maintenance", "misc"], {
+    message: "Invalid category"
+  }).optional(),
+  amount: z.number().positive({ message: "Amount must be positive" }).optional(),
+  description: z.string().trim().optional(),
+  date: z.string().optional(),
+  bankName: z.string().regex(/^[a-f\d]{24}$/i, { message: "Invalid bank ID" }).optional(),
+});
+
 
 // Validation middleware
 const validateRequest = (schema) => async (req, res, next) => {
@@ -382,4 +407,7 @@ export default {
   // Donation Expense
   donationExpenseSchema,
   donationExpenseUpdateSchema,
+  // General Expense
+  generalExpenseSchema,
+  generalExpenseUpdateSchema,
 };

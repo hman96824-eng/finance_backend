@@ -93,7 +93,7 @@ class AssetService {
         return assets.map(asset => ({
             ...asset,
             bankName: asset.bank?.bankName || null,
-
+            purchaseDate: asset.purchaseDate ? new Date(asset.purchaseDate).toISOString().split('T')[0] : null,
         }));
     };
 
@@ -111,7 +111,7 @@ class AssetService {
         return {
             ...asset,
             bankName: asset.bank?.bankName || null,
-
+            purchaseDate: asset.purchaseDate ? new Date(asset.purchaseDate).toISOString().split('T')[0] : null,
         };
     };
     static deleteAttachments = async (id, attachmentIds) => {

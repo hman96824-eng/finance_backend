@@ -58,10 +58,15 @@ class DonationExpenseService {
             .select("-isDeleted")
             .lean();
 
-        return donations.map((don) => ({
-            ...don,
-            bankName: don.bankName?.bankName || null,
-        }));
+        return donations.map((don) => {
+            const { bankName, ...rest } = don;
+            return {
+                ...rest,
+                bankName: bankName?.bankName || null,
+                donationDate: don.donationDate ? new Date(don.donationDate).toISOString().split('T')[0] : null,
+            };
+
+        });
     };
     static getDonationById = async (id) => {
         const don = await DonationModel.findById(id)
@@ -73,9 +78,11 @@ class DonationExpenseService {
 
         if (!don) throw ApiError.notFound("Donation not found");
 
+        const { bank, ...rest } = don;
         return {
-            ...don,
-            bankName: don.bankName?.bankName || null,
+            ...rest,
+            bankName: bankName?.bankName || null,
+            donationDate: don.donationDate ? new Date(don.donationDate).toISOString().split('T')[0] : null,
         };
     };
     static deleteAttachments = async (id, attachmentIds) => {
