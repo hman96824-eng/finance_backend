@@ -14,7 +14,9 @@ const port = config.PORT || 5000;
 const app = express();
 
 // ✅ CORS must be applied BEFORE routes
-app.use(cors('*'));
+console.log("CORS ORIGIN:", config.corsSettings.origin);
+
+app.use(cors(config.corsSettings));
 
 // app.use(express.json());
 app.use(express.json({ limit: "10mb" })); // default is 100kb
@@ -30,7 +32,17 @@ const httpServer = createServer(app);
 // ✅ Initialize socket.io
 const io = new Server(httpServer, {
   cors: {
-    origin: config.CORS_ORIGIN || "http://localhost:3000",
+    origin: function (origin, callback) {
+      if (!origin) return callback(null, true);
+      const allowedOrigins = config.CORS_ORIGIN
+        ? config.CORS_ORIGIN.split(',').map(o => o.trim())
+        : ["http://localhost:3000"];
+      if (allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
+        callback(null, true);
+      } else {
+        callback(null, false);
+      }
+    },
     methods: ["GET", "POST"],
     credentials: true,
   },
