@@ -9,6 +9,7 @@ import bankRoutes from "../modules/bank/routes.js";
 import assetRoutes from "../modules/expenses/asset/route.js";
 import bussinessRoutes from "../modules/expenses/business/route.js";
 import billRoutes from "../modules/expenses/bill/route.js";
+import DonationRoutes from "../modules/expenses/donation/route.js";
 import express from "express";
 
 const app = express();
@@ -27,6 +28,7 @@ export default (app) => {
   apiRoute.use("/assets", assetRoutes);
   apiRoute.use("/business", bussinessRoutes);
   apiRoute.use("/billing-expenses", billRoutes);
+  apiRoute.use("/donation-expenses", DonationRoutes);
 
   app.use("/api/v1", apiRoute);
 };

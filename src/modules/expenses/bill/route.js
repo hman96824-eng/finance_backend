@@ -25,6 +25,6 @@ router
     .delete("/delete-many", middleware.authenticate, validate(validation.deleteManySchema), BillingExpenseController.deleteManyExpense)
 
     .delete("/delete-attachments/:id", middleware.authenticate, validate(validation.deleteAttachmentsSchema), BillingExpenseController.deleteAttachments)
-    .put("/upload-attachments/:id", uploadMiddleware, BillingExpenseController.uploadAttachments);
+    .put("/upload-attachments/:id", uploadMiddleware, BillingExpenseController.uploadAttachments)
 
 export default router;

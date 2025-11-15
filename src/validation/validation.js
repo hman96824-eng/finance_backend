@@ -295,6 +295,26 @@ export const billingExpenseUpdateSchema = z.object({
   bankName: z.string().regex(/^[a-f\d]{24}$/i, { message: "Invalid bank ID" }).optional(),
 });
 
+// Donation Expense validation
+export const donationExpenseSchema = z.object({
+  title: z.string().trim().min(1, { message: "Donation title is required" }),
+  description: z.string().trim().optional(),
+  amount: z.number().positive({ message: "Amount must be positive" }),
+  donatedBy: z.string().trim().min(1, { message: "Donated by field is required" }),
+  donationDate: z.string().min(1, { message: "Donation date is required" }),
+  bankName: z.string().regex(/^[a-f\d]{24}$/i, { message: "Invalid bank ID" }),
+});
+
+// Donation Expense update
+export const donationExpenseUpdateSchema = z.object({
+  title: z.string().trim().min(1).optional(),
+  description: z.string().optional(),
+  amount: z.number().positive().optional(),
+  donatedBy: z.string().trim().min(1).optional(),
+  donationDate: z.string().min(1).optional(),
+  bankName: z.string().regex(/^[a-f\d]{24}$/i).optional(),
+});
+
 // Validation middleware
 const validateRequest = (schema) => async (req, res, next) => {
   try {
@@ -358,5 +378,8 @@ export default {
   assetExpenseUpdateSchema,
   // Billing Expense
   billingExpenseSchema,
-  billingExpenseUpdateSchema
+  billingExpenseUpdateSchema,
+  // Donation Expense
+  donationExpenseSchema,
+  donationExpenseUpdateSchema,
 };
