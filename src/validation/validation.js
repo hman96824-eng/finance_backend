@@ -244,11 +244,15 @@ export const deleteManySchema = z.object({
 });
 
 // Delete attachments validation
-export const deleteAttachmentsSchema = z.object({
-  ids: z.array(z.string().regex(/^[a-f\d]{24}$/i, { message: "Invalid attachment ID" })).min(1, { message: "At least one attachment ID is required" }),
-}).or(z.object({
-  attachmentIds: z.array(z.string().regex(/^[a-f\d]{24}$/i, { message: "Invalid attachment ID" })).min(1, { message: "At least one attachment ID is required" }),
-}));
+export const deleteAttachmentsSchema = z
+  .object({
+    ids: z.array(z.string().regex(/^[a-f\d]{24}$/i, { message: "Invalid attachment ID" })).optional(),
+    attachmentIds: z.array(z.string().regex(/^[a-f\d]{24}$/i, { message: "Invalid attachment ID" })).optional(),
+  })
+  .refine(
+    (data) => (data.ids && data.ids.length > 0) || (data.attachmentIds && data.attachmentIds.length > 0),
+    { message: "At least one attachment ID is required in 'ids' or 'attachmentIds'" }
+  );
 
 // Upload attachments validation (checks if files are present)
 export const uploadAttachmentsSchema = z.object({

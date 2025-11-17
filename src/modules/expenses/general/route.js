@@ -12,19 +12,20 @@ const router = express.Router();
 const uploadMiddleware = [middleware.authenticate, upload.array("attachments"), parseFormFields];
 
 // ---------- General Expense Routes ----------
-router
-    .post("/create", uploadMiddleware, validate(validation.generalExpenseSchema), GeneralExpenseController.createExpense)
-    .get("/all", middleware.authenticate, GeneralExpenseController.getAllExpenses)
-    .get("/:id", middleware.authenticate, GeneralExpenseController.getExpenseById)
+// ⚠️ IMPORTANT: More specific routes must come BEFORE less specific routes (e.g., /:id)
 
-    .put("/update/:id", uploadMiddleware, validate(validation.generalExpenseUpdateSchema), GeneralExpenseController.updateExpense)
-    .put("/soft-delete/:id", middleware.authenticate, GeneralExpenseController.softDeleteExpense)
-    .put("/soft-delete-many", middleware.authenticate, validate(validation.deleteManySchema), GeneralExpenseController.softDeleteMany)
+router.delete("/delete-attachments/:id", middleware.authenticate, validate(validation.deleteAttachmentsSchema), GeneralExpenseController.deleteAttachments);
+// Specific action routes (before generic /:id)
+router.post("/create", uploadMiddleware, validate(validation.generalExpenseSchema), GeneralExpenseController.createExpense);
+router.put("/upload-attachments/:id", uploadMiddleware, GeneralExpenseController.uploadAttachments);
+router.put("/soft-delete/:id", middleware.authenticate, GeneralExpenseController.softDeleteExpense);
+router.put("/soft-delete-many", middleware.authenticate, validate(validation.deleteManySchema), GeneralExpenseController.softDeleteMany);
+router.delete("/delete/:id", middleware.authenticate, GeneralExpenseController.deleteExpense);
+router.delete("/delete-many", middleware.authenticate, validate(validation.deleteManySchema), GeneralExpenseController.deleteManyExpense);
+router.put("/update/:id", uploadMiddleware, validate(validation.generalExpenseUpdateSchema), GeneralExpenseController.updateExpense);
 
-    .delete("/delete/:id", middleware.authenticate, GeneralExpenseController.deleteExpense)
-    .delete("/delete-many", middleware.authenticate, validate(validation.deleteManySchema), GeneralExpenseController.deleteManyExpense)
-
-    .delete("/delete-attachments/:id", middleware.authenticate, validate(validation.deleteAttachmentsSchema), GeneralExpenseController.deleteAttachments)
-    .put("/upload-attachments/:id", uploadMiddleware, GeneralExpenseController.uploadAttachments);
+// Generic routes (after specific ones)
+router.get("/all", middleware.authenticate, GeneralExpenseController.getAllExpenses);
+router.get("/:id", middleware.authenticate, GeneralExpenseController.getExpenseById);
 
 export default router;

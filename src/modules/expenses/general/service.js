@@ -89,8 +89,11 @@ class GeneralExpenseService {
             catch (err) { console.error(`Failed to delete media ${attachmentId}:`, err.message); }
         }
 
-        expense.attachments = expense.attachments.filter(a => !attachmentIds.includes(a.toString()));
-        await expense.save();
+        // Filter out the deleted attachments
+        const updatedAttachments = expense.attachments.filter(a => !attachmentIds.includes(a.toString()));
+
+        // Use findByIdAndUpdate to avoid full document validation
+        await GeneralExpenseModel.findByIdAndUpdate(id, { attachments: updatedAttachments }, { new: false });
 
         return await GeneralExpenseModel.findById(id)
             .populate("bankName", "bankName accountNumber balance")

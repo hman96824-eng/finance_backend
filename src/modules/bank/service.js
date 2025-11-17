@@ -96,111 +96,107 @@ class BankService {
     { amount, type = "credit", note, project }
   ) => {
     const session = await mongoose.startSession();
-    session.startTransaction();
     try {
+      // Validate inputs BEFORE starting transaction
       if (!mongoose.Types.ObjectId.isValid(project)) {
         throw ApiError.badRequest(
           messages.INVALID_PROJECT_ID || "Invalid project ID format"
         );
       }
 
-      // Fetch bank (owned by user) with session
-      const bank = await BankModel.findOne({
-        _id: bankId,
-        createdBy: userId,
-      }).session(session);
-      if (!bank) throw ApiError.notFound(messages.BANK_NOT_FOUND);
-
-      // First, let's clean up any invalid entries
-      if (!Array.isArray(bank.paymentHistory)) {
-        bank.paymentHistory = [];
-      }
-
-      const validPayments = [];
-      for (const payment of bank.paymentHistory) {
-        if (
-          payment &&
-          payment.project &&
-          mongoose.Types.ObjectId.isValid(String(payment.project))
-        ) {
-          validPayments.push(payment);
-        }
-      }
-      bank.paymentHistory = validPayments;
-
-      // Fetch project and validate
-      const projectDoc = await ProjectModel.findById(project).session(session);
-      if (!projectDoc) throw ApiError.notFound(messages.PROJECT_NOT_FOUND);
-
       const amt = Number(amount) || 0;
       if (amt <= 0)
         throw ApiError.badRequest("Payment amount must be greater than zero");
 
-      const paymentEntry = {
-        project: projectDoc._id,
-        amount: amt,
-        type,
-        note,
-        date: new Date(),
-      };
+      // Start transaction AFTER validation
+      await session.withTransaction(async () => {
+        // Fetch bank (owned by user) with session
+        const bank = await BankModel.findOne({
+          _id: bankId,
+          createdBy: userId,
+        }).session(session);
+        if (!bank) throw ApiError.notFound(messages.BANK_NOT_FOUND);
 
-      // Push payment to bank
-      bank.paymentHistory.push(paymentEntry);
+        // Clean up any invalid entries in paymentHistory
+        if (Array.isArray(bank.paymentHistory)) {
+          bank.paymentHistory = bank.paymentHistory.filter(
+            (payment) =>
+              payment &&
+              payment.project &&
+              mongoose.Types.ObjectId.isValid(String(payment.project))
+          );
+        } else {
+          bank.paymentHistory = [];
+        }
 
-      // The pre-save hook will handle the balance update
-      // No need to manually update balance here
+        // Fetch project and validate
+        const projectDoc = await ProjectModel.findById(project).session(session);
+        if (!projectDoc) throw ApiError.notFound(messages.PROJECT_NOT_FOUND);
 
-      // Ensure project.bankPayments array exists and push a bankPayment snapshot
-      projectDoc.bankPayments = Array.isArray(projectDoc.bankPayments)
-        ? projectDoc.bankPayments
-        : [];
-      projectDoc.bankPayments.push({
-        bank: bank._id,
-        amount: amt,
-        type,
-        note,
-        date: new Date(),
-        bankSnapshot: {
-          bankName: bank.bankName,
-          accountNumber: bank.accountNumber,
-          accountTitle: bank.accountTitle,
-        },
+        const paymentEntry = {
+          project: projectDoc._id,
+          amount: amt,
+          type,
+          note: note || "",
+          date: new Date(),
+        };
+
+        // Add payment to bank's payment history
+        bank.paymentHistory.push(paymentEntry);
+
+        // Initialize project arrays if needed
+        if (!Array.isArray(projectDoc.bankPayments)) {
+          projectDoc.bankPayments = [];
+        }
+        if (!Array.isArray(projectDoc.banks)) {
+          projectDoc.banks = [];
+        }
+
+        // Add bankPayment snapshot to project
+        projectDoc.bankPayments.push({
+          bank: bank._id,
+          amount: amt,
+          type,
+          note: note || "",
+          date: new Date(),
+          bankSnapshot: {
+            bankName: bank.bankName,
+            accountNumber: bank.accountNumber,
+            accountTitle: bank.accountTitle,
+          },
+        });
+
+        // Link bank to project if not already linked
+        if (!projectDoc.banks.some((b) => b.toString() === bank._id.toString())) {
+          projectDoc.banks.push(bank._id);
+        }
+
+        // Update project totals
+        const paymentAmt = type === "credit" ? amt : -amt;
+        projectDoc.totalPaid = Number(projectDoc.totalPaid || 0) + paymentAmt;
+        if (typeof projectDoc.budget === "number") {
+          projectDoc.pendingAmount = Math.max(
+            Number(projectDoc.budget || 0) - Number(projectDoc.totalPaid || 0),
+            0
+          );
+        }
+
+        // Save both documents in the transaction
+        await bank.save({ session });
+        await projectDoc.save({ session });
       });
 
-      // Ensure bank id is linked to project.banks
-      if (!projectDoc.banks.some((b) => b.toString() === bank._id.toString())) {
-        projectDoc.banks.push(bank._id);
-      }
-
-      // Update project totals (defensive)
-      projectDoc.totalPaid =
-        Number(projectDoc.totalPaid || 0) + (type === "credit" ? amt : -amt);
-      if (typeof projectDoc.budget === "number") {
-        projectDoc.pendingAmount = Math.max(
-          Number(projectDoc.budget || 0) - Number(projectDoc.totalPaid || 0),
-          0
-        );
-      }
-
-      // Save both docs in the session
-      await bank.save({ session });
-      await projectDoc.save({ session });
-
-      await session.commitTransaction();
-      session.endSession();
-
-      // Return populated bank with selective project fields and createdBy
-      return await BankModel.findById(bank._id)
+      // Return populated bank after successful transaction
+      return await BankModel.findById(bankId)
         .populate(
           "paymentHistory.project",
           "projectName clientName projectManager projectID"
         )
         .populate("createdBy", "name email _id");
     } catch (err) {
-      await session.abortTransaction();
-      session.endSession();
-      // Bubble up a useful message
       throw ApiError.badRequest(err.message || "Failed to add payment");
+    } finally {
+      await session.endSession();
     }
   };
 

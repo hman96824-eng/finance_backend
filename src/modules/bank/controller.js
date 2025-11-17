@@ -50,12 +50,18 @@ const BankController = {
   },
   addPayment: async (req, res, next) => {
     try {
+      // Convert amount to number if it's a string
+      const paymentData = {
+        ...req.body,
+        amount: Number(req.body.amount),
+      };
+
       const bank = await BankService.addPayment(
         req.params.id,
         req.user.id,
-        req.body
+        paymentData
       );
-      return successResponse(res, bank);
+      return successResponse(res, bank, "Payment added successfully");
     } catch (err) {
       next(err);
     }

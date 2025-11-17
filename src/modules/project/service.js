@@ -163,7 +163,7 @@ const ProService = {
   getProjects: async () => {
     try {
       let projects = await Project.find({
-        status: { $in: ["Pending", "Completed"] },
+        status: { $in: ["Pending", "Done"] },
         isDeleted: { $ne: true },
       })
         .sort({ createdAt: -1 })
@@ -231,7 +231,7 @@ const ProService = {
     try {
       const project = await Project.findOne({
         _id: id,
-        status: { $in: ["Pending", "Completed"] },
+        status: { $in: ["Pending", "Done"] },
         isDeleted: { $ne: true }
       }).lean();
 
