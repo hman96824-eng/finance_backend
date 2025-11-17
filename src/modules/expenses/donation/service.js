@@ -29,11 +29,18 @@ class DonationExpenseService {
 
         await DonationRepo.updateById(id, body);
 
-        return await DonationModel.findById(id)
+        const result = await DonationModel.findById(id)
             .populate("bankName", "bankName accountNumber balance")
             .populate("attachments", "_id url")
             .populate("enteredBy", "name email")
             .lean();
+
+        const { bankName, ...rest } = result;
+        return {
+            ...rest,
+            bankName: bankName?.bankName || null,
+            donationDate: result.donationDate ? new Date(result.donationDate).toISOString().split('T')[0] : null,
+        };
     };
     static softDelete = async (id) => {
         return await DonationRepo.updateById(id, { status: "Inactive", isDeleted: true });
@@ -103,11 +110,18 @@ class DonationExpenseService {
 
         await donation.save();
 
-        return await DonationModel.findById(id)
+        const result = await DonationModel.findById(id)
             .populate("bankName", "bankName accountNumber")
             .populate("attachments", "_id url")
-            .populate("donatedBy", "name email")
+            .populate("enteredBy", "name email")
             .lean();
+
+        const { bankName, ...rest } = result;
+        return {
+            ...rest,
+            bankName: bankName?.bankName || null,
+            donationDate: result.donationDate ? new Date(result.donationDate).toISOString().split('T')[0] : null,
+        };
     };
 }
 

@@ -49,11 +49,17 @@ class AssetService {
             const updated = await AssetRepo.updateById(id, body);
 
             // Return populated data like getAssetById
-            return await Asset.findById(id)
+            const result = await Asset.findById(id)
                 .populate("bank", "bankName accountNumber")
                 .populate("attachments", "url")
                 .populate("createdBy", "name email")
                 .lean();
+
+            return {
+                ...result,
+                bankName: result.bank?.bankName || null,
+                purchaseDate: result.purchaseDate ? new Date(result.purchaseDate).toISOString().split('T')[0] : null,
+            };
         } catch (err) {
             throw ApiError.badRequest(err.message);
         }
@@ -136,11 +142,17 @@ class AssetService {
         await asset.save();
 
         // Return populated asset
-        return await Asset.findById(id)
+        const result = await Asset.findById(id)
             .populate("bank", "bankName accountNumber")
             .populate("attachments", "url")
             .populate("createdBy", "name email")
             .lean();
+
+        return {
+            ...result,
+            bankName: result.bank?.bankName || null,
+            purchaseDate: result.purchaseDate ? new Date(result.purchaseDate).toISOString().split('T')[0] : null,
+        };
     }
 
 }

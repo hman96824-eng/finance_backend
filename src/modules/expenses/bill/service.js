@@ -33,11 +33,17 @@ class BillingExpenseService {
         const updated = await BillingRepo.updateById(id, body);
 
         // Return populated document
-        return await BillingModel.findById(id)
+        const result = await BillingModel.findById(id)
             .populate("bankName", "bankName accountNumber")
             .populate("attachments", "_id url")
             .populate("enteredBy", "name email")
             .lean();
+
+        return {
+            ...result,
+            bankName: result.bankName?.bankName || null,
+            billDate: result.billDate ? new Date(result.billDate).toISOString().split('T')[0] : null,
+        };
     };
     static softDelete = async (id) => {
         return await BillingRepo.updateById(id, { status: "Inactive", isDeleted: true });
@@ -106,11 +112,17 @@ class BillingExpenseService {
 
         await expense.save();
 
-        return await BillingModel.findById(id)
+        const result = await BillingModel.findById(id)
             .populate("bankName", "bankName accountNumber")
             .populate("attachments", "_id url")
             .populate("enteredBy", "name email")
             .lean();
+
+        return {
+            ...result,
+            bankName: result.bankName?.bankName || null,
+            billDate: result.billDate ? new Date(result.billDate).toISOString().split('T')[0] : null,
+        };
     };
 }
 

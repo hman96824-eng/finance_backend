@@ -6,6 +6,7 @@ const BusinessExpenseSchema = new mongoose.Schema(
     description: { type: String },                    // Description
     amount: { type: Number, required: true },        // Amount (PKR)
     paidBy: { type: String, required: true },     // Paid By (Cash, Bank, etc.)
+    purchaseDate: { type: Date, required: true }, // Purchase Date
 
     // Bank reference (for bankName in frontend)
     bankName: { type: mongoose.Schema.Types.ObjectId, ref: "Bank", required: true },

@@ -95,11 +95,17 @@ class GeneralExpenseService {
         // Use findByIdAndUpdate to avoid full document validation
         await GeneralExpenseModel.findByIdAndUpdate(id, { attachments: updatedAttachments }, { new: false });
 
-        return await GeneralExpenseModel.findById(id)
+        const result = await GeneralExpenseModel.findById(id)
             .populate("bankName", "bankName accountNumber balance")
             .populate("attachments", "_id url")
             .populate("createdBy", "name email")
             .lean();
+
+        return {
+            ...result,
+            bankName: result.bankName?.bankName || null,
+            date: result.date ? new Date(result.date).toISOString().split('T')[0] : null,
+        };
     };
 }
 

@@ -227,6 +227,7 @@ export const businessExpenseSchema = z.object({
   amount: z.number().positive({ message: "Amount must be a positive number" }),
   paidBy: z.string().trim().min(1, { message: "Paid by field is required" }),
   bankName: z.string().regex(/^[a-f\d]{24}$/i, { message: "Invalid bank ID" }),
+  purchaseDate: z.string().min(1, { message: "Purchase date is required" }),
 });
 
 // Business Expense update validation (all fields optional)

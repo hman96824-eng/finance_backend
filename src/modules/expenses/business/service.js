@@ -31,11 +31,16 @@ class BusinessExpenseService {
         const updated = await BussinessRepo.updateById(id, body);
 
         // Return populated data like assets
-        return await BusinessModel.findById(id)
+        const result = await BusinessModel.findById(id)
             .populate("bankName", "bankName accountNumber")
             .populate("attachments", "_id url")
             .populate("enteredBy", "name email")
             .lean();
+
+        return {
+            ...result,
+            purchaseDate: result.purchaseDate ? result.purchaseDate.toISOString().split('T')[0] : null,
+        };
     };
     static softDelete = async (id) => {
         return await BussinessRepo.updateById(id, { status: "Inactive", isDeleted: true });
@@ -64,6 +69,7 @@ class BusinessExpenseService {
         return expenses.map((exp) => ({
             ...exp,
             bankName: exp.bankName?.bankName || null,
+            purchaseDate: exp.purchaseDate ? exp.purchaseDate.toISOString().split('T')[0] : null,
         }));
     };
     static getExpenseById = async (id) => {
@@ -80,6 +86,7 @@ class BusinessExpenseService {
         return {
             ...exp,
             bankName: exp.bankName?.bankName || null,
+            purchaseDate: exp.purchaseDate ? exp.purchaseDate.toISOString().split('T')[0] : null,
         };
     };
     static deleteAttachments = async (id, attachmentIds) => {
@@ -104,11 +111,16 @@ class BusinessExpenseService {
         await expense.save();
 
         // Return populated expense
-        return await BusinessModel.findById(id)
+        const result = await BusinessModel.findById(id)
             .populate("bankName", "bankName accountNumber")
             .populate("attachments", "_id url")
             .populate("enteredBy", "name email")
             .lean();
+
+        return {
+            ...result,
+            purchaseDate: result.purchaseDate ? result.purchaseDate.toISOString().split('T')[0] : null,
+        };
     };
 }
 
