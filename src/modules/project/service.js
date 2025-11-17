@@ -294,6 +294,7 @@ const ProService = {
         status,
         budget,
         payments, // optional: array of new or updated payments
+        overrideReason,
       } = data;
 
       // 🧩 1️⃣ Update basic project fields
@@ -306,6 +307,7 @@ const ProService = {
       if (endDate) existingProject.endDate = endDate;
       if (status) existingProject.status = status;
       if (budget) existingProject.budget = budget;
+      if (overrideReason) existingProject.overrideReason = overrideReason;
 
       // 🏦 2️⃣ Process new or updated payments (if provided)
       if (Array.isArray(payments) && payments.length > 0) {

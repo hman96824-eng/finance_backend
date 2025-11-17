@@ -30,9 +30,10 @@ const ProjectSchema = new mongoose.Schema(
     endDate: { type: Date },
     status: {
       type: String,
-      enum: ["Pending", "Done"],
+      enum: ["Pending", "Done", "Deleted"],
       default: "Pending"
     },
+    overrideReason: { type: String, trim: true },
 
     // Financial fields per project
     budget: { type: Number },
