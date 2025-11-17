@@ -107,9 +107,11 @@ const DonationExpenseController = {
             const userId = req.user.id;
 
             let attachmentIds = [];
-            for (const file of req.files) {
-                const media = await uploadMedia(file.path, "donation-expense", userId);
-                attachmentIds.push(media._id);
+            if (req.files?.length > 0) {
+                for (const file of req.files) {
+                    const media = await uploadMedia(file.path, "donation-expense", userId);
+                    attachmentIds.push(media._id);
+                }
             }
 
             const updated = await DonationExpenseService.updateDonation(

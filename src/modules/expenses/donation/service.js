@@ -78,7 +78,7 @@ class DonationExpenseService {
 
         if (!don) throw ApiError.notFound("Donation not found");
 
-        const { bank, ...rest } = don;
+        const { bankName, ...rest } = don;
         return {
             ...rest,
             bankName: bankName?.bankName || null,
