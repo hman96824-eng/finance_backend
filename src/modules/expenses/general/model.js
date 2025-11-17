@@ -25,7 +25,7 @@ const GeneralExpenseSchema = new mongoose.Schema({
         type: String,
         default: ""
     },
-    date: {
+    purchaseDate: {
         type: Date,
     },
     purchaseBy: {

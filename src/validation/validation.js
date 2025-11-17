@@ -330,7 +330,7 @@ export const generalExpenseSchema = z.object({
   purchaseBy: z.string().trim().min(1, { message: "Purchase by field is required" }),
   amount: z.number().positive({ message: "Amount must be positive" }),
   description: z.string().trim().optional(),
-  date: z.string().optional(), // Optional, will default to now if not provided
+  purchaseDate: z.string().optional(), // Optional, will default to now if not provided
   bankName: z.string().regex(/^[a-f\d]{24}$/i, { message: "Invalid bank ID" }),
 });
 

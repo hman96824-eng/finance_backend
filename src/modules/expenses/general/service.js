@@ -61,7 +61,7 @@ class GeneralExpenseService {
         return expenses.map(exp => ({
             ...exp,
             bankName: exp.bankName?.bankName || null,
-            date: exp.date ? new Date(exp.date).toISOString().split('T')[0] : null,
+            purchaseDate: exp.purchaseDate ? new Date(exp.purchaseDate).toISOString().split('T')[0] : null,
         }));
     };
     static getExpenseById = async (id) => {
@@ -77,7 +77,7 @@ class GeneralExpenseService {
         return {
             ...exp,
             bankName: exp.bankName?.bankName || null,
-            date: exp.date ? new Date(exp.date).toISOString().split('T')[0] : null,
+            purchaseDate: exp.purchaseDate ? new Date(exp.purchaseDate).toISOString().split('T')[0] : null,
         };
     };
     static deleteAttachments = async (id, attachmentIds) => {
@@ -104,7 +104,7 @@ class GeneralExpenseService {
         return {
             ...result,
             bankName: result.bankName?.bankName || null,
-            date: result.date ? new Date(result.date).toISOString().split('T')[0] : null,
+            purchaseDate: result.purchaseDate ? new Date(result.purchaseDate).toISOString().split('T')[0] : null,
         };
     };
 }
