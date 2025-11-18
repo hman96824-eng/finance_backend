@@ -13,8 +13,9 @@ const port = config.PORT || 5000;
 
 const app = express();
 
-console.log("CORS ORIGIN:", config.CORS_ORIGIN);
-console.log("CORS SETTINGS:", config.corsSettings);
+console.log("CORS ORIGIN: ----", config.CORS_ORIGIN);
+
+console.log("CORS SETTINGS: ---", config.corsSettings);
 
 app.use(cors(config.corsSettings));
 
