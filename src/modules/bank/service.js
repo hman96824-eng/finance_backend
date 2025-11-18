@@ -34,6 +34,42 @@ class BankService {
     return this.formatBankResponse(bank);
   };
 
+  static updateBank = async (id, data, userId) => {
+    const bank = await BankRepo.findOne({ _id: id, createdBy: userId });
+    if (!bank) throw ApiError.notFound(messages.BANK_NOT_FOUND);
+
+    // Validate paymentHistory if provided
+    if (Array.isArray(data.paymentHistory)) {
+      for (let i = 0; i < data.paymentHistory.length; i++) {
+        const entry = data.paymentHistory[i];
+        if (!entry.project) throw ApiError.badRequest(`paymentHistory.${i}.project required`);
+      }
+    }
+
+    const updatedBank = await BankRepo.findOneAndUpdate(
+      { _id: id, createdBy: userId },
+      { ...data },
+      { new: true }
+    ).populate("createdBy", "name email _id");
+
+    return this.formatBankResponse(updatedBank);
+  };
+
+  static getPayments = async (bankId, userId) => {
+    const bank = await BankRepo.findOne({ _id: bankId, createdBy: userId });
+    if (!bank) throw ApiError.notFound(messages.BANK_NOT_FOUND);
+
+    // Get formatted bank response which includes payment history
+    const formattedBank = this.formatBankResponse(bank);
+
+    // Return only the payment history
+    return {
+      bankId: bank._id,
+      bankName: bank.bankName,
+      paymentHistory: formattedBank.paymentHistory || []
+    };
+  };
+
   static addPayment = async (bankId, userId, { amount, type = "credit", note, project, projectName, clientName }) => {
     const session = await mongoose.startSession();
     try {
@@ -174,6 +210,29 @@ class BankService {
       // If project is already a string, keep as is
       return payment;
     });
+  };
+  static deleteBank = async (id, userId) => {
+    const bank = await BankRepo.findOne({ _id: id, createdBy: userId });
+    if (!bank) throw ApiError.notFound(messages.BANK_NOT_FOUND);
+
+    await BankRepo.deleteOne({ _id: id, createdBy: userId });
+    return bank;
+  };
+  static deleteManyBanks = async (bankIds, userId) => {
+    try {
+      if (!Array.isArray(bankIds) || bankIds.length === 0) {
+        throw ApiError.badRequest(messages.NO_BANKS_SELECTED);
+      }
+
+      const result = await BankRepo.deleteMany({
+        _id: { $in: bankIds },
+        createdBy: userId,
+      });
+
+      return result;
+    } catch (error) {
+      throw ApiError.badRequest(error.message);
+    }
   };
 }
 
