@@ -10,191 +10,81 @@ const BankRepo = new repository(BankModel);
 
 class BankService {
   static createBank = async (data, userId) => {
-    try {
-      const balance = data.balance || 0;
-      console.log(balance, "balanace");
-
-      // Do not allow nested payment history during initial create in general (optional)
-      // Validate if provided
-      if (
-        Array.isArray(data.paymentHistory) &&
-        data.paymentHistory.length > 0
-      ) {
-        for (let i = 0; i < data.paymentHistory.length; i++) {
-          const entry = data.paymentHistory[i];
-          if (!entry.project) {
-            throw ApiError.badRequest(
-              `paymentHistory.${i}.project: Path "project" is required.`
-            );
-          }
-          if (!mongoose.Types.ObjectId.isValid(entry.project)) {
-            throw ApiError.badRequest(
-              `paymentHistory.${i}.project: Invalid project ID`
-            );
-          }
-          const proj = await projectRepo.findById(entry.project);
-          if (!proj) {
-            throw ApiError.badRequest(
-              `paymentHistory.${i}.project: Project not found`
-            );
-          }
-        }
+    if (Array.isArray(data.paymentHistory)) {
+      for (let i = 0; i < data.paymentHistory.length; i++) {
+        const entry = data.paymentHistory[i];
+        if (!entry.project) throw ApiError.badRequest(`paymentHistory.${i}.project required`);
       }
-
-      const bank = await BankRepo.create({ ...data, createdBy: userId });
-      return this.formatBankResponse(bank);
-    } catch (err) {
-      throw ApiError.badRequest(err.message);
     }
+    const bank = await BankRepo.create({ ...data, createdBy: userId });
+    return this.formatBankResponse(bank);
   };
 
   static getAllBanks = async (userId) => {
-    // Populate paymentHistory.project with selective fields and createdBy user
     const banks = await BankRepo.find({ createdBy: userId })
-      .populate(
-        "paymentHistory.project",
-        "projectName clientName projectManager projectID"
-      )
       .populate("createdBy", "name email _id")
       .sort({ createdAt: -1 });
-
-    return banks.map(bank => this.formatBankResponse(bank));
+    return banks.map(this.formatBankResponse);
   };
 
   static getBankById = async (id, userId) => {
     const bank = await BankRepo.findOne({ _id: id, createdBy: userId })
-      .populate(
-        "paymentHistory.project",
-        "projectName clientName projectManager projectID"
-      )
       .populate("createdBy", "name email _id");
-
     if (!bank) throw ApiError.notFound(messages.BANK_NOT_FOUND);
     return this.formatBankResponse(bank);
   };
 
-  static updateBank = async (id, data, userId) => {
-    const bank = await BankRepo.findOneAndPopulate(
-      { _id: id, createdBy: userId },
-      data,
-      { new: true }
-    );
-    if (!bank) throw ApiError.notFound(messages.BANK_NOT_FOUND);
-    return this.formatBankResponse(bank);
-  };
-
-  static deleteBank = async (id, userId) => {
-    const bank = await BankRepo.findOne({ _id: id, createdBy: userId });
-    if (!bank) throw ApiError.notFound(messages.BANK_NOT_FOUND);
-
-    await BankRepo.deleteOne({ _id: id, createdBy: userId });
-    return bank;
-  };
-
-  // Add payment to bank and also add bankPayment entry to the project atomically
-  static addPayment = async (
-    bankId,
-    userId,
-    { amount, type = "credit", note, project }
-  ) => {
+  static addPayment = async (bankId, userId, { amount, type = "credit", note, project, projectName, clientName }) => {
     const session = await mongoose.startSession();
     try {
-      // Validate inputs BEFORE starting transaction
-      if (!mongoose.Types.ObjectId.isValid(project)) {
-        throw ApiError.badRequest(
-          messages.INVALID_PROJECT_ID || "Invalid project ID format"
-        );
-      }
+      if (!mongoose.Types.ObjectId.isValid(project)) throw ApiError.badRequest("Invalid project ID");
+      const amt = Number(amount);
+      if (amt <= 0) throw ApiError.badRequest("Payment amount must be greater than zero");
 
-      const amt = Number(amount) || 0;
-      if (amt <= 0)
-        throw ApiError.badRequest("Payment amount must be greater than zero");
-
-      // Start transaction AFTER validation
       await session.withTransaction(async () => {
-        // Fetch bank (owned by user) with session
-        const bank = await BankModel.findOne({
-          _id: bankId,
-          createdBy: userId,
-        }).session(session);
+        const bank = await BankModel.findOne({ _id: bankId, createdBy: userId }).session(session);
         if (!bank) throw ApiError.notFound(messages.BANK_NOT_FOUND);
 
-        // Clean up any invalid entries in paymentHistory
-        if (Array.isArray(bank.paymentHistory)) {
-          bank.paymentHistory = bank.paymentHistory.filter(
-            (payment) =>
-              payment &&
-              payment.project &&
-              mongoose.Types.ObjectId.isValid(String(payment.project))
-          );
-        } else {
-          bank.paymentHistory = [];
-        }
+        // Clean up old payment history format before adding new payment
+        this.cleanupPaymentHistory(bank);
 
-        // Fetch project and validate
         const projectDoc = await ProjectModel.findById(project).session(session);
         if (!projectDoc) throw ApiError.notFound(messages.PROJECT_NOT_FOUND);
 
         const paymentEntry = {
-          project: projectDoc._id,
+          project: project,
+          projectName: projectName || "",
+          clientName: clientName || "",
           amount: amt,
           type,
           note: note || "",
-          date: new Date(),
+          date: new Date()
         };
-
-        // Add payment to bank's payment history
         bank.paymentHistory.push(paymentEntry);
 
-        // Initialize project arrays if needed
-        if (!Array.isArray(projectDoc.bankPayments)) {
-          projectDoc.bankPayments = [];
-        }
-        if (!Array.isArray(projectDoc.banks)) {
-          projectDoc.banks = [];
-        }
-
-        // Add bankPayment snapshot to project
+        // Update project snapshot
+        if (!projectDoc.bankPayments) projectDoc.bankPayments = [];
+        if (!projectDoc.banks) projectDoc.banks = [];
         projectDoc.bankPayments.push({
           bank: bank._id,
           amount: amt,
           type,
           note: note || "",
           date: new Date(),
-          bankSnapshot: {
-            bankName: bank.bankName,
-            accountNumber: bank.accountNumber,
-            accountTitle: bank.accountTitle,
-          },
+          bankSnapshot: { bankName: bank.bankName, accountNumber: bank.accountNumber, accountTitle: bank.accountTitle },
         });
+        if (!projectDoc.banks.includes(bank._id)) projectDoc.banks.push(bank._id);
 
-        // Link bank to project if not already linked
-        if (!projectDoc.banks.some((b) => b.toString() === bank._id.toString())) {
-          projectDoc.banks.push(bank._id);
-        }
-
-        // Update project totals
         const paymentAmt = type === "credit" ? amt : -amt;
-        projectDoc.totalPaid = Number(projectDoc.totalPaid || 0) + paymentAmt;
-        if (typeof projectDoc.budget === "number") {
-          projectDoc.pendingAmount = Math.max(
-            Number(projectDoc.budget || 0) - Number(projectDoc.totalPaid || 0),
-            0
-          );
-        }
+        projectDoc.totalPaid = (projectDoc.totalPaid || 0) + paymentAmt;
+        if (typeof projectDoc.budget === "number") projectDoc.pendingAmount = Math.max(projectDoc.budget - projectDoc.totalPaid, 0);
 
-        // Save both documents in the transaction
         await bank.save({ session });
         await projectDoc.save({ session });
       });
 
-      // Return populated bank after successful transaction
       return this.formatBankResponse(
         await BankModel.findById(bankId)
-          .populate(
-            "paymentHistory.project",
-            "projectName clientName projectManager projectID"
-          )
           .populate("createdBy", "name email _id")
       );
     } catch (err) {
@@ -204,55 +94,86 @@ class BankService {
     }
   };
 
-  static getPayments = async (bankId, userId) => {
-    const bank = await BankRepo.findOne({ _id: bankId, createdBy: userId });
-    if (!bank) throw ApiError.notFound(messages.BANK_NOT_FOUND);
+  static addExpenseToBank = async (bankId, expense) => {
+    const bank = await BankModel.findById(bankId);
+    if (!bank) throw ApiError.notFound("Bank not found");
 
-    // Format payment history with date only
-    return bank.paymentHistory.map(payment => ({
-      ...payment,
-      date: payment.date ? new Date(payment.date).toISOString().split('T')[0] : null
-    }));
+    const expenseEntry = {
+      project: expense._id.toString(), // Store asset ID as project
+      projectName: expense.title, // Asset title as project name
+      clientName: expense.purchaseBy, // purchaseBy as client name
+      amount: expense.amount,
+      type: "debit",
+      note: expense.note || "",
+      date: expense.date || new Date(),
+    };
+
+    bank.paymentHistory.push(expenseEntry);
+    // Don't update balance here - it's handled by the pre-save hook
+
+    await bank.save();
+
+    return this.formatBankResponse(
+      await BankModel.findById(bankId)
+        .populate("createdBy", "name email _id")
+    );
   };
 
-  static deleteManyBanks = async (bankIds, userId) => {
-    try {
-      if (!Array.isArray(bankIds) || bankIds.length === 0) {
-        throw ApiError.badRequest(messages.NO_BANKS_SELECTED);
-      }
-
-      const result = await BankRepo.deleteMany({
-        _id: { $in: bankIds },
-        createdBy: userId,
-      });
-
-      return result;
-    } catch (error) {
-      throw ApiError.badRequest(error.message);
-    }
-  };
-
-  // Helper method to format bank response with date formatting
   static formatBankResponse = (bank) => {
     if (!bank) return null;
-
-    // Convert to plain object if needed
     const bankObj = bank.toObject ? bank.toObject() : bank;
 
-    return {
+    // Get paymentHistory as is (maintains insertion order)
+    let allHistory = Array.isArray(bankObj.paymentHistory) ? [...bankObj.paymentHistory] : [];
+
+    // If old expenseHistory exists, convert to new format and append
+    if (Array.isArray(bankObj.expenseHistory) && bankObj.expenseHistory.length > 0) {
+      const convertedExpenses = bankObj.expenseHistory.map((expense) => ({
+        project: expense.expenseId || expense.assetId, // Asset ID as project
+        projectName: expense.title, // Asset title as project name  
+        clientName: expense.purchaseBy, // purchaseBy as client name
+        amount: expense.amount,
+        type: expense.type || "debit",
+        note: expense.note || "",
+        date: expense.date,
+      }));
+      allHistory = [...allHistory, ...convertedExpenses];
+    }
+
+    const response = {
       ...bankObj,
-      openingDate: bankObj.openingDate ? new Date(bankObj.openingDate).toISOString().split('T')[0] : null,
-      createdAt: bankObj.createdAt ? new Date(bankObj.createdAt).toISOString().split('T')[0] : null,
-      updatedAt: bankObj.updatedAt ? new Date(bankObj.updatedAt).toISOString().split('T')[0] : null,
-      paymentHistory: Array.isArray(bankObj.paymentHistory) ? bankObj.paymentHistory.map(payment => ({
+      openingDate: bankObj.openingDate?.toISOString().split("T")[0] || null,
+      createdAt: bankObj.createdAt?.toISOString().split("T")[0] || null,
+      updatedAt: bankObj.updatedAt?.toISOString().split("T")[0] || null,
+      paymentHistory: allHistory.map((payment) => ({
         ...payment,
-        date: payment.date ? new Date(payment.date).toISOString().split('T')[0] : null
-      })) : [],
-      expenseHistory: Array.isArray(bankObj.expenseHistory) ? bankObj.expenseHistory.map(expense => ({
-        ...expense,
-        date: expense.date ? new Date(expense.date).toISOString().split('T')[0] : null
-      })) : []
+        date: payment.date ? new Date(payment.date).toISOString().split("T")[0] : null,
+      })),
     };
+
+    // Remove expenseHistory from response
+    delete response.expenseHistory;
+
+    return response;
+  };
+
+  // Clean up old payment history format to new format
+  static cleanupPaymentHistory = (bank) => {
+    if (!bank.paymentHistory || !Array.isArray(bank.paymentHistory)) return;
+
+    bank.paymentHistory = bank.paymentHistory.map((payment) => {
+      // If project is an object (old format), convert to new format
+      if (payment.project && typeof payment.project === 'object' && payment.project.assetId) {
+        return {
+          ...payment,
+          project: payment.project.assetId.toString(), // Convert to string ID
+          projectName: payment.project.assetName || payment.projectName || "",
+          clientName: payment.project.purchaseBy || payment.clientName || "",
+        };
+      }
+      // If project is already a string, keep as is
+      return payment;
+    });
   };
 }
 

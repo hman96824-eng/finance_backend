@@ -4,6 +4,7 @@ import ApiError from "../../../utils/ApiError.js";
 import Repo from "../../../utils/repository.js";
 import messages from "../../../constants/messages.js";
 import { deleteMedia } from "../../media/service.js";
+import BankService from "../../bank/service.js";
 
 const AssetRepo = new Repo(Asset);
 const BankRepo = new Repo(Bank);
@@ -21,20 +22,15 @@ class AssetService {
             // Create asset first
             const createdAsset = await AssetRepo.create(body);
 
-            // Add to bank's expenseHistory
-            bank.expenseHistory.push({
+            // Add to bank's payment history (this also triggers balance update via pre-save hook)
+            await BankService.addExpenseToBank(body.bank, {
+                _id: createdAsset._id,
                 title: body.title,
-                date: body.purchaseDate,
-                type: "debit",
-                amount: body.amount,
-                expenseId: createdAsset._id,
                 purchaseBy: body.purchaseBy,
-                expenseType: "assets"
-            });
-
-            await BankRepo.update(bank._id, {
-                balance: bank.balance - body.amount,
-                expenseHistory: bank.expenseHistory
+                amount: body.amount,
+                expenseType: "assets",
+                note: body.note,
+                date: body.purchaseDate,
             });
 
             // Populate bank and attachments before returning
@@ -64,37 +60,39 @@ class AssetService {
 
             const updated = await AssetRepo.updateById(id, body);
 
-            // Update bank's expenseHistory if amount or title changed
+            // Update bank's paymentHistory if amount or title changed
             if (existingAsset.bank && (body.amount !== undefined || body.title !== undefined)) {
                 const bank = await BankRepo.findById(existingAsset.bank);
                 if (bank) {
-                    // Check if this asset already exists in expenseHistory
-                    const existingHistoryIndex = bank.expenseHistory.findIndex(
-                        (item) => item.assetId && item.assetId.toString() === id
+                    // Check if this asset already exists in paymentHistory
+                    const existingHistoryIndex = bank.paymentHistory.findIndex(
+                        (item) => item.project === id
                     );
 
                     if (existingHistoryIndex !== -1) {
                         // Update existing history entry
-                        bank.expenseHistory[existingHistoryIndex] = {
-                            ...bank.expenseHistory[existingHistoryIndex],
-                            title: body.title || existingAsset.title,
+                        bank.paymentHistory[existingHistoryIndex] = {
+                            ...bank.paymentHistory[existingHistoryIndex],
+                            project: id,
+                            projectName: body.title || existingAsset.title,
+                            clientName: body.purchaseBy || existingAsset.purchaseBy,
                             amount: body.amount !== undefined ? body.amount : existingAsset.amount,
-                            date: body.purchaseDate || existingAsset.purchaseDate,
+                            date: body.purchaseDate || existingAsset.purchaseDate
                         };
                     } else {
                         // Add new history entry if it doesn't exist
-                        bank.expenseHistory.push({
-                            title: body.title || existingAsset.title,
-                            date: body.purchaseDate || existingAsset.purchaseDate,
-                            type: "debit",
+                        bank.paymentHistory.push({
+                            project: id,
+                            projectName: body.title || existingAsset.title,
+                            clientName: body.purchaseBy || existingAsset.purchaseBy,
                             amount: body.amount !== undefined ? body.amount : existingAsset.amount,
-                            expenseId: id,
-                            purchaseBy: body.purchaseBy || existingAsset.purchaseBy,
-                            expenseType: "assets"
+                            type: "debit",
+                            note: body.note || existingAsset.note || "",
+                            date: body.purchaseDate || existingAsset.purchaseDate
                         });
                     }
 
-                    await BankRepo.update(bank._id, { expenseHistory: bank.expenseHistory });
+                    await bank.save();
                 }
             }
 
