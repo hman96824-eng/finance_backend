@@ -17,21 +17,18 @@ class GeneralExpenseService {
         // Create expense first
         const createdExpense = await GeneralExpenseRepo.create(body);
 
-        // Add to bank's expenseHistory
-        bank.expenseHistory.push({
-            title: body.title || "General Expense",
-            date: body.purchaseDate || new Date(),
-            type: "debit",
+        // Add to bank's paymentHistory using new format
+        bank.paymentHistory.push({
+            project: createdExpense._id.toString(),
+            projectName: body.title || "General Expense",
+            clientName: body.purchaseBy || "",
             amount: body.amount,
-            expenseId: createdExpense._id,
-            purchaseBy: body.purchaseBy,
-            expenseType: "general"
+            type: "debit",
+            note: body.note || "",
+            date: body.purchaseDate || new Date()
         });
 
-        await BankRepo.update(bank._id, {
-            balance: bank.balance - body.amount,
-            expenseHistory: bank.expenseHistory
-        });
+        await bank.save();
 
         return createdExpense;
     };
@@ -48,37 +45,39 @@ class GeneralExpenseService {
 
         const updated = await GeneralExpenseRepo.updateById(id, body);
 
-        // Update bank's expenseHistory if amount or title changed
+        // Update bank's paymentHistory if amount or title changed
         if (existingExpense.bankName && (body.amount !== undefined || body.title !== undefined)) {
             const bank = await BankRepo.findById(existingExpense.bankName);
             if (bank) {
-                // Check if this expense already exists in expenseHistory
-                const existingHistoryIndex = bank.expenseHistory.findIndex(
-                    (item) => item.expenseId && item.expenseId.toString() === id
+                // Check if this expense already exists in paymentHistory
+                const existingHistoryIndex = bank.paymentHistory.findIndex(
+                    (item) => item.project === id
                 );
 
                 if (existingHistoryIndex !== -1) {
                     // Update existing history entry
-                    bank.expenseHistory[existingHistoryIndex] = {
-                        ...bank.expenseHistory[existingHistoryIndex],
-                        title: body.title || existingExpense.title,
+                    bank.paymentHistory[existingHistoryIndex] = {
+                        ...bank.paymentHistory[existingHistoryIndex],
+                        project: id,
+                        projectName: body.title || existingExpense.title,
+                        clientName: body.purchaseBy || existingExpense.purchaseBy,
                         amount: body.amount !== undefined ? body.amount : existingExpense.amount,
-                        date: body.purchaseDate || existingExpense.purchaseDate,
+                        date: body.purchaseDate || existingExpense.purchaseDate
                     };
                 } else {
                     // Add new history entry if it doesn't exist
-                    bank.expenseHistory.push({
-                        title: body.title || existingExpense.title,
-                        date: body.purchaseDate || existingExpense.purchaseDate,
-                        type: "debit",
+                    bank.paymentHistory.push({
+                        project: id,
+                        projectName: body.title || existingExpense.title,
+                        clientName: body.purchaseBy || existingExpense.purchaseBy,
                         amount: body.amount !== undefined ? body.amount : existingExpense.amount,
-                        expenseId: id,
-                        purchaseBy: body.purchaseBy || existingExpense.purchaseBy,
-                        expenseType: "general"
+                        type: "debit",
+                        note: body.note || existingExpense.note || "",
+                        date: body.purchaseDate || existingExpense.purchaseDate
                     });
                 }
 
-                await BankRepo.update(bank._id, { expenseHistory: bank.expenseHistory });
+                await bank.save();
             }
         }
 

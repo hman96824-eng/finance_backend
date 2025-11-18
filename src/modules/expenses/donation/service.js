@@ -18,21 +18,18 @@ class DonationExpenseService {
         // Create donation first
         const createdDonation = await DonationRepo.create(body);
 
-        // Add to bank's expenseHistory
-        bank.expenseHistory.push({
-            title: body.donationName || body.title || "Donation",
-            date: body.donationDate || new Date(),
-            type: "debit",
+        // Add to bank's paymentHistory using new format
+        bank.paymentHistory.push({
+            project: createdDonation._id.toString(),
+            projectName: body.donationName || body.title || "Donation",
+            clientName: body.purchaseBy || "",
             amount: body.amount,
-            expenseId: createdDonation._id,
-            purchaseBy: body.purchaseBy,
-            expenseType: "donation"
+            type: "debit",
+            note: body.note || "",
+            date: body.donationDate || new Date()
         });
 
-        await BankRepo.update(bank._id, {
-            balance: bank.balance - body.amount,
-            expenseHistory: bank.expenseHistory
-        });
+        await bank.save();
 
         return createdDonation;
     };
@@ -49,37 +46,39 @@ class DonationExpenseService {
 
         await DonationRepo.updateById(id, body);
 
-        // Update bank's expenseHistory if amount or title changed
+        // Update bank's paymentHistory if amount or title changed
         if (existingDonation.bankName && (body.amount !== undefined || body.donationName !== undefined || body.title !== undefined)) {
             const bank = await BankRepo.findById(existingDonation.bankName);
             if (bank) {
-                // Check if this donation already exists in expenseHistory
-                const existingHistoryIndex = bank.expenseHistory.findIndex(
-                    (item) => item.expenseId && item.expenseId.toString() === id
+                // Check if this donation already exists in paymentHistory
+                const existingHistoryIndex = bank.paymentHistory.findIndex(
+                    (item) => item.project === id
                 );
 
                 if (existingHistoryIndex !== -1) {
                     // Update existing history entry
-                    bank.expenseHistory[existingHistoryIndex] = {
-                        ...bank.expenseHistory[existingHistoryIndex],
-                        title: body.donationName || body.title || existingDonation.donationName || existingDonation.title,
+                    bank.paymentHistory[existingHistoryIndex] = {
+                        ...bank.paymentHistory[existingHistoryIndex],
+                        project: id,
+                        projectName: body.donationName || body.title || existingDonation.donationName || existingDonation.title,
+                        clientName: body.purchaseBy || existingDonation.purchaseBy,
                         amount: body.amount !== undefined ? body.amount : existingDonation.amount,
-                        date: body.donationDate || existingDonation.donationDate,
+                        date: body.donationDate || existingDonation.donationDate
                     };
                 } else {
                     // Add new history entry if it doesn't exist
-                    bank.expenseHistory.push({
-                        title: body.donationName || body.title || existingDonation.donationName || existingDonation.title,
-                        date: body.donationDate || existingDonation.donationDate,
-                        type: "debit",
+                    bank.paymentHistory.push({
+                        project: id,
+                        projectName: body.donationName || body.title || existingDonation.donationName || existingDonation.title,
+                        clientName: body.purchaseBy || existingDonation.purchaseBy,
                         amount: body.amount !== undefined ? body.amount : existingDonation.amount,
-                        expenseId: id,
-                        purchaseBy: body.purchaseBy || existingDonation.purchaseBy,
-                        expenseType: "donation"
+                        type: "debit",
+                        note: body.note || existingDonation.note || "",
+                        date: body.donationDate || existingDonation.donationDate
                     });
                 }
 
-                await BankRepo.update(bank._id, { expenseHistory: bank.expenseHistory });
+                await bank.save();
             }
         }
 

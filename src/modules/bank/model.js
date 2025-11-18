@@ -2,30 +2,13 @@ import mongoose from "mongoose";
 
 const PaymentSchema = new mongoose.Schema(
   {
-    project: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Project",
-      required: true
-    },
-
+    project: { type: mongoose.Schema.Types.Mixed }, // Allow both String and Object for backward compatibility
+    projectName: { type: String },
+    clientName: { type: String },
     amount: { type: Number, required: true },
     type: { type: String, enum: ["credit", "debit"], default: "credit" },
     note: { type: String },
-    date: { type: Date, default: Date.now }
-  },
-  { _id: false }
-);
-
-
-const ExpenseHistorySchema = new mongoose.Schema(
-  {
-    title: { type: String },
-    date: { type: Date },
-    type: { type: String, enum: ["debit"], default: "debit" },
-    amount: { type: Number, required: true },
-    expenseId: { type: mongoose.Schema.Types.ObjectId },
-    purchaseBy: { type: String },
-    expenseType: { type: String, enum: ["assets", "billing", "business", "donation", "general", "salary"] },
+    date: { type: Date, default: Date.now },
   },
   { _id: false }
 );
@@ -42,45 +25,37 @@ const BankSchema = new mongoose.Schema(
     openingDate: { type: Date },
     balance: { type: Number, default: 0 },
     status: { type: String, enum: ["Active", "Closed"], default: "Active" },
-
-    // All payment history (subdocuments)
     paymentHistory: [PaymentSchema],
-    expenseHistory: [ExpenseHistorySchema],
-
-
-    // Ownership tracking
-    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" }
+    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   },
   { timestamps: true }
 );
 
-// --- Indexing (no duplicate accounts per user) ---
+// Unique constraint
 BankSchema.index({ accountNumber: 1, createdBy: 1 }, { unique: true, sparse: true });
 
-// --- Balance auto-update on save (recalculate from paymentHistory) ---
+// Auto-update balance on save
 BankSchema.pre("save", function (next) {
   if (this.isNew) {
-    // For new bank documents, use the initial balance
     this.balance = Number(this.balance || 0);
   } else {
-    // For existing documents, calculate from the latest payment
-    const latestPayment = this.paymentHistory[this.paymentHistory.length - 1];
-    if (latestPayment) {
-      this.balance = Number(this.balance || 0) +
-        (latestPayment.type === "credit" ? Number(latestPayment.amount || 0) : -Number(latestPayment.amount || 0));
+    const latest = this.paymentHistory[this.paymentHistory.length - 1];
+    if (latest) {
+      this.balance =
+        Number(this.balance || 0) +
+        (latest.type === "credit" ? Number(latest.amount || 0) : -Number(latest.amount || 0));
     }
   }
   next();
 });
 
-// When converting to JSON, hide __v and return id
 BankSchema.set("toJSON", {
   transform: (doc, ret) => {
     ret.id = ret._id;
     delete ret._id;
     delete ret.__v;
     return ret;
-  }
+  },
 });
 
 export default mongoose.models.Bank || mongoose.model("Bank", BankSchema);
