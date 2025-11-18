@@ -12,9 +12,17 @@ const AssetController = {
             // ⭐ Step 1: Upload attachments first (before calling service)
             let attachmentIds = [];
             if (req.files?.length > 0) {
-                for (let file of req.files) {
-                    const media = await uploadMedia(file.path, "assets", userId);
-                    attachmentIds.push(media._id);
+                try {
+                    for (let file of req.files) {
+                        const media = await uploadMedia(file.path, "assets", userId);
+                        if (!media || !media._id) {
+                            throw new Error("Media upload returned invalid result");
+                        }
+                        attachmentIds.push(media._id);
+                    }
+                } catch (uploadError) {
+                    console.error("❌ Media upload error:", uploadError.message);
+                    throw new Error(`Media upload failed: ${uploadError.message}`);
                 }
             }
 
@@ -59,9 +67,17 @@ const AssetController = {
             // ⭐ Step 1: Upload new attachments first (if any)
             let attachmentIds = [];
             if (req.files?.length > 0) {
-                for (let file of req.files) {
-                    const media = await uploadMedia(file.path, "assets", userId);
-                    attachmentIds.push(media._id);
+                try {
+                    for (let file of req.files) {
+                        const media = await uploadMedia(file.path, "assets", userId);
+                        if (!media || !media._id) {
+                            throw new Error("Media upload returned invalid result");
+                        }
+                        attachmentIds.push(media._id);
+                    }
+                } catch (uploadError) {
+                    console.error("❌ Media upload error:", uploadError.message);
+                    throw new Error(`Media upload failed: ${uploadError.message}`);
                 }
             }
 
@@ -177,9 +193,17 @@ const AssetController = {
             // ⭐ Step 1: Upload new attachments first (if any)
             let attachmentIds = [];
             if (req.files?.length > 0) {
-                for (let file of req.files) {
-                    const media = await uploadMedia(file.path, "assets", userId);
-                    attachmentIds.push(media._id);
+                try {
+                    for (let file of req.files) {
+                        const media = await uploadMedia(file.path, "assets", userId);
+                        if (!media || !media._id) {
+                            throw new Error("Media upload returned invalid result");
+                        }
+                        attachmentIds.push(media._id);
+                    }
+                } catch (uploadError) {
+                    console.error("❌ Media upload error:", uploadError.message);
+                    throw new Error(`Media upload failed: ${uploadError.message}`);
                 }
             }
             // ⭐ Step 2: Update asset with new attachments

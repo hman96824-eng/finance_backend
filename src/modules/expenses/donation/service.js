@@ -15,19 +15,73 @@ class DonationExpenseService {
         if (bank.balance < body.amount)
             throw ApiError.badRequest("Not enough bank balance");
 
-        await BankRepo.update(bank._id, { balance: bank.balance - body.amount });
+        // Create donation first
+        const createdDonation = await DonationRepo.create(body);
 
-        return await DonationRepo.create(body);
+        // Add to bank's expenseHistory
+        bank.expenseHistory.push({
+            title: body.donationName || body.title || "Donation",
+            date: body.donationDate || new Date(),
+            type: "debit",
+            amount: body.amount,
+            expenseId: createdDonation._id,
+            purchaseBy: body.purchaseBy,
+            expenseType: "donation"
+        });
+
+        await BankRepo.update(bank._id, {
+            balance: bank.balance - body.amount,
+            expenseHistory: bank.expenseHistory
+        });
+
+        return createdDonation;
     };
     static updateDonation = async (id, body) => {
+        // Get existing donation to track changes
+        const existingDonation = await DonationModel.findById(id);
+        if (!existingDonation) throw ApiError.notFound("Donation not found");
+
         if (body.attachments?.length > 0) {
-            const existing = await DonationModel.findById(id).select("attachments");
-            if (existing) {
-                body.attachments = [...existing.attachments, ...body.attachments];
+            if (existingDonation.attachments) {
+                body.attachments = [...existingDonation.attachments, ...body.attachments];
             }
         }
 
         await DonationRepo.updateById(id, body);
+
+        // Update bank's expenseHistory if amount or title changed
+        if (existingDonation.bankName && (body.amount !== undefined || body.donationName !== undefined || body.title !== undefined)) {
+            const bank = await BankRepo.findById(existingDonation.bankName);
+            if (bank) {
+                // Check if this donation already exists in expenseHistory
+                const existingHistoryIndex = bank.expenseHistory.findIndex(
+                    (item) => item.expenseId && item.expenseId.toString() === id
+                );
+
+                if (existingHistoryIndex !== -1) {
+                    // Update existing history entry
+                    bank.expenseHistory[existingHistoryIndex] = {
+                        ...bank.expenseHistory[existingHistoryIndex],
+                        title: body.donationName || body.title || existingDonation.donationName || existingDonation.title,
+                        amount: body.amount !== undefined ? body.amount : existingDonation.amount,
+                        date: body.donationDate || existingDonation.donationDate,
+                    };
+                } else {
+                    // Add new history entry if it doesn't exist
+                    bank.expenseHistory.push({
+                        title: body.donationName || body.title || existingDonation.donationName || existingDonation.title,
+                        date: body.donationDate || existingDonation.donationDate,
+                        type: "debit",
+                        amount: body.amount !== undefined ? body.amount : existingDonation.amount,
+                        expenseId: id,
+                        purchaseBy: body.purchaseBy || existingDonation.purchaseBy,
+                        expenseType: "donation"
+                    });
+                }
+
+                await BankRepo.update(bank._id, { expenseHistory: bank.expenseHistory });
+            }
+        }
 
         const result = await DonationModel.findById(id)
             .populate("bankName", "bankName accountNumber balance")

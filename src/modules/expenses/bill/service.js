@@ -15,22 +15,75 @@ class BillingExpenseService {
 
         if (bank.balance < body.amount) throw ApiError.badRequest("Not enough bank balance");
 
-        // Deduct bank balance
-        await BankRepo.update(bank._id, { balance: bank.balance - body.amount });
+        // Create billing expense first
+        const createdExpense = await BillingRepo.create(body);
 
-        // Create billing expense
-        return await BillingRepo.create(body);
+        // Add to bank's expenseHistory
+        bank.expenseHistory.push({
+            title: body.billName || body.title || "Billing Expense",
+            date: body.billDate || new Date(),
+            type: "debit",
+            amount: body.amount,
+            expenseId: createdExpense._id,
+            purchaseBy: body.purchaseBy,
+            expenseType: "billing"
+        });
+
+        // Deduct bank balance and update expense history
+        await BankRepo.update(bank._id, {
+            balance: bank.balance - body.amount,
+            expenseHistory: bank.expenseHistory
+        });
+
+        return createdExpense;
     };
     static updateExpense = async (id, body) => {
+        // Get existing expense to track changes
+        const existingExpense = await BillingModel.findById(id);
+        if (!existingExpense) throw ApiError.notFound("Billing Expense not found");
+
         // Merge attachments if present (append new ones)
         if (body.attachments && body.attachments.length > 0) {
-            const existing = await BillingModel.findById(id).select("attachments");
-            if (existing && existing.attachments) {
-                body.attachments = [...existing.attachments.map(a => a.toString()), ...body.attachments];
+            if (existingExpense.attachments) {
+                body.attachments = [...existingExpense.attachments.map(a => a.toString()), ...body.attachments];
             }
         }
 
         const updated = await BillingRepo.updateById(id, body);
+
+        // Update bank's expenseHistory if amount or title changed
+        if (existingExpense.bankName && (body.amount !== undefined || body.billName !== undefined)) {
+            const bank = await BankRepo.findById(existingExpense.bankName);
+            if (bank) {
+                // Check if this expense already exists in expenseHistory
+                const existingHistoryIndex = bank.expenseHistory.findIndex(
+                    (item) => item.expenseId && item.expenseId.toString() === id
+                );
+
+                if (existingHistoryIndex !== -1) {
+                    // Update existing history entry
+                    bank.expenseHistory[existingHistoryIndex] = {
+                        ...bank.expenseHistory[existingHistoryIndex],
+                        title: body.billName || existingExpense.billName || body.title || existingExpense.title,
+                        amount: body.amount !== undefined ? body.amount : existingExpense.amount,
+                        date: body.billDate || existingExpense.billDate,
+                    };
+                } else {
+                    // Add new history entry if it doesn't exist
+                    bank.expenseHistory.push({
+                        title: body.billName || existingExpense.billName || body.title || existingExpense.title,
+                        date: body.billDate || existingExpense.billDate,
+                        type: "debit",
+                        amount: body.amount !== undefined ? body.amount : existingExpense.amount,
+                        expenseId: id,
+                        purchaseBy: body.purchaseBy || existingExpense.purchaseBy,
+                        expenseType: "billing"
+                    });
+                }
+
+                await BankRepo.update(bank._id, { expenseHistory: bank.expenseHistory });
+            }
+        }
 
         // Return populated document
         const result = await BillingModel.findById(id)

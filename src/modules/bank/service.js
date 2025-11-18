@@ -42,7 +42,7 @@ class BankService {
       }
 
       const bank = await BankRepo.create({ ...data, createdBy: userId });
-      return bank;
+      return this.formatBankResponse(bank);
     } catch (err) {
       throw ApiError.badRequest(err.message);
     }
@@ -50,13 +50,15 @@ class BankService {
 
   static getAllBanks = async (userId) => {
     // Populate paymentHistory.project with selective fields and createdBy user
-    return await BankRepo.find({ createdBy: userId })
+    const banks = await BankRepo.find({ createdBy: userId })
       .populate(
         "paymentHistory.project",
         "projectName clientName projectManager projectID"
       )
       .populate("createdBy", "name email _id")
       .sort({ createdAt: -1 });
+
+    return banks.map(bank => this.formatBankResponse(bank));
   };
 
   static getBankById = async (id, userId) => {
@@ -68,7 +70,7 @@ class BankService {
       .populate("createdBy", "name email _id");
 
     if (!bank) throw ApiError.notFound(messages.BANK_NOT_FOUND);
-    return bank;
+    return this.formatBankResponse(bank);
   };
 
   static updateBank = async (id, data, userId) => {
@@ -78,7 +80,7 @@ class BankService {
       { new: true }
     );
     if (!bank) throw ApiError.notFound(messages.BANK_NOT_FOUND);
-    return bank;
+    return this.formatBankResponse(bank);
   };
 
   static deleteBank = async (id, userId) => {
@@ -187,12 +189,14 @@ class BankService {
       });
 
       // Return populated bank after successful transaction
-      return await BankModel.findById(bankId)
-        .populate(
-          "paymentHistory.project",
-          "projectName clientName projectManager projectID"
-        )
-        .populate("createdBy", "name email _id");
+      return this.formatBankResponse(
+        await BankModel.findById(bankId)
+          .populate(
+            "paymentHistory.project",
+            "projectName clientName projectManager projectID"
+          )
+          .populate("createdBy", "name email _id")
+      );
     } catch (err) {
       throw ApiError.badRequest(err.message || "Failed to add payment");
     } finally {
@@ -203,7 +207,12 @@ class BankService {
   static getPayments = async (bankId, userId) => {
     const bank = await BankRepo.findOne({ _id: bankId, createdBy: userId });
     if (!bank) throw ApiError.notFound(messages.BANK_NOT_FOUND);
-    return bank.paymentHistory;
+
+    // Format payment history with date only
+    return bank.paymentHistory.map(payment => ({
+      ...payment,
+      date: payment.date ? new Date(payment.date).toISOString().split('T')[0] : null
+    }));
   };
 
   static deleteManyBanks = async (bankIds, userId) => {
@@ -221,6 +230,29 @@ class BankService {
     } catch (error) {
       throw ApiError.badRequest(error.message);
     }
+  };
+
+  // Helper method to format bank response with date formatting
+  static formatBankResponse = (bank) => {
+    if (!bank) return null;
+
+    // Convert to plain object if needed
+    const bankObj = bank.toObject ? bank.toObject() : bank;
+
+    return {
+      ...bankObj,
+      openingDate: bankObj.openingDate ? new Date(bankObj.openingDate).toISOString().split('T')[0] : null,
+      createdAt: bankObj.createdAt ? new Date(bankObj.createdAt).toISOString().split('T')[0] : null,
+      updatedAt: bankObj.updatedAt ? new Date(bankObj.updatedAt).toISOString().split('T')[0] : null,
+      paymentHistory: Array.isArray(bankObj.paymentHistory) ? bankObj.paymentHistory.map(payment => ({
+        ...payment,
+        date: payment.date ? new Date(payment.date).toISOString().split('T')[0] : null
+      })) : [],
+      expenseHistory: Array.isArray(bankObj.expenseHistory) ? bankObj.expenseHistory.map(expense => ({
+        ...expense,
+        date: expense.date ? new Date(expense.date).toISOString().split('T')[0] : null
+      })) : []
+    };
   };
 }
 

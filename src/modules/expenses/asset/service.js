@@ -18,11 +18,24 @@ class AssetService {
             if (bank.balance < body.amount)
                 throw ApiError.badRequest("Not enough bank balance");
 
-            await BankRepo.update(bank._id, {
-                balance: bank.balance - body.amount,
+            // Create asset first
+            const createdAsset = await AssetRepo.create(body);
+
+            // Add to bank's expenseHistory
+            bank.expenseHistory.push({
+                title: body.title,
+                date: body.purchaseDate,
+                type: "debit",
+                amount: body.amount,
+                expenseId: createdAsset._id,
+                purchaseBy: body.purchaseBy,
+                expenseType: "assets"
             });
 
-            const createdAsset = await AssetRepo.create(body);
+            await BankRepo.update(bank._id, {
+                balance: bank.balance - body.amount,
+                expenseHistory: bank.expenseHistory
+            });
 
             // Populate bank and attachments before returning
             return await Asset.findById(createdAsset._id)
@@ -37,16 +50,53 @@ class AssetService {
     // ---------------- UPDATE ----------------
     static updateAsset = async (id, body) => {
         try {
+            // Get existing asset to track changes
+            const existingAsset = await Asset.findById(id);
+            if (!existingAsset) throw ApiError.notFound("Asset not found");
+
             // If attachments are in body, merge with existing ones
             if (body.attachments && body.attachments.length > 0) {
-                const existingAsset = await Asset.findById(id).select("attachments");
-                if (existingAsset && existingAsset.attachments) {
+                if (existingAsset.attachments) {
                     // Merge new attachments with existing ones
                     body.attachments = [...existingAsset.attachments, ...body.attachments];
                 }
             }
 
             const updated = await AssetRepo.updateById(id, body);
+
+            // Update bank's expenseHistory if amount or title changed
+            if (existingAsset.bank && (body.amount !== undefined || body.title !== undefined)) {
+                const bank = await BankRepo.findById(existingAsset.bank);
+                if (bank) {
+                    // Check if this asset already exists in expenseHistory
+                    const existingHistoryIndex = bank.expenseHistory.findIndex(
+                        (item) => item.assetId && item.assetId.toString() === id
+                    );
+
+                    if (existingHistoryIndex !== -1) {
+                        // Update existing history entry
+                        bank.expenseHistory[existingHistoryIndex] = {
+                            ...bank.expenseHistory[existingHistoryIndex],
+                            title: body.title || existingAsset.title,
+                            amount: body.amount !== undefined ? body.amount : existingAsset.amount,
+                            date: body.purchaseDate || existingAsset.purchaseDate,
+                        };
+                    } else {
+                        // Add new history entry if it doesn't exist
+                        bank.expenseHistory.push({
+                            title: body.title || existingAsset.title,
+                            date: body.purchaseDate || existingAsset.purchaseDate,
+                            type: "debit",
+                            amount: body.amount !== undefined ? body.amount : existingAsset.amount,
+                            expenseId: id,
+                            purchaseBy: body.purchaseBy || existingAsset.purchaseBy,
+                            expenseType: "assets"
+                        });
+                    }
+
+                    await BankRepo.update(bank._id, { expenseHistory: bank.expenseHistory });
+                }
+            }
 
             // Return populated data like getAssetById
             const result = await Asset.findById(id)

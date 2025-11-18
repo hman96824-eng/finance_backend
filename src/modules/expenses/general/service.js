@@ -14,20 +14,73 @@ class GeneralExpenseService {
 
         if (bank.balance < body.amount) throw ApiError.badRequest("Not enough bank balance");
 
-        // Deduct bank balance
-        await BankRepo.update(bank._id, { balance: bank.balance - body.amount });
+        // Create expense first
+        const createdExpense = await GeneralExpenseRepo.create(body);
 
-        return await GeneralExpenseRepo.create(body);
+        // Add to bank's expenseHistory
+        bank.expenseHistory.push({
+            title: body.title || "General Expense",
+            date: body.purchaseDate || new Date(),
+            type: "debit",
+            amount: body.amount,
+            expenseId: createdExpense._id,
+            purchaseBy: body.purchaseBy,
+            expenseType: "general"
+        });
+
+        await BankRepo.update(bank._id, {
+            balance: bank.balance - body.amount,
+            expenseHistory: bank.expenseHistory
+        });
+
+        return createdExpense;
     };
     static updateExpense = async (id, body) => {
+        // Get existing expense to track changes
+        const existingExpense = await GeneralExpenseModel.findById(id);
+        if (!existingExpense) throw ApiError.notFound("General Expense not found");
+
         if (body.attachments && body.attachments.length > 0) {
-            const existing = await GeneralExpenseModel.findById(id).select("attachments");
-            if (existing && existing.attachments) {
-                body.attachments = [...existing.attachments.map(a => a.toString()), ...body.attachments];
+            if (existingExpense.attachments) {
+                body.attachments = [...existingExpense.attachments.map(a => a.toString()), ...body.attachments];
             }
         }
 
         const updated = await GeneralExpenseRepo.updateById(id, body);
+
+        // Update bank's expenseHistory if amount or title changed
+        if (existingExpense.bankName && (body.amount !== undefined || body.title !== undefined)) {
+            const bank = await BankRepo.findById(existingExpense.bankName);
+            if (bank) {
+                // Check if this expense already exists in expenseHistory
+                const existingHistoryIndex = bank.expenseHistory.findIndex(
+                    (item) => item.expenseId && item.expenseId.toString() === id
+                );
+
+                if (existingHistoryIndex !== -1) {
+                    // Update existing history entry
+                    bank.expenseHistory[existingHistoryIndex] = {
+                        ...bank.expenseHistory[existingHistoryIndex],
+                        title: body.title || existingExpense.title,
+                        amount: body.amount !== undefined ? body.amount : existingExpense.amount,
+                        date: body.purchaseDate || existingExpense.purchaseDate,
+                    };
+                } else {
+                    // Add new history entry if it doesn't exist
+                    bank.expenseHistory.push({
+                        title: body.title || existingExpense.title,
+                        date: body.purchaseDate || existingExpense.purchaseDate,
+                        type: "debit",
+                        amount: body.amount !== undefined ? body.amount : existingExpense.amount,
+                        expenseId: id,
+                        purchaseBy: body.purchaseBy || existingExpense.purchaseBy,
+                        expenseType: "general"
+                    });
+                }
+
+                await BankRepo.update(bank._id, { expenseHistory: bank.expenseHistory });
+            }
+        }
 
         return await GeneralExpenseModel.findById(id)
             .populate("bankName", "bankName accountNumber balance")

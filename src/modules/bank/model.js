@@ -16,6 +16,20 @@ const PaymentSchema = new mongoose.Schema(
   { _id: false }
 );
 
+
+const ExpenseHistorySchema = new mongoose.Schema(
+  {
+    title: { type: String },
+    date: { type: Date },
+    type: { type: String, enum: ["debit"], default: "debit" },
+    amount: { type: Number, required: true },
+    expenseId: { type: mongoose.Schema.Types.ObjectId },
+    purchaseBy: { type: String },
+    expenseType: { type: String, enum: ["assets", "billing", "business", "donation", "general", "salary"] },
+  },
+  { _id: false }
+);
+
 const BankSchema = new mongoose.Schema(
   {
     bankName: { type: String, trim: true, required: true },
@@ -31,6 +45,8 @@ const BankSchema = new mongoose.Schema(
 
     // All payment history (subdocuments)
     paymentHistory: [PaymentSchema],
+    expenseHistory: [ExpenseHistorySchema],
+
 
     // Ownership tracking
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" }

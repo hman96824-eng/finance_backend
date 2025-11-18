@@ -1,5 +1,5 @@
 import Media from "./model.js";
-import { uploadToCloudinary } from "../../config/cloud.js";
+import { uploadToCloudinary, deleteFromCloudinary } from "../../config/cloud.js";
 import ApiError from "../../utils/ApiError.js";
 import messages from "../../constants/messages.js";
 import fs from "fs";
