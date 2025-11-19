@@ -16,12 +16,11 @@ class SalaryService {
             deductions: body.deductions || 0,
             netSalary: body.netSalary,
             salaryMonth: body.salaryMonth,
-            paymentDate: body.paymentDate,
             bankName: body.bankName,
         };
 
         // Check if employee exists
-        let employee = await SalaryExpense.findOne({ employeeCode: body.employeeId, isDeleted: false });
+        let employee = await SalaryExpense.findOne({ employeeId: body.employeeId, isDeleted: false });
 
         if (employee) {
             // Add new salary to array
@@ -50,7 +49,7 @@ class SalaryService {
             amount: body.netSalary,
             type: "debit",
             note: `Salary for ${body.salaryMonth}`,
-            date: body.paymentDate
+            date: body.salaryMonth
         });
 
         await bank.save();
