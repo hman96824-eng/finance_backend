@@ -241,7 +241,7 @@ export const businessExpenseUpdateSchema = z.object({
 
 // Delete many validation
 export const deleteManySchema = z.object({
-  ids: z.array(z.string().regex(/^[a-f\d]{24}$/i, { message: "Invalid ID format" })).min(1, { message: "At least one ID is required" }),
+  ids: z.array(z.string().regex(/^[a-f\d]{24}$/i, { message: "Invalid ids format" })).min(1, { message: "At least one ids is required" }),
 });
 
 // Delete attachments validation
@@ -346,6 +346,71 @@ export const generalExpenseUpdateSchema = z.object({
   bankName: z.string().regex(/^[a-f\d]{24}$/i, { message: "Invalid bank ID" }).optional(),
 });
 
+// ===============================
+// 🧾 SALARY EXPENSE VALIDATION
+// ===============================
+export const salaryExpenseSchema = z.object({
+  employeeName: z
+    .string()
+    .trim()
+    .min(1, { message: "employeeName is required" }),
+
+  employeeId: z
+    .string()
+    .trim()
+    .min(1, { message: "employeeId is required" }),
+
+  designation: z
+    .string()
+    .trim()
+    .min(1, { message: "designation is required" }),
+
+  department: z
+    .string()
+    .trim()
+    .min(1, { message: "department is required" }),
+
+  baseSalary: z
+    .number()
+    .positive({ message: "baseSalary must be a positive number" }),
+
+  allowances: z
+    .number()
+    .nonnegative({ message: "allowances cannot be negative" })
+    .optional(),
+
+  deductions: z
+    .number()
+    .nonnegative({ message: "deductions cannot be negative" })
+    .optional(),
+
+  netSalary: z
+    .number()
+    .positive({ message: "netSalary is required" }),
+
+  salaryMonth: z
+    .string()
+    .regex(/^\d{4}-(0[1-9]|1[0-2])$/, {
+      message: "salaryMonth must be in YYYY-MM format",
+    }), // Example: "2025-11"
+
+  paymentDate: z
+    .string()
+    .regex(
+      /^(January|February|March|April|May|June|July|August|September|October|November|December)\s\d{4}$/i,
+      {
+        message:
+          "paymentDate must be in format: Month YYYY (e.g., January 2025)",
+      }
+    ),
+  bankName: z.string().trim().min(1, { message: "bankName is required" }),
+  bankId: z
+    .string()
+    .regex(/^[a-f\d]{24}$/i, { message: "Invalid bankId" }),
+})
+
+
+
 
 // Validation middleware
 const validateRequest = (schema) => async (req, res, next) => {
@@ -417,4 +482,6 @@ export default {
   // General Expense
   generalExpenseSchema,
   generalExpenseUpdateSchema,
+  // Salary Expense
+  salaryExpenseSchema,
 };
