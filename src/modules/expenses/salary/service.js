@@ -3,6 +3,7 @@ import Bank from "../../bank/model.js";
 import Repo from "../../../utils/repository.js";
 import ApiError from "../../../utils/ApiError.js";
 import { uploadMedia } from "../../media/service.js";
+import mongoose from "mongoose";
 
 const SalaryRepo = new Repo(SalaryExpense);
 const BankRepo = new Repo(Bank);
@@ -57,20 +58,39 @@ class SalaryService {
         return employee;
     };
 
-    static deleteSalary = async (employeeId) => {
-        return await SalaryExpense.deleteOne({ employeeId });
+    static deleteSalary = async (id) => {
+        // Validate ObjectId format
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            throw ApiError.badRequest("Invalid ID format");
+        }
+
+        // Permanent delete
+        const result = await SalaryExpense.deleteOne({ _id: id });
+
+        if (result.deletedCount === 0) {
+            throw ApiError.notFound("Employee not found");
+        }
+
+        return result;
     };
 
-    static deleteMany = async (employeeIds) => {
-        return await SalaryExpense.deleteMany({ employeeId: { $in: employeeIds } });
+    static deleteMany = async (ids) => {
+        // Validate all IDs
+        const validIds = ids.filter(id => mongoose.Types.ObjectId.isValid(id));
+
+        if (validIds.length === 0) {
+            throw ApiError.badRequest("No valid IDs provided");
+        }
+
+        return await SalaryExpense.deleteMany({ _id: { $in: validIds } });
     };
 
     static getAllSalaries = async () => {
         return await SalaryExpense.find({ isDeleted: false });
     };
 
-    static getSalaryById = async (employeeId) => {
-        const employee = await SalaryExpense.findOne({ employeeId, isDeleted: false });
+    static getSalaryById = async (id) => {
+        const employee = await SalaryExpense.findOne({ id, isDeleted: false });
         if (!employee) throw ApiError.notFound("Employee not found");
         return employee;
     };

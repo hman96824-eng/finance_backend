@@ -15,7 +15,7 @@ const SalaryController = {
 
     deleteSalary: async (req, res, next) => {
         try {
-            const result = await SalaryService.deleteSalary(req.params.employeeId);
+            const result = await SalaryService.deleteSalary(req.params.id);
             return successResponse(res, result, "Salary deleted permanently");
         } catch (err) { next(err); }
     },
@@ -36,7 +36,7 @@ const SalaryController = {
 
     getSalaryById: async (req, res, next) => {
         try {
-            const data = await SalaryService.getSalaryById(req.params.employeeId);
+            const data = await SalaryService.getSalaryById(req.params.id);
             return successResponse(res, data);
         } catch (err) { next(err); }
     }

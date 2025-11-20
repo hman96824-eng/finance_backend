@@ -14,10 +14,9 @@ const router = express.Router();
 router
     .post("/create", middleware.authenticate, validate(validation.salaryExpenseSchema), SalaryController.createSalary)
 
-    .delete("/delete/:employeeId", middleware.authenticate, SalaryController.deleteSalary)
+    .delete("/delete/:id", middleware.authenticate, SalaryController.deleteSalary)
     .delete("/delete-many", middleware.authenticate, validate(validation.deleteManySchema), SalaryController.deleteManySalary)
 
     .get("/all", middleware.authenticate, SalaryController.getAllSalaries)
-    .get("/:employeeId", middleware.authenticate, SalaryController.getSalaryById)
-
+    .get("/:id", middleware.authenticate, SalaryController.getSalaryById)
 export default router;
