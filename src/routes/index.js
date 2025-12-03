@@ -12,6 +12,7 @@ import billRoutes from "../modules/expenses/bill/route.js";
 import DonationRoutes from "../modules/expenses/donation/route.js";
 import GeneralExpenseRoutes from "../modules/expenses/general/route.js";
 import salaryRoutes from "../modules/expenses/salary/route.js";
+import leaveRoutes from "../modules/leave/route.js";
 import express from "express";
 
 const app = express();
@@ -33,6 +34,7 @@ export default (app) => {
   apiRoute.use("/donation-expenses", DonationRoutes);
   apiRoute.use("/general-expenses", GeneralExpenseRoutes);
   apiRoute.use("/salary-expenses", salaryRoutes);
+  apiRoute.use("/leave", leaveRoutes);
 
   app.use("/api/v1", apiRoute);
 };
