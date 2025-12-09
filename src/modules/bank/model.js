@@ -6,7 +6,7 @@ const PaymentSchema = new mongoose.Schema(
     projectName: { type: String },
     clientName: { type: String },
     amount: { type: Number, required: true },
-    type: { type: String, enum: ["credit", "debit"], default: "credit" },
+    type: { type: String, enum: ["credit", "debit", "commission"], default: "credit" },
     note: { type: String },
     date: { type: Date, default: Date.now },
   },
@@ -57,5 +57,55 @@ BankSchema.set("toJSON", {
     return ret;
   },
 });
+
+
+export const PaymentSchemaforpay = new mongoose.Schema(
+  {
+    // Who is receiving the payment?
+    holderType: {
+      type: String,
+      enum: ["user", "employee", "external"],
+      required: true,
+    },
+
+    // USER PAYMENT
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
+
+    // EMPLOYEE PAYMENT
+    employeeId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Employee",
+      default: null,
+    },
+
+    // EXTERNAL PERSON PAYMENT
+    externalName: {
+      type: String,
+      default: null,
+      trim: true,
+    },
+
+    // Bank selected for payment
+    bankId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Bank",
+      required: true,
+    },
+
+    // Payment amount
+    amount: {
+      type: Number,
+      required: true,
+      min: 1,
+    },
+
+  },
+  { timestamps: true }
+);
+
 
 export default mongoose.models.Bank || mongoose.model("Bank", BankSchema);

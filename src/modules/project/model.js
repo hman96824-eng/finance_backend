@@ -36,7 +36,11 @@ const ProjectSchema = new mongoose.Schema(
     overrideReason: { type: String, trim: true },
 
     // Financial fields per project
-    budget: { type: Number },
+    // user will enter USD
+    budgetUSD: { type: Number, default: 0 },
+
+    // auto-calculated PKR
+    budgetPKR: { type: Number, default: 0 },
     advanceAmount: { type: Number, default: 0 },
     totalPaid: { type: Number, default: 0 },
     pendingAmount: { type: Number, default: 0 },

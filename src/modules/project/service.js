@@ -1,3 +1,4 @@
+import axios from "axios";
 import Project from "./model.js";
 import Bank from "../bank/model.js";
 import ApiError from "../../utils/ApiError.js";
@@ -30,6 +31,32 @@ const generateProjectID = async () => {
   }
 };
 
+// --------- NEW: conversion helper (uses provided API key) ----------
+const convertUSDToPKR = async (usdAmount) => {
+  try {
+    // YOUR API KEY (from the message)
+    const API_KEY = "7fb4de64678297771c9d69fa";
+    const url = `https://v6.exchangerate-api.com/v6/${API_KEY}/pair/USD/PKR`;
+
+    const resp = await axios.get(url);
+    const data = resp?.data;
+    const rate = data && typeof data.conversion_rate !== "undefined" ? Number(data.conversion_rate) : null;
+
+    if (!rate || Number.isNaN(rate)) {
+      // if rate is not available, return 0 (safe fallback)
+      return 0;
+    }
+
+    return usdAmount * rate;
+  } catch (err) {
+    // Do not throw here to avoid breaking the flow — return 0 as a safe fallback.
+    // Caller can decide what to do if conversion fails.
+    // Optionally you can log the error in your logging system.
+    return 0;
+  }
+};
+// --------------------------------------------------------------------
+
 const ProService = {
   addProject: async (data, userId) => {
     try {
@@ -49,12 +76,37 @@ const ProService = {
         payments = [] // payments: optional initial payments that may include bank info
       } = data || {};
 
+      // ------ NEW: handle budgetUSD (user-entered USD) safely -------
+      // If user provided budgetUSD in the request prefer that (converted to PKR).
+      // Otherwise keep existing behavior where `budget` is treated as PKR.
+      const providedBudgetUSD = typeof data?.budgetUSD !== "undefined" ? Number(data.budgetUSD) : undefined;
+
+      // safeBudget will ultimately be PKR amount used by the rest of your logic
+      let safeBudget = typeof budget === "number" ? budget : Number(budget) || 0;
+      let budgetUSD = 0;
+      let budgetPKR = 0;
+
+      if (typeof providedBudgetUSD !== "undefined" && !Number.isNaN(providedBudgetUSD) && providedBudgetUSD > 0) {
+        budgetUSD = providedBudgetUSD;
+        // convert to PKR via API helper
+        const converted = await convertUSDToPKR(budgetUSD);
+        // if conversion fails converted = 0, we fallback to 0 to not crash. You can decide to change behavior.
+        budgetPKR = Number(converted) || 0;
+        // set safeBudget (PKR) for the rest of the code
+        safeBudget = budgetPKR;
+      } else {
+        // No budgetUSD provided — keep existing budget as PKR (safeBudget already set)
+        budgetUSD = 0;
+        budgetPKR = safeBudget;
+      }
+      // ---------------------------------------------------------------
+
       const safePayments = Array.isArray(payments) ? payments : [];
-      const safeBudget = typeof budget === "number" ? budget : Number(budget) || 0;
+      const safeBudgetNum = typeof safeBudget === "number" ? safeBudget : Number(safeBudget) || 0;
 
       // Calculate totals based on initial payments if they have amounts
       const totalPaid = safePayments.reduce((sum, p) => sum + (Number(p?.amount) || 0), 0);
-      const pendingAmount = Math.max(safeBudget - totalPaid, 0);
+      const pendingAmount = Math.max(safeBudgetNum - totalPaid, 0);
 
       // Create project first (without banks/payments)
       const project = await Project.create({
@@ -68,7 +120,10 @@ const ProService = {
         startDate,
         endDate,
         status,
-        budget: safeBudget,
+        // Save both USD and PKR, and keep the existing `budget` field as PKR for backward compatibility
+        budgetUSD,
+        budgetPKR,
+        budget: safeBudgetNum,
         totalPaid,
         pendingAmount,
         banks: [],

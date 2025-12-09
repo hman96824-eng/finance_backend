@@ -20,6 +20,8 @@ router
     .post("/payment/:id", BankController.addPayment)
     .get("/payment/:id", BankController.getPayments)
 
-
+router
+ 
+  .post("/commission/pay",BankController.createPaymentRequest )
 
 export default router;

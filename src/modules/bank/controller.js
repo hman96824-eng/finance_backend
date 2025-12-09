@@ -13,8 +13,11 @@ const BankController = {
   },
   getAllBanks: async (req, res, next) => {
     try {
+      console.log(req.user.id, "asciiew");
+      
       const banks = await BankService.getAllBanks(req.user.id);
-      return successResponse(res, banks);
+      console.log(banks, 'check 2 ');
+      return successResponse(res, banks, "Banks fetched Successfully");
     } catch (err) {
       next(err);
     }
@@ -86,6 +89,23 @@ const BankController = {
       next(err);
     }
   },
+
+  // pay money 
+  createPaymentRequest: async (req, res, next) => {
+    try {
+      const payment = await BankService.createPaymentRequest({
+        bankId: req.body.bankId,
+        commissionHolderId: req.body.commissionHolderId,
+        amount: Number(req.body.amount),
+      });
+      console.log(payment, " payment in controller ");
+
+      return successResponse(res, payment, "Payment request created");
+    } catch (err) {
+      next(err);
+    }
+  },
+
 };
 
 export default BankController;
