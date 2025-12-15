@@ -15,6 +15,47 @@ const projectRepo = new repository(ProjectModel);
 const BankRepo = new repository(BankModel);
 
 class BankService {
+  // Format bank document for responses (normalize paymentHistory entries)
+  static formatBankResponse = (bank) => {
+    if (!bank) return null;
+    // if Mongoose document, convert to plain object
+    const b = typeof bank.toObject === 'function' ? bank.toObject() : { ...bank };
+    const ph = Array.isArray(b.paymentHistory) ? b.paymentHistory.slice() : [];
+    b.paymentHistory = ph
+      .map((p) => {
+        // Normalize project to id string when possible
+        let projectId = null;
+        if (p && p.project) {
+          if (typeof p.project === 'object' && p.project._id) projectId = String(p.project._id);
+          else projectId = String(p.project);
+        }
+        return {
+          project: projectId,
+          projectName: p.projectName || '',
+          clientName: p.clientName || '',
+          amount: typeof p.amount === 'number' ? p.amount : Number(p.amount || 0),
+          type: p.type || 'credit',
+          note: p.note || '',
+          date: p.date ? new Date(p.date) : null,
+        };
+      })
+      // sort by date desc
+      .sort((a, b) => (b.date?.getTime() || 0) - (a.date?.getTime() || 0));
+    return b;
+  };
+
+  // Ensure paymentHistory entries are normalized before saving
+  static cleanupPaymentHistory = (bank) => {
+    if (!bank || !Array.isArray(bank.paymentHistory)) return;
+    bank.paymentHistory = bank.paymentHistory.map((p) => {
+      // If project is a populated object, keep only id
+      if (p && typeof p.project === 'object' && p.project._id) p.project = p.project._id;
+      if (!p.date) p.date = new Date();
+      if (!p.type) p.type = 'credit';
+      p.amount = Number(p.amount || 0);
+      return p;
+    });
+  };
   static createBank = async (data, userId) => {
     if (Array.isArray(data.paymentHistory)) {
       for (let i = 0; i < data.paymentHistory.length; i++) {

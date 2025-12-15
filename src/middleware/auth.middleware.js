@@ -26,8 +26,33 @@ export const authenticate = (req, res, next) => {
     next(err);
   }
 };
-// ==================== Invite Permission Middleware ====================
+
+
+export const checkMonthClosed = async (req, res, next) => {
+  try {
+    
+    const { month } = req.body; 
+
+    if (!month) throw ApiError.badRequest("Month is required");
+
+    const result = await db.query(
+      "SELECT is_closed FROM closed_months WHERE month = ?",
+      [month]
+    );
+
+    if (result.length > 0 && result[0].is_closed) {
+      throw ApiError.forbidden(messages.MONTH_CLOSED || "This month is closed. Data cannot be edited.");
+    }
+
+    next(); // Month is open, allow operation
+  } catch (err) {
+    next(err);
+  }
+};
+
+
 
 export default {
   authenticate,
+  checkMonthClosed,
 };

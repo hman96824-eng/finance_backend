@@ -48,9 +48,6 @@ export const initContractNotificationSocket = (io) => {
                     },
                 ],
             });
-
-            console.log(`🧾 Found ${expiringContracts.length} `);
-
             if (expiringContracts.length > 0) {
                 // Populate avatars
                 const populatedEmployees = await EmployeeModel.populate(
