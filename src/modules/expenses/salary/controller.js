@@ -29,7 +29,6 @@ const SalaryController = {
 
     deleteSalary: async (req, res, next) => {
         try {
-            // Check if period matches logic if needed, but for now just proxy
             const result = await SalaryService.deleteSalary(req.params.id);
             return successResponse(res, result, "Salary deleted permanently");
         } catch (err) { next(err); }
@@ -44,7 +43,13 @@ const SalaryController = {
 
     getAllSalaries: async (req, res, next) => {
         try {
-            const data = await SalaryService.getAllSalaries();
+            // Fetch Active Period ID to filter salaries
+            // If user explicitly asks for 'history' (via query param?) we could skip this.
+            // But based on request, assume default view is for current period.
+            // Use accountingPeriod from middleware
+            const accountingPeriod = req.accountingPeriod;
+
+            const data = await SalaryService.getAllSalaries(accountingPeriod);
             return successResponse(res, data);
         } catch (err) { next(err); }
     },

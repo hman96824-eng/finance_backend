@@ -6,6 +6,8 @@ import DonationExpenseController from "./controller.js";
 import { validate } from "../../../middleware/validation.middleware.js";
 import validation from "../../../validation/validation.js";
 
+import { accountingPeriodMiddleware } from "../../../middleware/hardcodedPeriod.middleware.js"
+
 const router = express.Router();
 
 const uploadMiddleware = [
@@ -16,7 +18,7 @@ const uploadMiddleware = [
 
 router
     .post("/create", uploadMiddleware, validate(validation.donationExpenseSchema), DonationExpenseController.createDonation)
-    .get("/all", middleware.authenticate, DonationExpenseController.getAllDonations)
+    .get("/all", middleware.authenticate, accountingPeriodMiddleware, DonationExpenseController.getAllDonations)
     .get("/:id", middleware.authenticate, DonationExpenseController.getDonationById)
 
     .put("/update/:id", uploadMiddleware, validate(validation.donationExpenseUpdateSchema), DonationExpenseController.updateDonation)

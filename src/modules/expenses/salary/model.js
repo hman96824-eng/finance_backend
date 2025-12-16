@@ -7,6 +7,7 @@ const SalaryDetailSchema = new mongoose.Schema({
     netSalary: { type: Number, required: true },
     salaryMonth: { type: String, required: true },
     bankName: { type: String, required: true },
+    accountingPeriod: { type: mongoose.Schema.Types.ObjectId, ref: "AccountingPeriod" }
 }, { _id: false }); // We don't need _id for each salary item
 
 const SalaryExpenseSchema = new mongoose.Schema({

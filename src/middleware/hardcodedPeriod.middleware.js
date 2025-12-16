@@ -25,7 +25,7 @@ export const accountingPeriodMiddleware = async (req, res, next) => {
     }
 
     // 3️⃣ Attach to request
-    req.accountingPeriod = { startDate, endDate };
+    req.accountingPeriod = { startDate, endDate, _id: activePeriod?._id };
 
     next();
   } catch (err) {

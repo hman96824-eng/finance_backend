@@ -6,6 +6,8 @@ import BusinessExpenseController from "./controller.js";
 import { validate } from "../../../middleware/validation.middleware.js";
 import validation from "../../../validation/validation.js";
 
+import { accountingPeriodMiddleware } from "../../../middleware/hardcodedPeriod.middleware.js"
+
 const router = express.Router();
 
 // Middleware stack for routes that include file uploads
@@ -15,7 +17,7 @@ const uploadMiddleware = [middleware.authenticate, upload.array("attachments"), 
 
 router
     .post("/create", uploadMiddleware, validate(validation.businessExpenseSchema), BusinessExpenseController.createExpense)
-    .get("/all", middleware.authenticate, BusinessExpenseController.getAllExpenses)
+    .get("/all", middleware.authenticate, accountingPeriodMiddleware, BusinessExpenseController.getAllExpenses)
     .get("/:id", middleware.authenticate, BusinessExpenseController.getExpenseById)
 
     .put("/update/:id", uploadMiddleware, validate(validation.businessExpenseUpdateSchema), BusinessExpenseController.updateExpense)

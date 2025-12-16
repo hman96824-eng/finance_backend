@@ -102,8 +102,14 @@ class GeneralExpenseService {
     static deleteMany = async (ids) => {
         return await GeneralExpenseRepo.deleteMany({ _id: { $in: ids } });
     };
-    static getAllExpenses = async () => {
-        const expenses = await GeneralExpenseModel.find({ isDeleted: false })
+    static getAllExpenses = async (accountingPeriod) => {
+        const query = { isDeleted: false };
+        if (accountingPeriod) {
+            const { startDate, endDate } = accountingPeriod;
+            query.purchaseDate = { $gte: startDate, $lte: endDate };
+        }
+
+        const expenses = await GeneralExpenseModel.find(query)
             .populate("bankName", "bankName accountNumber balance")
             .populate("attachments", "_id url")
             .populate("createdBy", "name email")

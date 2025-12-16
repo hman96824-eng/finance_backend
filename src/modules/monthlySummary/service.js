@@ -3,11 +3,13 @@ import BillingExpenseModel from "../expenses/bill/model.js";
 import DonationModel from "../expenses/donation/model.js";
 import GeneralExpense from "../expenses/general/model.js";
 import SalaryExpense from "../expenses/salary/model.js";
+import AssetExpense from "../expenses/asset/model.js";
+import BusinessExpense from "../expenses/business/model.js";
 import mongoose from "mongoose";
 
 /**
  * Generate a monthly summary for a given accounting period using date ranges.
- * Aggregates data from Billing, Salary, Donation, and General expenses.
+ * Aggregates data from Billing, Salary, Donation, General, Asset, and Business expenses.
  * @param {Object} period - The AccountingPeriod document.
  * @returns {Object} - The structured summary data.
  */
@@ -106,23 +108,75 @@ export const generateMonthlySummary = async (period) => {
         }
     ]);
 
-    // 4. Salary Aggregation
+    // 4. Asset Expenses Aggregation
+    const assetStats = await AssetExpense.aggregate([
+        {
+            $match: {
+                $or: [
+                    { accountingPeriod: period._id },
+                    { purchaseDate: { $gte: startDate, $lte: endDate } }
+                ],
+                isDeleted: false,
+                status: "Active"
+            }
+        },
+        {
+            $group: {
+                _id: null,
+                total: { $sum: "$amount" },
+                items: {
+                    $push: {
+                        title: "$title",
+                        amount: "$amount",
+                        date: "$purchaseDate",
+                        purchaseBy: "$purchaseBy"
+                    }
+                }
+            }
+        }
+    ]);
+
+    // 5. Business Expenses Aggregation
+    const businessStats = await BusinessExpense.aggregate([
+        {
+            $match: {
+                $or: [
+                    { accountingPeriod: period._id },
+                    { purchaseDate: { $gte: startDate, $lte: endDate } }
+                ],
+                isDeleted: false,
+                status: "Active"
+            }
+        },
+        {
+            $group: {
+                _id: null,
+                total: { $sum: "$amount" },
+                items: {
+                    $push: {
+                        title: "$title",
+                        amount: "$amount",
+                        date: "$purchaseDate",
+                        paidBy: "$paidBy"
+                    }
+                }
+            }
+        }
+    ]);
+
+    // 6. Salary Aggregation
     const salaryStats = await SalaryExpense.aggregate([
         {
             $match: {
                 isDeleted: false
-                // We do basic filter here. accountingPeriod might update on Employee doc, so picking all active employees is safer then filtering inside.
             }
         },
         { $unwind: "$salaries" },
         {
-            // Complex Match: Match either exact ISO substring OR verbose Month Name
-            // OR try to parse the string to date and compare range.
             $match: {
                 $or: [
                     { "salaries.salaryMonth": monthStr }, // "2025-11"
                     { "salaries.salaryMonth": verboseMonth }, // "November 2025"
-                    // Also try regex if spacing varies
                     { "salaries.salaryMonth": { $regex: new RegExp(`^${monthNames[start.getMonth()]}\\s+${start.getFullYear()}`, 'i') } }
                 ]
             }
@@ -146,9 +200,11 @@ export const generateMonthlySummary = async (period) => {
     const billingData = billingStats[0] || { total: 0, items: [] };
     const donationData = donationStats[0] || { total: 0, items: [] };
     const generalData = generalStats[0] || { total: 0, items: [] };
+    const assetData = assetStats[0] || { total: 0, items: [] };
+    const businessData = businessStats[0] || { total: 0, items: [] };
     const salaryData = salaryStats[0] || { total: 0, items: [] };
 
-    const overallTotal = billingData.total + donationData.total + generalData.total + salaryData.total;
+    const overallTotal = billingData.total + donationData.total + generalData.total + assetData.total + businessData.total + salaryData.total;
 
     return {
         periodId: period._id,
@@ -158,13 +214,17 @@ export const generateMonthlySummary = async (period) => {
             salary: salaryData.total,
             donation: donationData.total,
             general: generalData.total,
+            assets: assetData.total,
+            business: businessData.total,
             overallTotal: overallTotal
         },
         breakdown: {
             billing: billingData.items,
             salary: salaryData.items,
             donation: donationData.items,
-            general: generalData.items
+            general: generalData.items,
+            assets: assetData.items,
+            business: businessData.items
         },
         locked: true
     };

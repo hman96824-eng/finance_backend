@@ -157,8 +157,15 @@ class DonationExpenseService {
         };
     };
 
-    static getDonationsByPeriod = async (periodId) => {
-        const donations = await DonationModel.find({ isDeleted: false, accountingPeriod: periodId })
+    static getDonationsByPeriod = async (accountingPeriod) => {
+        const query = { isDeleted: false };
+        if (accountingPeriod && accountingPeriod.startDate && accountingPeriod.endDate) {
+            query.donationDate = { $gte: accountingPeriod.startDate, $lte: accountingPeriod.endDate };
+        } else if (accountingPeriod && accountingPeriod._id) {
+            query.accountingPeriod = accountingPeriod._id;
+        }
+
+        const donations = await DonationModel.find(query)
             .populate("bankName", "bankName accountNumber balance")
             .populate("attachments", "_id url")
             .populate("enteredBy", "name email")

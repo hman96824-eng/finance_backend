@@ -6,6 +6,8 @@ import GeneralExpenseController from "./controller.js";
 import { validate } from "../../../middleware/validation.middleware.js";
 import validation from "../../../validation/validation.js";
 
+import { accountingPeriodMiddleware } from "../../../middleware/hardcodedPeriod.middleware.js"
+
 const router = express.Router();
 
 // Middleware stack for routes with file uploads
@@ -25,7 +27,7 @@ router.delete("/delete-many", middleware.authenticate, validate(validation.delet
 router.put("/update/:id", uploadMiddleware, validate(validation.generalExpenseUpdateSchema), GeneralExpenseController.updateExpense);
 
 // Generic routes (after specific ones)
-router.get("/all", middleware.authenticate, GeneralExpenseController.getAllExpenses);
+router.get("/all", middleware.authenticate, accountingPeriodMiddleware, GeneralExpenseController.getAllExpenses);
 router.get("/:id", middleware.authenticate, GeneralExpenseController.getExpenseById);
 
 export default router;

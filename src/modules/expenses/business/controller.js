@@ -3,10 +3,18 @@ import { uploadMedia } from "../../media/service.js";
 import { UserModel } from "../../user/model.js";
 import { successResponse } from "../../../utils/response.helper.js";
 
+import { AccountingPeriodModel } from "../../period/model.js";
+
 const BusinessExpenseController = {
     createExpense: async (req, res, next) => {
         try {
             const userId = req.user.id;
+
+            // 1. Get Active Accounting Period
+            const activePeriod = await AccountingPeriodModel.findOne({ status: "open" });
+            if (!activePeriod) {
+                return res.status(404).json({ message: "No active accounting period found" });
+            }
 
             let attachmentIds = [];
             if (req.files?.length > 0) {
@@ -23,6 +31,7 @@ const BusinessExpenseController = {
                 ...req.body,
                 attachments: attachmentIds,
                 enteredBy: userId,
+                accountingPeriod: activePeriod._id
             });
 
             // Get populated response for create
@@ -90,7 +99,7 @@ const BusinessExpenseController = {
 
     getAllExpenses: async (req, res, next) => {
         try {
-            const data = await BusinessExpenseService.getAllExpenses();
+            const data = await BusinessExpenseService.getAllExpenses(req.accountingPeriod);
             return successResponse(res, data);
         } catch (err) { next(err); }
     },

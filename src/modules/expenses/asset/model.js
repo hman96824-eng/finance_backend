@@ -22,6 +22,7 @@ const AssetSchema = new mongoose.Schema(
 
         // 🗑 Soft delete flag
         isDeleted: { type: Boolean, default: false },
+        accountingPeriod: { type: mongoose.Schema.Types.ObjectId, ref: "AccountingPeriod", required: true }
     },
     { timestamps: true, versionKey: false }
 );

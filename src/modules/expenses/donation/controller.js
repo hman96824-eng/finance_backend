@@ -139,13 +139,13 @@ const DonationExpenseController = {
             */
             // So default was showing CURRENT OPEN MONTH donations.
 
-            const activePeriod = await AccountingPeriodModel.findOne({ status: "open" });
+            const accountingPeriod = req.accountingPeriod;
             // If no period, maybe return empty or all?
-            if (!activePeriod) {
+            if (!accountingPeriod) {
                 return successResponse(res, []);
             }
 
-            const result = await DonationExpenseService.getDonationsByPeriod(activePeriod._id);
+            const result = await DonationExpenseService.getDonationsByPeriod(accountingPeriod);
             return successResponse(res, result);
         } catch (err) { next(err); }
     },

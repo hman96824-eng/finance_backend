@@ -135,8 +135,14 @@ class AssetService {
     };
 
     // ---------------- GET ----------------
-    static getAllAssets = async () => {
-        const assets = await Asset.find({ isDeleted: false })
+    static getAllAssets = async (accountingPeriod) => {
+        const query = { isDeleted: false };
+        if (accountingPeriod) {
+            const { startDate, endDate } = accountingPeriod;
+            query.purchaseDate = { $gte: startDate, $lte: endDate };
+        }
+
+        const assets = await Asset.find(query)
             .populate("bank", "bankName accountNumber")
             .populate("attachments", "url")
             .populate("createdBy", "name email")

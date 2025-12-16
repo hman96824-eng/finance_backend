@@ -7,6 +7,8 @@ import { validate } from "../../../middleware/validation.middleware.js";
 import validation from "../../../validation/validation.js";
 
 
+import { accountingPeriodMiddleware } from "../../../middleware/hardcodedPeriod.middleware.js"
+
 const router = express.Router();
 
 
@@ -17,6 +19,6 @@ router
     .delete("/delete/:id", middleware.authenticate, SalaryController.deleteSalary)
     .delete("/delete-many", middleware.authenticate, validate(validation.deleteManySchema), SalaryController.deleteManySalary)
 
-    .get("/all", middleware.authenticate, SalaryController.getAllSalaries)
+    .get("/all", middleware.authenticate, accountingPeriodMiddleware, SalaryController.getAllSalaries)
     .get("/:id", middleware.authenticate, SalaryController.getSalaryById)
 export default router;

@@ -3,11 +3,19 @@ import { uploadMedia } from "../../media/service.js";
 import { UserModel } from "../../user/model.js";
 import { successResponse } from "../../../utils/response.helper.js";
 
+import { AccountingPeriodModel } from "../../period/model.js";
+
 const AssetController = {
     // ---------------- CREATE ----------------
     createAsset: async (req, res, next) => {
         try {
             const userId = req.user.id;
+
+            // 1. Get Active Accounting Period
+            const activePeriod = await AccountingPeriodModel.findOne({ status: "open" });
+            if (!activePeriod) {
+                return res.status(404).json({ message: "No active accounting period found" });
+            }
 
             // ⭐ Step 1: Upload attachments first (before calling service)
             let attachmentIds = [];
@@ -46,6 +54,7 @@ const AssetController = {
                 ...req.body,
                 attachments: attachmentIds,
                 createdBy: userId,  // Store only user ID
+                accountingPeriod: activePeriod._id
             });
 
             return successResponse(res, {
@@ -163,7 +172,7 @@ const AssetController = {
     // ---------------- GET ALL / ONE ----------------
     getAllAssets: async (req, res, next) => {
         try {
-            const data = await AssetService.getAllAssets();
+            const data = await AssetService.getAllAssets(req.accountingPeriod);
             return successResponse(res, data);
         } catch (err) {
             next(err);

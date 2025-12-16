@@ -16,6 +16,8 @@ const MonthlySummarySchema = new mongoose.Schema({
         salary: { type: Number, default: 0 },
         donation: { type: Number, default: 0 },
         general: { type: Number, default: 0 },
+        assets: { type: Number, default: 0 },
+        business: { type: Number, default: 0 },
         overallTotal: { type: Number, default: 0 }
     },
     breakdown: {
@@ -41,6 +43,18 @@ const MonthlySummarySchema = new mongoose.Schema({
             amount: Number,
             date: Date,
             category: String
+        }],
+        assets: [{
+            title: String,
+            amount: Number,
+            date: Date,
+            purchaseBy: String
+        }],
+        business: [{
+            title: String,
+            amount: Number,
+            date: Date,
+            paidBy: String
         }]
     },
     locked: {

@@ -110,8 +110,14 @@ class BusinessExpenseService {
     static deleteMany = async (ids) => {
         return await BussinessRepo.deleteMany({ _id: { $in: ids } });
     };
-    static getAllExpenses = async () => {
-        const expenses = await BusinessModel.find({ isDeleted: false })
+    static getAllExpenses = async (accountingPeriod) => {
+        const query = { isDeleted: false };
+        if (accountingPeriod) {
+            const { startDate, endDate } = accountingPeriod;
+            query.purchaseDate = { $gte: startDate, $lte: endDate };
+        }
+
+        const expenses = await BusinessModel.find(query)
             .populate("bankName", "bankName accountNumber")
             .populate("attachments", "_id url")
             .populate("enteredBy", "name email")
