@@ -89,7 +89,7 @@ const BillingExpenseController = {
     },
     getAllExpenses: async (req, res, next) => {
         try {
-            const data = await BillingExpenseService.getAllExpenses();
+            const data = await BillingExpenseService.getAllExpenses(req.accountingPeriod);
             return successResponse(res, data);
         } catch (err) { next(err); }
     },

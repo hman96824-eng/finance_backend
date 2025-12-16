@@ -5,6 +5,7 @@ import parseFormFields from "../../../middleware/parseFormFields.middleware.js";
 import BillingExpenseController from "./controller.js";
 import { validate } from "../../../middleware/validation.middleware.js";
 import validation from "../../../validation/validation.js";
+import {accountingPeriodMiddleware} from "../../../middleware/hardcodedPeriod.middleware.js"
 
 const router = express.Router();
 
@@ -14,7 +15,7 @@ const uploadMiddleware = [middleware.authenticate, upload.array("attachments"), 
 // ---------- Billing Expense Routes ----------
 router
     .post("/create", uploadMiddleware, validate(validation.billingExpenseSchema), BillingExpenseController.createExpense)
-    .get("/all", middleware.authenticate, BillingExpenseController.getAllExpenses)
+    .get("/all", middleware.authenticate, accountingPeriodMiddleware, BillingExpenseController.getAllExpenses)
     .get("/:id", middleware.authenticate, BillingExpenseController.getExpenseById)
 
     .put("/update/:id", uploadMiddleware, validate(validation.billingExpenseUpdateSchema), BillingExpenseController.updateExpense)

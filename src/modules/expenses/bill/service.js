@@ -111,8 +111,9 @@ class BillingExpenseService {
     static deleteMany = async (ids) => {
         return await BillingRepo.deleteMany({ _id: { $in: ids } });
     };
-    static getAllExpenses = async () => {
-        const expenses = await BillingModel.find({ isDeleted: false })
+    static getAllExpenses = async (accountingPeriod) => {
+        const { startDate, endDate } = accountingPeriod;
+        const expenses = await BillingModel.find({ isDeleted: false ,billDate: { $gte: startDate, $lte: endDate }})
             .populate("bankName", "bankName accountNumber")
             .populate("attachments", "_id url")
             .populate("enteredBy", "name email")
