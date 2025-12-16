@@ -15,6 +15,7 @@ import salaryRoutes from "../modules/expenses/salary/route.js";
 import leaveRoutes from "../modules/leave/route.js";
 import commissionRoute from "../modules/commission/route.js"
 import admindashboard from "../modules/dashboard/route.js"
+import financialMonthRoutes from "../modules/financialMonth/routes.js";
 import express from "express";
 
 const app = express();
@@ -39,6 +40,7 @@ export default (app) => {
   apiRoute.use("/leave", leaveRoutes);
   apiRoute.use("/commission",commissionRoute );
   apiRoute.use("/dashboard",admindashboard )
+  apiRoute.use("/financial-month" , financialMonthRoutes );
 
   app.use("/api/v1", apiRoute);
 };
