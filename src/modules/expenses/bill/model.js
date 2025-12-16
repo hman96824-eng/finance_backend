@@ -23,6 +23,8 @@ const BillingExpenseSchema = new mongoose.Schema(
         // Status and soft delete
         status: { type: String, enum: ["Active", "Inactive"], default: "Active" },
         isDeleted: { type: Boolean, default: false },
+
+        accountingPeriod: { type: mongoose.Schema.Types.ObjectId, ref: "AccountingPeriod", required: true }
     },
     { timestamps: true, versionKey: false }
 );

@@ -16,7 +16,8 @@ const SalaryExpenseSchema = new mongoose.Schema({
     department: { type: String, required: true },
     salaries: [SalaryDetailSchema], // Array of salary records
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-    isDeleted: { type: Boolean, default: false }
+    isDeleted: { type: Boolean, default: false },
+    accountingPeriod: { type: mongoose.Schema.Types.ObjectId, ref: "AccountingPeriod", required: true }
 }, { timestamps: true });
 
 const SalaryExpense = mongoose.model("SalaryExpense", SalaryExpenseSchema);

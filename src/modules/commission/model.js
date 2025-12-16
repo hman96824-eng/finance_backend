@@ -7,9 +7,9 @@ const CommissionHolderSchema = new mongoose.Schema({
     refPath: "commissionHolders.holderModel",
     default: null,
   },
-  paidAmount:{
-    type:number,
-    default:null
+  paidAmount: {
+    type: number,
+    default: null
   },
   holderModel: {
     type: String,
@@ -46,6 +46,7 @@ const ProjectCommissionSchema = new mongoose.Schema(
     totalAmountPKR: { type: Number, required: true },
 
     commissionHolders: [CommissionHolderSchema],
+    accountingPeriod: { type: mongoose.Schema.Types.ObjectId, ref: "AccountingPeriod" }
   },
   { timestamps: true }
 );

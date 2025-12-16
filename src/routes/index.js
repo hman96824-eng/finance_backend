@@ -15,8 +15,8 @@ import salaryRoutes from "../modules/expenses/salary/route.js";
 import leaveRoutes from "../modules/leave/route.js";
 import commissionRoute from "../modules/commission/route.js"
 import admindashboard from "../modules/dashboard/route.js"
-import financialMonthRoutes from "../modules/financialMonth/routes.js";
 import sessionPeriod from "../modules/period/route.js"
+import monthlySummaryRoutes from "../modules/monthlySummary/route.js";
 import express from "express";
 
 const app = express();
@@ -39,10 +39,10 @@ export default (app) => {
   apiRoute.use("/general-expenses", GeneralExpenseRoutes);
   apiRoute.use("/salary-expenses", salaryRoutes);
   apiRoute.use("/leave", leaveRoutes);
-  apiRoute.use("/commission",commissionRoute );
-  apiRoute.use("/dashboard",admindashboard )
-  apiRoute.use("/financial-month" , financialMonthRoutes );
-    apiRoute.use("/sessionperiod",sessionPeriod )
+  apiRoute.use("/commission", commissionRoute);
+  apiRoute.use("/dashboard", admindashboard)
+  apiRoute.use("/sessionperiod", sessionPeriod)
+  apiRoute.use("/summary", monthlySummaryRoutes)
 
   app.use("/api/v1", apiRoute);
 };

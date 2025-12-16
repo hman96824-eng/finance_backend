@@ -50,6 +50,11 @@ const GeneralExpenseSchema = new mongoose.Schema({
     isDeleted: {
         type: Boolean,
         default: false
+    },
+    accountingPeriod: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "AccountingPeriod",
+        required: true
     }
 }, { timestamps: true });
 
