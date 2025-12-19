@@ -56,7 +56,7 @@ class BankService {
       return p;
     });
   };
-  static createBank = async (data, userId) => {
+  static createBank = async (data) => {
     if (Array.isArray(data.paymentHistory)) {
       for (let i = 0; i < data.paymentHistory.length; i++) {
         const entry = data.paymentHistory[i];
@@ -64,31 +64,25 @@ class BankService {
           throw ApiError.badRequest(`paymentHistory.${i}.project required`);
       }
     }
-    const bank = await BankRepo.create({ ...data, createdBy: userId });
+    const bank = await BankRepo.create({ ...data });
     return bank;
   };
 
-  static getAllBanks = async (userId) => {
-    const banks = await BankRepo.find({ createdBy: userId })
-      .populate("createdBy", "name email _id")
+  static getAllBanks = async () => {
+    const banks = await BankRepo.find({})
       .sort({ createdAt: -1 });
-    console.log('check 1 ');
     return banks;
-
   };
 
 
-  static getBankById = async (id, userId) => {
-    const bank = await BankRepo.findOne({ _id: id, createdBy: userId }).populate(
-      "createdBy",
-      "name email _id"
-    );
+  static getBankById = async (id) => {
+    const bank = await BankRepo.findOne({ _id: id });
     if (!bank) throw ApiError.notFound(messages.BANK_NOT_FOUND);
     return this.formatBankResponse(bank);
   };
 
-  static updateBank = async (id, data, userId) => {
-    const bank = await BankRepo.findOne({ _id: id, createdBy: userId });
+  static updateBank = async (id, data) => {
+    const bank = await BankRepo.findOne({ _id: id });
     if (!bank) throw ApiError.notFound(messages.BANK_NOT_FOUND);
 
     if (Array.isArray(data.paymentHistory)) {
@@ -100,16 +94,16 @@ class BankService {
     }
 
     const updatedBank = await BankRepo.findOneAndUpdate(
-      { _id: id, createdBy: userId },
+      { _id: id },
       { ...data },
       { new: true }
-    ).populate("createdBy", "name email _id");
+    );
 
     return this.formatBankResponse(updatedBank);
   };
 
-  static getPayments = async (bankId, userId) => {
-    const bank = await BankRepo.findOne({ _id: bankId, createdBy: userId });
+  static getPayments = async (bankId) => {
+    const bank = await BankRepo.findOne({ _id: bankId });
     if (!bank) throw ApiError.notFound(messages.BANK_NOT_FOUND);
 
     const formattedBank = this.formatBankResponse(bank);
@@ -123,7 +117,6 @@ class BankService {
 
   static addPayment = async (
     bankId,
-    userId,
     { amount, type = "credit", note, project, projectName, clientName }
   ) => {
     const session = await mongoose.startSession();
@@ -138,7 +131,6 @@ class BankService {
       await session.withTransaction(async () => {
         const bank = await BankModel.findOne({
           _id: bankId,
-          createdBy: userId,
         }).session(session);
         if (!bank) throw ApiError.notFound(messages.BANK_NOT_FOUND);
 
@@ -195,10 +187,7 @@ class BankService {
       });
 
       return this.formatBankResponse(
-        await BankModel.findById(bankId).populate(
-          "createdBy",
-          "name email _id"
-        )
+        await BankModel.findById(bankId)
       );
     } catch (err) {
       throw ApiError.badRequest(err.message || "Failed to add payment");
@@ -226,29 +215,25 @@ class BankService {
     await bank.save();
 
     return this.formatBankResponse(
-      await BankModel.findById(bankId).populate(
-        "createdBy",
-        "name email _id"
-      )
+      await BankModel.findById(bankId)
     );
   };
 
-  static deleteBank = async (id, userId) => {
-    const bank = await BankRepo.findOne({ _id: id, createdBy: userId });
+  static deleteBank = async (id) => {
+    const bank = await BankRepo.findOne({ _id: id });
     if (!bank) throw ApiError.notFound(messages.BANK_NOT_FOUND);
 
-    await BankRepo.deleteOne({ _id: id, createdBy: userId });
+    await BankRepo.deleteOne({ _id: id });
     return bank;
   };
 
-  static deleteManyBanks = async (bankIds, userId) => {
+  static deleteManyBanks = async (bankIds) => {
     if (!Array.isArray(bankIds) || bankIds.length === 0) {
       throw ApiError.badRequest(messages.NO_BANKS_SELECTED);
     }
 
     return await BankRepo.deleteMany({
       _id: { $in: bankIds },
-      createdBy: userId,
     });
   };
 

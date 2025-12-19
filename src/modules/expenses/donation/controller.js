@@ -12,7 +12,7 @@ const DonationExpenseController = {
             // Check currently open period
             const currentPeriod = await AccountingPeriodModel.findOne({ status: "open" });
             if (!currentPeriod) {
-                throw new Error("No open accounting period. Cannot add donation.");
+                throw new Error("No active month found");
             }
 
             // Upload attachments if any

@@ -26,13 +26,12 @@ const BankSchema = new mongoose.Schema(
     balance: { type: Number, default: 0 },
     status: { type: String, enum: ["Active", "Closed"], default: "Active" },
     paymentHistory: [PaymentSchema],
-    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   },
   { timestamps: true }
 );
 
-// Unique constraint
-BankSchema.index({ accountNumber: 1, createdBy: 1 }, { unique: true, sparse: true });
+// Unique constraint - global uniqueness on account number
+BankSchema.index({ accountNumber: 1 }, { unique: true, sparse: true });
 
 // Auto-update balance on save
 BankSchema.pre("save", function (next) {

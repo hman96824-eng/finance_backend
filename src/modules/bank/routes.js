@@ -6,22 +6,25 @@ import { validate } from "../../middleware/validation.middleware.js";
 
 const router = express.Router();
 
+// All routes require authentication
 router.use(Middleware.authenticate);
 
+// Write operations require admin privileges
 router
-    .post("/create", validate(validation.bankSchema), BankController.createBank)
-    .get("/all", BankController.getAllBanks)
-    .get("/:id", BankController.getBankById)
-    .put("/update/:id", BankController.updateBank)
-    .delete("/delete/:id", BankController.deleteBank)
-    .delete("/delete-many", BankController.deleteManyBanks)
+  .post("/create", Middleware.checkAdmin, validate(validation.bankSchema), BankController.createBank)
+  .get("/all", BankController.getAllBanks)
+  .get("/:id", BankController.getBankById)
+  .put("/update/:id", Middleware.checkAdmin, BankController.updateBank)
+  .delete("/delete/:id", Middleware.checkAdmin, BankController.deleteBank)
+  .delete("/delete-many", Middleware.checkAdmin, BankController.deleteManyBanks)
 
+// Payment operations require admin privileges
 router
-    .post("/payment/:id", BankController.addPayment)
-    .get("/payment/:id", BankController.getPayments)
+  .post("/payment/:id", Middleware.checkAdmin, BankController.addPayment)
+  .get("/payment/:id", BankController.getPayments)
 
+// Commission payment requires admin privileges
 router
- 
-  .post("/commission/pay",BankController.createPaymentRequest )
+  .post("/commission/pay", Middleware.checkAdmin, BankController.createPaymentRequest)
 
 export default router;

@@ -18,14 +18,13 @@ export const accountingPeriodMiddleware = async (req, res, next) => {
       } else {
         endDate = endOfMonth(startDate);
       }
-    } else {
-      // 2️⃣ Fallback → current month
-      startDate = startOfMonth(new Date());
-      endDate = endOfMonth(startDate);
-    }
 
-    // 3️⃣ Attach to request
-    req.accountingPeriod = { startDate, endDate, _id: activePeriod?._id };
+      // 3️⃣ Attach to request
+      req.accountingPeriod = { startDate, endDate, _id: activePeriod._id };
+    } else {
+      // User requirement: If no open period, give nothing (null)
+      req.accountingPeriod = null;
+    }
 
     next();
   } catch (err) {

@@ -3,13 +3,17 @@ import Bank from "../../bank/model.js";
 import Repo from "../../../utils/repository.js";
 import ApiError from "../../../utils/ApiError.js";
 import { deleteMedia } from "../../media/service.js";
+import { validateExpenseDate } from "../../../utils/dateValidation.js";
+
 
 const GeneralExpenseRepo = new Repo(GeneralExpenseModel);
 const BankRepo = new Repo(Bank);
 
 class GeneralExpenseService {
     static createExpense = async (body) => {
+        await validateExpenseDate(body.purchaseDate, "Purchase Date");
         const bank = await BankRepo.findById(body.bankName);
+
         if (!bank) throw ApiError.notFound("Bank not found");
 
         if (bank.balance < body.amount) throw ApiError.badRequest("Not enough bank balance");
@@ -33,8 +37,12 @@ class GeneralExpenseService {
         return createdExpense;
     };
     static updateExpense = async (id, body) => {
+        if (body.purchaseDate) {
+            await validateExpenseDate(body.purchaseDate, "Purchase Date");
+        }
         // Get existing expense to track changes
         const existingExpense = await GeneralExpenseModel.findById(id);
+
         if (!existingExpense) throw ApiError.notFound("General Expense not found");
 
         if (body.attachments && body.attachments.length > 0) {

@@ -3,12 +3,17 @@ import Bank from "../../bank/model.js";
 import Repo from "../../../utils/repository.js";
 import ApiError from "../../../utils/ApiError.js";
 import mongoose from "mongoose";
+import { validateExpenseDate } from "../../../utils/dateValidation.js";
+
 
 const SalaryRepo = new Repo(SalaryExpense);
 const BankRepo = new Repo(Bank);
 
 class SalaryService {
     static createSalary = async (body) => {
+        await validateExpenseDate(body.salaryMonth, "Salary Month", true);
+
+
 
         // Validate accountingPeriod exists
         if (!body.accountingPeriod) {
@@ -29,6 +34,12 @@ class SalaryService {
         let employee = await SalaryExpense.findOne({ employeeId: body.employeeId, isDeleted: false });
 
         if (employee) {
+            // Check duplicates
+            const existing = employee.salaries.find(s => s.salaryMonth === body.salaryMonth);
+            if (existing) {
+                throw ApiError.badRequest(`Salary for ${body.salaryMonth} already exists for this employee.`);
+            }
+
             // Update root accountingPeriod to current just for activity tracking, though it's now ambiguous at root level
             employee.accountingPeriod = body.accountingPeriod;
             employee.salaries.push(salaryData);

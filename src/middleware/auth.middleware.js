@@ -20,6 +20,7 @@ export const authenticate = (req, res, next) => {
       name: decoded.name,
       email: decoded.email,
       role_id: decoded.role_id,
+      role: decoded.role, // Add role for easy access in checkAdmin
     };
     next();
   } catch (err) {
@@ -30,8 +31,8 @@ export const authenticate = (req, res, next) => {
 
 export const checkMonthClosed = async (req, res, next) => {
   try {
-    
-    const { month } = req.body; 
+
+    const { month } = req.body;
 
     if (!month) throw ApiError.badRequest("Month is required");
 
@@ -51,8 +52,31 @@ export const checkMonthClosed = async (req, res, next) => {
 };
 
 
+// ==================== CHECK ADMIN Middleware ====================
+export const checkAdmin = (req, res, next) => {
+  try {
+    // Ensure user is authenticated first
+    if (!req.user || !req.user.role_id) {
+      throw ApiError.unauthorized("Authentication required");
+    }
+
+    // Check if user has admin role using the role from JWT token
+    // The role is already decoded in the authenticate middleware
+    if (!req.user.role || (req.user.role !== "ADMIN" && req.user.role !== "Admin")) {
+      throw ApiError.forbidden("Admin access required for this operation");
+    }
+
+    // User is admin, proceed
+    next();
+  } catch (err) {
+    next(err);
+  }
+};
+
+
 
 export default {
   authenticate,
   checkMonthClosed,
+  checkAdmin,
 };

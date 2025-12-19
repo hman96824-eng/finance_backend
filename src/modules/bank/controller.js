@@ -5,7 +5,7 @@ import { successResponse } from "../../utils/response.helper.js";
 const BankController = {
   createBank: async (req, res, next) => {
     try {
-      const bank = await BankService.createBank(req.body, req.user.id);
+      const bank = await BankService.createBank(req.body);
       return successResponse(res, bank, "Bank created Successfully");
     } catch (err) {
       next(err);
@@ -13,10 +13,7 @@ const BankController = {
   },
   getAllBanks: async (req, res, next) => {
     try {
-      console.log(req.user.id, "asciiew");
-      
-      const banks = await BankService.getAllBanks(req.user.id);
-      console.log(banks, 'check 2 ');
+      const banks = await BankService.getAllBanks();
       return successResponse(res, banks, "Banks fetched Successfully");
     } catch (err) {
       next(err);
@@ -24,7 +21,7 @@ const BankController = {
   },
   getBankById: async (req, res, next) => {
     try {
-      const bank = await BankService.getBankById(req.params.id, req.user.id);
+      const bank = await BankService.getBankById(req.params.id);
       return successResponse(res, bank);
     } catch (err) {
       next(err);
@@ -34,8 +31,7 @@ const BankController = {
     try {
       const bank = await BankService.updateBank(
         req.params.id,
-        req.body,
-        req.user.id
+        req.body
       );
       return successResponse(res, bank);
     } catch (err) {
@@ -44,7 +40,7 @@ const BankController = {
   },
   deleteBank: async (req, res, next) => {
     try {
-      const bank = await BankService.deleteBank(req.params.id, req.user.id);
+      const bank = await BankService.deleteBank(req.params.id);
 
       return successResponse(res, bank, "Bank deleted Successfully");
     } catch (err) {
@@ -61,7 +57,6 @@ const BankController = {
 
       const bank = await BankService.addPayment(
         req.params.id,
-        req.user.id,
         paymentData
       );
       return successResponse(res, bank, "Payment added successfully");
@@ -72,8 +67,7 @@ const BankController = {
   getPayments: async (req, res, next) => {
     try {
       const payments = await BankService.getPayments(
-        req.params.id,
-        req.user.id
+        req.params.id
       );
       return successResponse(res, payments);
     } catch (err) {
@@ -83,7 +77,7 @@ const BankController = {
   deleteManyBanks: async (req, res, next) => {
     try {
       const bankIds = req.body;
-      const result = await BankService.deleteManyBanks(bankIds, req.user.id);
+      const result = await BankService.deleteManyBanks(bankIds);
       return successResponse(res, result, "Banks deleted Successfully");
     } catch (err) {
       next(err);

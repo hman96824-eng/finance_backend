@@ -8,21 +8,60 @@ import BusinessExpense from "../expenses/business/model.js";
 import mongoose from "mongoose";
 
 /**
+ * Determines which month has the most days in a given period.
+ * This is useful for labeling periods that span across two months or 
+ * for normalizing timezone-shifted start dates (e.g. 00:00 local becoming 19:00 previous day UTC).
+ */
+const getMajorMonth = (startDate, endDate) => {
+    const counts = {};
+    let current = new Date(startDate);
+    const end = new Date(endDate);
+
+    // Safety counter to prevent infinite loop
+    let iters = 0;
+    while (current <= end && iters < 60) {
+        iters++;
+        // Use noon to avoid edge day shifts
+        const d = new Date(current.getTime());
+        d.setUTCHours(12, 0, 0, 0);
+
+        const y = d.getUTCFullYear();
+        const m = (d.getUTCMonth() + 1).toString().padStart(2, '0');
+        const key = `${y}-${m}`;
+
+        counts[key] = (counts[key] || 0) + 1;
+        current.setUTCDate(current.getUTCDate() + 1);
+    }
+
+    let majorKey = null;
+    let maxDays = -1;
+    for (const key in counts) {
+        if (counts[key] > maxDays) {
+            maxDays = counts[key];
+            majorKey = key;
+        }
+    }
+    return majorKey;
+};
+
+/**
  * Generate a monthly summary for a given accounting period using date ranges.
  * Aggregates data from Billing, Salary, Donation, General, Asset, and Business expenses.
  * @param {Object} period - The AccountingPeriod document.
  * @returns {Object} - The structured summary data.
  */
-export const generateMonthlySummary = async (period) => {
+export const generateMonthlySummary = async (period, notes = "") => {
     const { startDate, endDate } = period;
-    // Use startDate YYYY-MM as the key
-    const monthStr = startDate.toISOString().substring(0, 7);
+
+    // Use Major Month logic to determine the key
+    const monthStr = getMajorMonth(startDate, endDate);
 
     // Helper to get Month Name Year string (e.g., "November 2025")
-    const start = new Date(startDate);
+    const [year, month] = monthStr.split('-').map(Number);
+    const dateObj = new Date(year, month - 1, 1);
     const monthNames = ["January", "February", "March", "April", "May", "June",
         "July", "August", "September", "October", "November", "December"];
-    const verboseMonth = `${monthNames[start.getMonth()]} ${start.getFullYear()}`;
+    const verboseMonth = `${monthNames[dateObj.getMonth()]} ${dateObj.getFullYear()}`;
 
     // 1. Billing Expenses Aggregation
     const billingStats = await BillingExpenseModel.aggregate([
@@ -175,9 +214,16 @@ export const generateMonthlySummary = async (period) => {
         {
             $match: {
                 $or: [
-                    { "salaries.salaryMonth": monthStr }, // "2025-11"
-                    { "salaries.salaryMonth": verboseMonth }, // "November 2025"
-                    { "salaries.salaryMonth": { $regex: new RegExp(`^${monthNames[start.getMonth()]}\\s+${start.getFullYear()}`, 'i') } }
+                    { "salaries.accountingPeriod": period._id }, // Strict match
+                    // Fallback for legacy data or if periodId is missing in subdoc but date matches
+                    {
+                        "salaries.accountingPeriod": { $exists: false },
+                        $or: [
+                            { "salaries.salaryMonth": monthStr },
+                            { "salaries.salaryMonth": verboseMonth },
+                            { "salaries.salaryMonth": { $regex: new RegExp(`^${monthNames[dateObj.getMonth()]}\\s+${dateObj.getFullYear()}`, 'i') } }
+                        ]
+                    }
                 ]
             }
         },
@@ -226,7 +272,8 @@ export const generateMonthlySummary = async (period) => {
             assets: assetData.items,
             business: businessData.items
         },
-        locked: true
+        locked: true,
+        notes: notes
     };
 };
 
@@ -236,4 +283,14 @@ export const createSummary = async (summaryData) => {
 
 export const getLatestClosedSummary = async () => {
     return await MonthlySummaryModel.findOne({ locked: true }).sort({ createdAt: -1 });
+};
+
+export const getSummaryByPeriodId = async (periodId) => {
+    return await MonthlySummaryModel.findOne({ periodId });
+};
+
+export const getAllSummaries = async () => {
+    return await MonthlySummaryModel.find({})
+        .populate("periodId")
+        .sort({ month: -1 });
 };

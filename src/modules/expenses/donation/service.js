@@ -4,13 +4,17 @@ import Repo from "../../../utils/repository.js";
 import ApiError from "../../../utils/ApiError.js";
 import { deleteMedia } from "../../media/service.js";
 import { AccountingPeriodModel } from "../../period/model.js";
+import { validateExpenseDate } from "../../../utils/dateValidation.js";
+
 
 const DonationRepo = new Repo(DonationModel);
 const BankRepo = new Repo(Bank);
 
 class DonationExpenseService {
     static createDonation = async (body) => {
+        await validateExpenseDate(body.donationDate, "Donation Date");
         const bank = await BankRepo.findById(body.bankName);
+
         if (!bank) throw ApiError.notFound("Bank not found");
 
         if (bank.balance < body.amount)
@@ -39,7 +43,11 @@ class DonationExpenseService {
     };
 
     static updateDonation = async (id, body) => {
+        if (body.donationDate) {
+            await validateExpenseDate(body.donationDate, "Donation Date");
+        }
         const existingDonation = await DonationModel.findById(id);
+
         if (!existingDonation) throw ApiError.notFound("Donation not found");
 
         // Check if period is closed

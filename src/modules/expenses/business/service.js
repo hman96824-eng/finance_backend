@@ -3,13 +3,17 @@ import Bank from "../../bank/model.js";
 import Repo from "../../../utils/repository.js";
 import ApiError from "../../../utils/ApiError.js";
 import { deleteMedia } from "../../media/service.js";
+import { validateExpenseDate } from "../../../utils/dateValidation.js";
+
 
 const BussinessRepo = new Repo(BusinessModel);
 const BankRepo = new Repo(Bank);
 
 class BusinessExpenseService {
     static createExpense = async (body) => {
+        await validateExpenseDate(body.purchaseDate, "Purchase Date");
         const bank = await BankRepo.findById(body.bankName);
+
         if (!bank) throw ApiError.notFound("Bank not found");
 
         if (bank.balance < body.amount)
@@ -34,8 +38,12 @@ class BusinessExpenseService {
         return createdExpense;
     };
     static updateExpense = async (id, body) => {
+        if (body.purchaseDate) {
+            await validateExpenseDate(body.purchaseDate, "Purchase Date");
+        }
         // Get existing expense to track changes
         const existingExpense = await BusinessModel.findById(id);
+
         if (!existingExpense) throw ApiError.notFound("Business Expense not found");
 
         // Merge attachments if present

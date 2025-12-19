@@ -14,7 +14,7 @@ const AssetController = {
             // 1. Get Active Accounting Period
             const activePeriod = await AccountingPeriodModel.findOne({ status: "open" });
             if (!activePeriod) {
-                return res.status(404).json({ message: "No active accounting period found" });
+                return res.status(404).json({ message: "No active month found" });
             }
 
             // ⭐ Step 1: Upload attachments first (before calling service)
@@ -172,6 +172,8 @@ const AssetController = {
     // ---------------- GET ALL / ONE ----------------
     getAllAssets: async (req, res, next) => {
         try {
+            if (!req.accountingPeriod) return successResponse(res, []);
+
             const data = await AssetService.getAllAssets(req.accountingPeriod);
             return successResponse(res, data);
         } catch (err) {

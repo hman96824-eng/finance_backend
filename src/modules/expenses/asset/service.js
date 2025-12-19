@@ -5,6 +5,8 @@ import Repo from "../../../utils/repository.js";
 import messages from "../../../constants/messages.js";
 import { deleteMedia } from "../../media/service.js";
 import BankService from "../../bank/service.js";
+import { validateExpenseDate } from "../../../utils/dateValidation.js";
+
 
 const AssetRepo = new Repo(Asset);
 const BankRepo = new Repo(Bank);
@@ -13,7 +15,9 @@ class AssetService {
     // ---------------- CREATE ----------------
     static createAsset = async (body) => {
         try {
+            await validateExpenseDate(body.purchaseDate, "Purchase Date");
             const bank = await BankRepo.findById(body.bank);
+
             if (!bank) throw ApiError.notFound(messages.BANK_NOT_FOUND);
 
             if (bank.balance < body.amount)
@@ -46,8 +50,12 @@ class AssetService {
     // ---------------- UPDATE ----------------
     static updateAsset = async (id, body) => {
         try {
+            if (body.purchaseDate) {
+                await validateExpenseDate(body.purchaseDate, "Purchase Date");
+            }
             // Get existing asset to track changes
             const existingAsset = await Asset.findById(id);
+
             if (!existingAsset) throw ApiError.notFound("Asset not found");
 
             // If attachments are in body, merge with existing ones

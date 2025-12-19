@@ -13,7 +13,7 @@ const BusinessExpenseController = {
             // 1. Get Active Accounting Period
             const activePeriod = await AccountingPeriodModel.findOne({ status: "open" });
             if (!activePeriod) {
-                return res.status(404).json({ message: "No active accounting period found" });
+                return res.status(404).json({ message: "No active month found" });
             }
 
             let attachmentIds = [];
@@ -99,6 +99,8 @@ const BusinessExpenseController = {
 
     getAllExpenses: async (req, res, next) => {
         try {
+            if (!req.accountingPeriod) return successResponse(res, []);
+
             const data = await BusinessExpenseService.getAllExpenses(req.accountingPeriod);
             return successResponse(res, data);
         } catch (err) { next(err); }

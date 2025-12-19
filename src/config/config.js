@@ -31,7 +31,7 @@ export const config = {
   CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET,
   corsSettings: {
     origin: process.env.CORS_ORIGIN,
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     credentials: true,
   },
 };

@@ -12,7 +12,7 @@ const BillingExpenseController = {
             // 1. Get Active Accounting Period
             const activePeriod = await AccountingPeriodModel.findOne({ status: "open" });
             if (!activePeriod) {
-                return res.status(404).json({ message: "No active accounting period found" });
+                return res.status(404).json({ message: "No active month found" });
             }
 
             // upload attachments (if any) and collect media ids
@@ -105,27 +105,15 @@ const BillingExpenseController = {
             // If it's undefined, service might fail if it tries destructuring.
             // Let's assume for getAll, we might want all or filtered by open period.
 
-            // Replicating safe logic:
-            const activePeriod = await AccountingPeriodModel.findOne({ status: "open" });
-            // If no active period, what to return? All? Or empty?
-            // Service expects an object with startDate/endDate to filter by date.
-            // If we want ALL history, we should fix service to handle null period.
-            // But usually "getAll" implies filtered view in this context?
+            // Use accountingPeriod filtered by middleware (Active or Fallback to Current Month)
+            const accountingPeriod = req.accountingPeriod;
 
-            // Let's just pass what we can found, or handle in service.
-            // Service code: const { startDate, endDate } = accountingPeriod;
-            // So it MUST be an object.
-
-            if (!activePeriod) {
-                // Fallback to fetch all? or error?
-                // Let's create a dummy object that covers a wide range or handle in service?
-                // Better: fetch all if no period.
-                // Modifying service is risky without reading it again.
-                // Safest: if activePeriod exists, use it. Else...
+            // If for some reason middleware failed to attach (shouldn't happen if mounted), handle safety
+            if (!accountingPeriod) {
                 return successResponse(res, []);
             }
 
-            const data = await BillingExpenseService.getAllExpenses(activePeriod);
+            const data = await BillingExpenseService.getAllExpenses(accountingPeriod);
             return successResponse(res, data);
         } catch (err) { next(err); }
     },

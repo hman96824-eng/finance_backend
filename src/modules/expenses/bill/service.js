@@ -3,14 +3,18 @@ import Bank from "../../bank/model.js";
 import Repo from "../../../utils/repository.js";
 import ApiError from "../../../utils/ApiError.js";
 import { deleteMedia } from "../../media/service.js";
+import { validateExpenseDate } from "../../../utils/dateValidation.js";
+
 
 const BillingRepo = new Repo(BillingModel);
 const BankRepo = new Repo(Bank);
 
 class BillingExpenseService {
     static createExpense = async (body) => {
+        await validateExpenseDate(body.billDate, "Bill Date");
         // Expect body.enteredBy to be userId, body.amount numeric, body.bankName = bankId
         const bank = await BankRepo.findById(body.bankName);
+
         if (!bank) throw ApiError.notFound("Bank not found");
 
         if (bank.balance < body.amount) throw ApiError.badRequest("Not enough bank balance");
@@ -34,8 +38,12 @@ class BillingExpenseService {
         return createdExpense;
     };
     static updateExpense = async (id, body) => {
+        if (body.billDate) {
+            await validateExpenseDate(body.billDate, "Bill Date");
+        }
         // Get existing expense to track changes
         const existingExpense = await BillingModel.findById(id);
+
         if (!existingExpense) throw ApiError.notFound("Billing Expense not found");
 
         // Merge attachments if present (append new ones)
@@ -113,7 +121,7 @@ class BillingExpenseService {
     };
     static getAllExpenses = async (accountingPeriod) => {
         const { startDate, endDate } = accountingPeriod;
-        const expenses = await BillingModel.find({ isDeleted: false ,billDate: { $gte: startDate, $lte: endDate }})
+        const expenses = await BillingModel.find({ isDeleted: false, billDate: { $gte: startDate, $lte: endDate } })
             .populate("bankName", "bankName accountNumber")
             .populate("attachments", "_id url")
             .populate("enteredBy", "name email")

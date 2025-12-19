@@ -10,7 +10,7 @@ const SalaryController = {
             // 1. Get Active Accounting Period
             const activePeriod = await AccountingPeriodModel.findOne({ status: "open" });
             if (!activePeriod) {
-                return res.status(404).json({ message: "No active accounting period found" });
+                return res.status(404).json({ message: "No active month found" });
             }
 
             // 2. Attach accountingPeriod to payload
@@ -48,6 +48,8 @@ const SalaryController = {
             // But based on request, assume default view is for current period.
             // Use accountingPeriod from middleware
             const accountingPeriod = req.accountingPeriod;
+
+            if (!accountingPeriod) return successResponse(res, []);
 
             const data = await SalaryService.getAllSalaries(accountingPeriod);
             return successResponse(res, data);
