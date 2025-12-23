@@ -13,26 +13,44 @@ const userRepo = new Repository(UserModel);
 const inviteRepo = new Repository(InviteModel);
 const roleRepo = new Repository(RoleModel);
 
-export const getAllInvitedUsers = async (acceptedFilter) => {
-  let filter = {};
+export const getAllInvitedUsers = async (acceptedFilter, page = 1, limit = 10) => {
+  try {
+    const skip = (Number(page) - 1) * Number(limit);
+    let filter = {};
 
-  if (acceptedFilter === "true") filter.accepted = true;
-  else if (acceptedFilter === "false") filter.accepted = false;
+    if (acceptedFilter === "true") filter.accepted = true;
+    else if (acceptedFilter === "false") filter.accepted = false;
 
-  const invites = await inviteRepo.findWithPopulate(filter, ["role_id"]);
+    const total = await InviteModel.countDocuments(filter);
+    const invites = await InviteModel.find(filter)
+      .populate("role_id")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(Number(limit));
 
-  const formattedData = invites.map((inv) => ({
-    _id: inv._id,
-    name: inv.name,
-    email: inv.email,
-    role_id: inv.role_id?.name,
-    accepted: inv.accepted,
-    inviteCount: inv.invite,
-    expiresAt: inv.expiresAt,
-    status: inv.status,
-  }));
+    const formattedData = invites.map((inv) => ({
+      _id: inv._id,
+      name: inv.name,
+      email: inv.email,
+      role_id: inv.role_id?.name,
+      accepted: inv.accepted,
+      inviteCount: inv.invite,
+      expiresAt: inv.expiresAt,
+      status: inv.status,
+    }));
 
-  return formattedData;
+    return {
+      data: formattedData,
+      pagination: {
+        total,
+        currentPage: Number(page),
+        totalPages: Math.ceil(total / Number(limit)),
+        pageSize: Number(limit),
+      },
+    };
+  } catch (error) {
+    throw ApiError.badRequest(error.message);
+  }
 };
 export const createInvite = async (name, email, roleName) => {
   const cleanEmail = email.trim().toLowerCase();

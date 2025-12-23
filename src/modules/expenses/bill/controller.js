@@ -97,23 +97,14 @@ const BillingExpenseController = {
     },
     getAllExpenses: async (req, res, next) => {
         try {
-            // Need to pass a valid object if service expects {startDate, endDate}?
-            // Or service handles missing accountingPeriod?
-            // Checking service usage: getAllExpenses(req.accountingPeriod)
-            // But req.accountingPeriod is likely middleware populated? Or assumed?
-            // The previous code had `req.accountingPeriod`.
-            // If it's undefined, service might fail if it tries destructuring.
-            // Let's assume for getAll, we might want all or filtered by open period.
-
-            // Use accountingPeriod filtered by middleware (Active or Fallback to Current Month)
             const accountingPeriod = req.accountingPeriod;
 
-            // If for some reason middleware failed to attach (shouldn't happen if mounted), handle safety
             if (!accountingPeriod) {
-                return successResponse(res, []);
+                return successResponse(res, { data: [], pagination: {} });
             }
 
-            const data = await BillingExpenseService.getAllExpenses(accountingPeriod);
+            const { page = 1, limit = 10 } = req.query;
+            const data = await BillingExpenseService.getAllExpenses(accountingPeriod, page, limit);
             return successResponse(res, data);
         } catch (err) { next(err); }
     },

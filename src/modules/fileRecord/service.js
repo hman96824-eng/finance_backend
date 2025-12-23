@@ -95,7 +95,8 @@ export const createFileRecordService = async (data, files, user) => {
   }
 };
 
-export const getAllFileRecordsService = async () => {
+export const getAllFileRecordsService = async (page = 1, limit = 10) => {
+  const skip = (Number(page) - 1) * Number(limit);
   const records = await FileRecord.find()
     .populate([
       {
@@ -112,9 +113,21 @@ export const getAllFileRecordsService = async () => {
         select: "name email role",
       },
     ])
-    .sort({ createdAt: -1 }); // latest first
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(Number(limit));
 
-  return records;
+  const total = await FileRecord.countDocuments();
+
+  return {
+    records,
+    pagination: {
+      total,
+      currentPage: Number(page),
+      totalPages: Math.ceil(total / Number(limit)),
+      pageSize: Number(limit),
+    },
+  };
 };
 
 // ✅ Update file record and append new files (files only)

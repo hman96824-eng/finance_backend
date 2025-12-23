@@ -83,30 +83,29 @@ export const passowrdChange = async (req, res, next) => {
 
 export const getUser = async (req, res, next) => {
   try {
-    const { status } = req.query;
+    const { status, page = 1, limit = 10 } = req.query;
     // Build filter based on query
     const filter = {};
     if (status && ["active", "inactive", "deleted"].includes(status)) {
       filter.status = status;
     }
 
-    const users = await userService.getAllUsers(filter);
+    const result = await userService.getAllUsers(filter, page, limit);
 
-    if (!users) throw ApiError.notFound(messages.USER_NOT_FOUND);
+    if (!result.users) throw ApiError.notFound(messages.USER_NOT_FOUND);
 
     const totalActive = await userService.countUsersByStatus("active");
     const totalInctive = await userService.countUsersByStatus("inactive");
     const deletedUser = await userService.countUsersByStatus("deleted");
     const totalUsers = totalActive + totalInctive + deletedUser;
-    res.json({
-      success: true,
+
+    return successResponse(res, {
+      ...result,
       totalUsers,
       totalActive,
       totalInctive,
       deletedUser,
-      filtered: users.length,
-      data: users,
-    });
+    }, "Users fetched successfully");
   } catch (err) {
     console.error("Error in getUser:", err);
     next(err);
@@ -202,20 +201,10 @@ export const dashboard = (req, res, next) => {
 
 export const InactiveUserStatus = async (req, res, next) => {
   try {
-    const inactiveUsers = await userService.getInactiveUsers();
+    const { page = 1, limit = 10 } = req.query;
+    const data = await userService.getInactiveUsers(page, limit);
 
-    const transformedUsers = inactiveUsers.map((user) => {
-      const userObj = user; // service returns plain objects already
-      userObj.role_id = userObj.role || null;
-      delete userObj.password; // just to be safe
-      return userObj;
-    });
-
-    res.status(200).json({
-      success: true,
-      count: transformedUsers.length,
-      users: transformedUsers,
-    });
+    return successResponse(res, data, "Inactive users fetched successfully");
   } catch (error) {
     next(error);
   }

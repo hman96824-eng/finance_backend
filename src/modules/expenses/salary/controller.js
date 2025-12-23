@@ -43,15 +43,10 @@ const SalaryController = {
 
     getAllSalaries: async (req, res, next) => {
         try {
-            // Fetch Active Period ID to filter salaries
-            // If user explicitly asks for 'history' (via query param?) we could skip this.
-            // But based on request, assume default view is for current period.
-            // Use accountingPeriod from middleware
             const accountingPeriod = req.accountingPeriod;
-
-            if (!accountingPeriod) return successResponse(res, []);
-
-            const data = await SalaryService.getAllSalaries(accountingPeriod);
+            if (!accountingPeriod) return successResponse(res, { data: [], pagination: {} });
+            const { page = 1, limit = 10 } = req.query;
+            const data = await SalaryService.getAllSalaries(accountingPeriod, page, limit);
             return successResponse(res, data);
         } catch (err) { next(err); }
     },

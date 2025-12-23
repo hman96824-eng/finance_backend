@@ -126,15 +126,21 @@ class DonationExpenseService {
         return await DonationRepo.deleteMany({ _id: { $in: ids } });
     };
 
-    static getAllDonations = async () => {
-        const donations = await DonationModel.find({ isDeleted: false })
+    static getAllDonations = async (page = 1, limit = 10) => {
+        const skip = (Number(page) - 1) * Number(limit);
+        const query = { isDeleted: false };
+        const total = await DonationModel.countDocuments(query);
+        const donations = await DonationModel.find(query)
             .populate("bankName", "bankName accountNumber balance")
             .populate("attachments", "_id url")
             .populate("enteredBy", "name email")
             .populate("accountingPeriod", "startDate endDate status")
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(Number(limit))
             .lean();
 
-        return donations.map(don => {
+        const data = donations.map(don => {
             const { bankName, accountingPeriod, ...rest } = don;
             return {
                 ...rest,
@@ -143,6 +149,16 @@ class DonationExpenseService {
                 donationDate: don.donationDate ? new Date(don.donationDate).toISOString().split('T')[0] : null
             };
         });
+
+        return {
+            data,
+            pagination: {
+                total,
+                currentPage: Number(page),
+                totalPages: Math.ceil(total / Number(limit)),
+                pageSize: Number(limit),
+            }
+        };
     };
 
     static getDonationById = async (id) => {
@@ -165,7 +181,8 @@ class DonationExpenseService {
         };
     };
 
-    static getDonationsByPeriod = async (accountingPeriod) => {
+    static getDonationsByPeriod = async (accountingPeriod, page = 1, limit = 10) => {
+        const skip = (Number(page) - 1) * Number(limit);
         const query = { isDeleted: false };
         if (accountingPeriod && accountingPeriod.startDate && accountingPeriod.endDate) {
             query.donationDate = { $gte: accountingPeriod.startDate, $lte: accountingPeriod.endDate };
@@ -173,14 +190,18 @@ class DonationExpenseService {
             query.accountingPeriod = accountingPeriod._id;
         }
 
+        const total = await DonationModel.countDocuments(query);
         const donations = await DonationModel.find(query)
             .populate("bankName", "bankName accountNumber balance")
             .populate("attachments", "_id url")
             .populate("enteredBy", "name email")
             .populate("accountingPeriod", "startDate endDate status")
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(Number(limit))
             .lean();
 
-        return donations.map(don => {
+        const data = donations.map(don => {
             const { bankName, accountingPeriod, ...rest } = don;
             return {
                 ...rest,
@@ -189,6 +210,16 @@ class DonationExpenseService {
                 donationDate: don.donationDate ? new Date(don.donationDate).toISOString().split('T')[0] : null
             };
         });
+
+        return {
+            data,
+            pagination: {
+                total,
+                currentPage: Number(page),
+                totalPages: Math.ceil(total / Number(limit)),
+                pageSize: Number(limit),
+            }
+        };
     };
 
     static deleteAttachments = async (id, attachmentIds) => {

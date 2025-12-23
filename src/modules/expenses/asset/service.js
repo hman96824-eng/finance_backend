@@ -143,26 +143,41 @@ class AssetService {
     };
 
     // ---------------- GET ----------------
-    static getAllAssets = async (accountingPeriod) => {
+    static getAllAssets = async (accountingPeriod, page = 1, limit = 10) => {
+        const skip = (Number(page) - 1) * Number(limit);
         const query = { isDeleted: false };
         if (accountingPeriod) {
             const { startDate, endDate } = accountingPeriod;
             query.purchaseDate = { $gte: startDate, $lte: endDate };
         }
 
+        const total = await Asset.countDocuments(query);
         const assets = await Asset.find(query)
             .populate("bank", "bankName accountNumber")
             .populate("attachments", "url")
             .populate("createdBy", "name email")
             .select("-isDeleted")
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(Number(limit))
             .lean();
 
         // Map to frontend format
-        return assets.map(asset => ({
+        const data = assets.map(asset => ({
             ...asset,
             bankName: asset.bank?.bankName || null,
             purchaseDate: asset.purchaseDate ? new Date(asset.purchaseDate).toISOString().split('T')[0] : null,
         }));
+
+        return {
+            data,
+            pagination: {
+                total,
+                currentPage: Number(page),
+                totalPages: Math.ceil(total / Number(limit)),
+                pageSize: Number(limit),
+            }
+        };
     };
 
     static getAssetById = async (id) => {

@@ -5,9 +5,9 @@ import { successResponse } from "../../utils/response.helper.js";
 
 export const getAllInvitedUsers = async (req, res, next) => {
   try {
-    const { accepted } = req.query; // "true" or "false"
+    const { accepted, page = 1, limit = 10 } = req.query; // "true" or "false"
 
-    const result = await inviteService.getAllInvitedUsers(accepted);
+    const result = await inviteService.getAllInvitedUsers(accepted, page, limit);
 
     return successResponse(res, result, "users fetch successfully");
   } catch (error) {

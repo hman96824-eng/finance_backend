@@ -29,10 +29,15 @@ export const sendEmail = async ({ to, subject, html, text }) => {
     };
 
     await sgMail.send(msg);
-    console.log(`✅ Email sent to ${to}`);
+    console.log(`✅ Email sent successfully to: ${to}`);
   } catch (error) {
-    console.error("❌ Email sending failed:", error.response?.body || error);
-    throw new Error("Failed to send email");
+    if (error.response) {
+      const { body } = error.response;
+      console.error("❌ SendGrid Error:", JSON.stringify(body, null, 2));
+    } else {
+      console.error("❌ Email sending failed:", error.message || error);
+    }
+    throw new Error("Failed to send email. Please check your email configuration.");
   }
 };
 

@@ -16,7 +16,8 @@ const ProController = {
 
   getAllProjects: async (req, res) => {
     try {
-      const data = await ProService.getProjects();
+      const { page = 1, limit = 10 } = req.query;
+      const data = await ProService.getProjects(page, limit);
       successResponse(res, data);
     } catch (err) {
       throw ApiError.badRequest(err.message);
@@ -67,7 +68,8 @@ const ProController = {
 
   getDeletedProjects: async (req, res) => {
     try {
-      const data = await ProService.getDeletedProjects();
+      const { page = 1, limit = 10 } = req.query;
+      const data = await ProService.getDeletedProjects(page, limit);
       successResponse(res, data);
     } catch (err) {
       throw ApiError.badRequest(err.message);

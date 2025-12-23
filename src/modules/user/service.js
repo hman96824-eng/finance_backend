@@ -90,7 +90,7 @@ export const refreshAccessToken = async (refreshToken) => {
   let decoded;
   try {
     decoded = jwt.verifyRefreshToken(refreshToken);
-    
+
   } catch (err) {
     throw new Error("Invalid or expired refresh token");
   }
@@ -100,7 +100,7 @@ export const refreshAccessToken = async (refreshToken) => {
     "role_id",
     "name description"
   );
- 
+
 
   if (!user) throw new Error("User not found");
 
@@ -267,18 +267,35 @@ export const getUserById = async (id) => {
 
   return userObj;
 };
-export const getAllUsers = async (filter = {}) => {
+export const getAllUsers = async (filter = {}, page = 1, limit = 10) => {
+  const skip = (Number(page) - 1) * Number(limit);
   const baseFilter = {
     status: { $in: ["active", "inactive", "deleted"] },
     ...filter,
   };
-  const users = await userRepo.findWithPopulate(baseFilter, "role_id", "name");
 
-  return users.map((user) => ({
+  const total = await UserModel.countDocuments(baseFilter);
+  const users = await UserModel.find(baseFilter)
+    .populate("role_id", "name")
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(Number(limit));
+
+  const data = users.map((user) => ({
     ...user._doc,
     role: user.role_id?.name || null, // extract name
     role_id: undefined, // hide ObjectId
   }));
+
+  return {
+    users: data,
+    pagination: {
+      total,
+      currentPage: Number(page),
+      totalPages: Math.ceil(total / Number(limit)),
+      pageSize: Number(limit),
+    },
+  };
 };
 export const countUsersByStatus = async (status) => {
   return userRepo.count({ status });
@@ -429,15 +446,34 @@ export const toggleUserStatus = async (id) => {
     },
   };
 };
-export const getInactiveUsers = async () => {
+export const getInactiveUsers = async (page = 1, limit = 10) => {
   try {
-    const users = await userRepo.findObj(
-      { status: "deleted" },
-      {},
-      {},
-      { path: "role_id", select: "name" }
-    );
-    return users || [];
+    const skip = (Number(page) - 1) * Number(limit);
+    const filter = { status: "deleted" };
+
+    const total = await UserModel.countDocuments(filter);
+    const users = await UserModel.find(filter)
+      .populate("role_id", "name")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(Number(limit));
+
+    const data = users.map((user) => {
+      const userObj = user.toObject();
+      userObj.role_id = userObj.role_id || null;
+      delete userObj.password;
+      return userObj;
+    });
+
+    return {
+      users: data,
+      pagination: {
+        total,
+        currentPage: Number(page),
+        totalPages: Math.ceil(total / Number(limit)),
+        pageSize: Number(limit),
+      },
+    };
   } catch (error) {
     throw new Error("Failed to fetch inactive users: " + error.message);
   }

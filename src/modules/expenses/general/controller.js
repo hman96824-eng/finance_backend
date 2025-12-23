@@ -82,9 +82,10 @@ const GeneralExpenseController = {
     },
     getAllExpenses: async (req, res, next) => {
         try {
-            if (!req.accountingPeriod) return successResponse(res, []);
+            if (!req.accountingPeriod) return successResponse(res, { data: [], pagination: {} });
 
-            const data = await GeneralExpenseService.getAllExpenses(req.accountingPeriod);
+            const { page = 1, limit = 10 } = req.query;
+            const data = await GeneralExpenseService.getAllExpenses(req.accountingPeriod, page, limit);
             return successResponse(res, data);
         } catch (err) { next(err); }
     },

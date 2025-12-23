@@ -34,7 +34,8 @@ const LeaveController = {
 
     getAllLeaves: async (req, res, next) => {
         try {
-            const data = await LeaveService.getAllLeaves();
+            const { page, limit } = req.query;
+            const data = await LeaveService.getAllLeaves(page, limit);
 
             return successResponse(res, data);
         } catch (err) {
@@ -55,7 +56,7 @@ const LeaveController = {
 
     deleteLeave: async (req, res, next) => {
         try {
-            const ids = req.body.ids || [req.params.leaveId]; 
+            const ids = req.body.ids || [req.params.leaveId];
             const data = await LeaveService.deleteLeave(ids);
 
             return successResponse(res, data, "Leave(s) deleted");

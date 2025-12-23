@@ -13,8 +13,9 @@ const BankController = {
   },
   getAllBanks: async (req, res, next) => {
     try {
-      const banks = await BankService.getAllBanks();
-      return successResponse(res, banks, "Banks fetched Successfully");
+      const { page = 1, limit = 10 } = req.query;
+      const data = await BankService.getAllBanks(page, limit);
+      return successResponse(res, data, "Banks fetched Successfully");
     } catch (err) {
       next(err);
     }

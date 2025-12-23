@@ -52,7 +52,7 @@ const EmpController = {
         media?._id || null
       );
 
-     
+
       res
         .status(200)
         .json(ApiError.ok("Employee updated successfully", updated));
@@ -63,10 +63,9 @@ const EmpController = {
 
   getAllEmployees: async (req, res, next) => {
     try {
-      const employees = await EmployeeService.getAllEmployees();
-      res
-        .status(200)
-        .json(ApiError.ok("Employees fetched successfully", employees));
+      const { page = 1, limit = 10 } = req.query;
+      const data = await EmployeeService.getAllEmployees(page, limit);
+      return successResponse(res, data, "Employees fetched successfully");
     } catch (error) {
       next(error);
     }
@@ -74,10 +73,9 @@ const EmpController = {
 
   getDeletedEmployees: async (req, res, next) => {
     try {
-      const employees = await EmployeeService.getAllDeletedEmployees();
-      res
-        .status(200)
-        .json(ApiError.ok("Deleted employees fetched successfully", employees));
+      const { page = 1, limit = 10 } = req.query;
+      const data = await EmployeeService.getAllDeletedEmployees(page, limit);
+      return successResponse(res, data, "Deleted employees fetched successfully");
     } catch (error) {
       next(error);
     }
@@ -118,7 +116,7 @@ const EmpController = {
       const userIds = req.body;
       const { type } = req.query;
 
-     
+
 
       // Call appropriate service
       let result;

@@ -68,10 +68,27 @@ class BankService {
     return bank;
   };
 
-  static getAllBanks = async () => {
-    const banks = await BankRepo.find({})
-      .sort({ createdAt: -1 });
-    return banks;
+  static getAllBanks = async (page = 1, limit = 10) => {
+    const skip = (Number(page) - 1) * Number(limit);
+
+    // Fetch paginated banks
+    const banks = await BankModel.find({})
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(Number(limit));
+
+    // Get total count for pagination metadata
+    const total = await BankModel.countDocuments({});
+
+    return {
+      banks,
+      pagination: {
+        total,
+        currentPage: Number(page),
+        totalPages: Math.ceil(total / Number(limit)),
+        pageSize: Number(limit),
+      },
+    };
   };
 
 

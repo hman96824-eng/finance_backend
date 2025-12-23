@@ -95,7 +95,8 @@ class SalaryService {
         return await SalaryExpense.deleteMany({ _id: { $in: validIds } });
     };
 
-    static getAllSalaries = async (accountingPeriod) => {
+    static getAllSalaries = async (accountingPeriod, page = 1, limit = 10) => {
+        const skip = (Number(page) - 1) * Number(limit);
         // Prepare search criteria
         let monthString = null;
         let verboseMonth = null;
@@ -114,6 +115,7 @@ class SalaryService {
             }
         }
 
+        const query = { isDeleted: false };
         if (monthString || periodId) {
             let filterCondition = [];
 
@@ -122,26 +124,11 @@ class SalaryService {
             }
 
             if (monthString && verboseMonth) {
-                // We also match by string if ID match fails or as alternative
-                // User requirement: "Active Month".
-                // If we have periodId, we prefer it. But if data lacks ID, we use String.
-                // Or allows both OR condition?
-                // OR condition in $filter cond is strict.
-                // Let's use $or operator in aggregation expression
-
                 filterCondition.push({ $eq: ["$$s.salaryMonth", verboseMonth] });
-                // We could also regex, but exact match is safer for now if we know format.
-                // The snippet in Step 320 uses: 
-                // { "salaries.salaryMonth": { $regex: ... } }
-                // Here we use $filter cond. Regex in $filter is tricky (requires $regexMatch which is mongo 4.2+).
-                // Assuming mongo is recent enough.
             }
 
-            // Construct OR logic. 
-            // cond: { $or: [ { $eq: ... }, { $eq: ... } ] }
-
-            return await SalaryExpense.aggregate([
-                { $match: { isDeleted: false } },
+            const aggregationPipeline = [
+                { $match: query },
                 {
                     $project: {
                         employeeName: 1,
@@ -165,10 +152,48 @@ class SalaryService {
                     }
                 },
                 { $match: { "salaries.0": { $exists: true } } }
+            ];
+
+            // Get total count
+            const countResult = await SalaryExpense.aggregate([
+                ...aggregationPipeline,
+                { $count: "total" }
             ]);
+            const total = countResult.length > 0 ? countResult[0].total : 0;
+
+            const data = await SalaryExpense.aggregate([
+                ...aggregationPipeline,
+                { $sort: { createdAt: -1 } },
+                { $skip: skip },
+                { $limit: Number(limit) }
+            ]);
+
+            return {
+                data,
+                pagination: {
+                    total,
+                    currentPage: Number(page),
+                    totalPages: Math.ceil(total / Number(limit)),
+                    pageSize: Number(limit),
+                }
+            };
         }
 
-        return await SalaryExpense.find({ isDeleted: false });
+        const total = await SalaryExpense.countDocuments(query);
+        const data = await SalaryExpense.find(query)
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(Number(limit));
+
+        return {
+            data,
+            pagination: {
+                total,
+                currentPage: Number(page),
+                totalPages: Math.ceil(total / Number(limit)),
+                pageSize: Number(limit),
+            }
+        };
     };
 
     static getSalaryById = async (id) => {

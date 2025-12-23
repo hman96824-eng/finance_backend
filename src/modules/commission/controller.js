@@ -37,7 +37,8 @@ const commissionController = {
     // ⭐ Get all commissions
     getAllCommissions: async (req, res, next) => {
         try {
-            const data = await CommissionService.getAllCommissions();
+            const { page = 1, limit = 10 } = req.query;
+            const data = await CommissionService.getAllCommissions(page, limit);
             return successResponse(res, data);
         } catch (err) {
             next(err);

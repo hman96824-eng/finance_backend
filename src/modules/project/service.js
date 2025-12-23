@@ -215,21 +215,28 @@ const ProService = {
     }
   },
 
-  getProjects: async () => {
+  getProjects: async (page = 1, limit = 10) => {
     try {
-      let projects = await Project.find({
+      const skip = (Number(page) - 1) * Number(limit);
+
+      const query = {
         status: { $in: ["Pending", "Done"] },
         isDeleted: { $ne: true },
-      })
+      };
+
+      const projects = await Project.find(query)
         .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(Number(limit))
         .lean();
 
-      if (!Array.isArray(projects)) projects = projects ? [projects] : [];
+      const total = await Project.countDocuments(query);
 
       // To avoid N+1, load all banks referenced by these projects once
       const allBankIds = projects.flatMap(p => Array.isArray(p.banks) ? p.banks : (p.banks ? [p.banks] : []));
       const uniqueBankIds = [...new Set(allBankIds.map(String))];
       const banksById = {};
+
       if (uniqueBankIds.length > 0) {
         const banks = await Bank.find({ _id: { $in: uniqueBankIds } }).lean();
         for (const b of banks) banksById[b._id.toString()] = b;
@@ -276,7 +283,15 @@ const ProService = {
         };
       }));
 
-      return results;
+      return {
+        projects: results,
+        pagination: {
+          total,
+          currentPage: Number(page),
+          totalPages: Math.ceil(total / Number(limit)),
+          pageSize: Number(limit),
+        },
+      };
     } catch (error) {
       throw ApiError.badRequest(error?.message || "Failed to fetch projects");
     }
@@ -472,14 +487,21 @@ const ProService = {
     }
   },
 
-  getDeletedProjects: async () => {
+  getDeletedProjects: async (page = 1, limit = 10) => {
     try {
-      const deletedProjects = await ProRepo.find({ status: "Deleted" })
+      const skip = (Number(page) - 1) * Number(limit);
+      const query = { status: "Deleted" };
+
+      const deletedProjects = await ProRepo.find(query)
         .populate("banks")
         .sort({ updatedAt: -1 })
+        .skip(skip)
+        .limit(Number(limit))
         .lean();
-      // filter paymentHistory per bank
-      return (Array.isArray(deletedProjects) ? deletedProjects : []).map(
+
+      const total = await ProRepo.count(query);
+
+      const projects = (Array.isArray(deletedProjects) ? deletedProjects : []).map(
         (proj) => {
           proj.banks = (Array.isArray(proj.banks) ? proj.banks : []).map(
             (b) => ({
@@ -496,6 +518,16 @@ const ProService = {
           return proj;
         }
       );
+
+      return {
+        projects,
+        pagination: {
+          total,
+          currentPage: Number(page),
+          totalPages: Math.ceil(total / Number(limit)),
+          pageSize: Number(limit),
+        },
+      };
     } catch (error) {
       throw ApiError.badRequest(
         error?.message || "Failed to fetch deleted projects"

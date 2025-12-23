@@ -3,11 +3,11 @@ import * as AccountingPeriodService from "./service.js";
 // POST /admin/period/start
 export const startPeriodController = async (req, res, next) => {
   try {
-    const { startDate } = req.body; // optional
+    const { startDate , expectedEndDate } = req.body; // optional
     if (!startDate) {
       throw new Error("startDate is required to start a new period");
     }
-    const period = await AccountingPeriodService.startPeriod(startDate);
+    const period = await AccountingPeriodService.startPeriod(startDate, expectedEndDate);
     res.json({ success: true, period });
   } catch (err) {
     next(err);

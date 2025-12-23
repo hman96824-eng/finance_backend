@@ -122,30 +122,13 @@ const DonationExpenseController = {
 
     getAllDonations: async (req, res, next) => {
         try {
-            // Support historical query if needed, or just default to open?
-            // User requirement: "No live queries" for closed months via summary.
-            // But this is likely for management view.
-
-            // If they ask for specific period (via query param?)
-            // For now, let's just return all or filter by active if needed.
-            // But standard list usually shows all unless filtered.
-            // The original code filtered by OPEN month if no query.
-
-            // Let's replicate behavior: Filter by open period if no specific filter?
-            // Or just return all because frontend tables usually paginate all.
-            // The original code:
-            /*
-            if (monthKey) { ... } else { month = findOne({ status: "OPEN" }) }
-            */
-            // So default was showing CURRENT OPEN MONTH donations.
-
             const accountingPeriod = req.accountingPeriod;
-            // If no period, maybe return empty or all?
             if (!accountingPeriod) {
-                return successResponse(res, []);
+                return successResponse(res, { data: [], pagination: {} });
             }
 
-            const result = await DonationExpenseService.getDonationsByPeriod(accountingPeriod);
+            const { page = 1, limit = 10 } = req.query;
+            const result = await DonationExpenseService.getDonationsByPeriod(accountingPeriod, page, limit);
             return successResponse(res, result);
         } catch (err) { next(err); }
     },

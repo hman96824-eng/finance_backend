@@ -118,26 +118,41 @@ class BusinessExpenseService {
     static deleteMany = async (ids) => {
         return await BussinessRepo.deleteMany({ _id: { $in: ids } });
     };
-    static getAllExpenses = async (accountingPeriod) => {
+    static getAllExpenses = async (accountingPeriod, page = 1, limit = 10) => {
+        const skip = (Number(page) - 1) * Number(limit);
         const query = { isDeleted: false };
         if (accountingPeriod) {
             const { startDate, endDate } = accountingPeriod;
             query.purchaseDate = { $gte: startDate, $lte: endDate };
         }
 
+        const total = await BusinessModel.countDocuments(query);
         const expenses = await BusinessModel.find(query)
             .populate("bankName", "bankName accountNumber")
             .populate("attachments", "_id url")
             .populate("enteredBy", "name email")
             .select("-isDeleted")
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(Number(limit))
             .lean();
 
         // Map to frontend format like assets
-        return expenses.map((exp) => ({
+        const data = expenses.map((exp) => ({
             ...exp,
             bankName: exp.bankName?.bankName || null,
             purchaseDate: exp.purchaseDate ? exp.purchaseDate.toISOString().split('T')[0] : null,
         }));
+
+        return {
+            data,
+            pagination: {
+                total,
+                currentPage: Number(page),
+                totalPages: Math.ceil(total / Number(limit)),
+                pageSize: Number(limit),
+            }
+        };
     };
     static getExpenseById = async (id) => {
         const exp = await BusinessModel.findById(id)

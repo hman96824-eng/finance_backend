@@ -195,29 +195,61 @@ const EmployeeService = {
     }
   },
 
-  getAllEmployees: async (req, res, next) => {
+  getAllEmployees: async (page = 1, limit = 10) => {
     try {
-      const employees = await EmployeeModel.find({
-        status: { $in: ["Active", "Inactive"] },
-      }).populate("avatar");
+      const skip = (Number(page) - 1) * Number(limit);
+      const filter = { status: { $in: ["Active", "Inactive"] } };
+
+      const total = await EmployeeModel.countDocuments(filter);
+      const employees = await EmployeeModel.find(filter)
+        .populate("avatar")
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(Number(limit));
 
       // Add remaining days for each employee
       const data = employees.map((emp) => {
         const empObj = emp.toObject();
-        empObj.contractRemainingDays = checkContractExpiry(emp.contractEndDate);
+        empObj.contractRemainingDays = checkContractExpiry(emp.contractDetails?.contractEndDate);
         return empObj;
       });
 
-      return data;
+      return {
+        employees: data,
+        pagination: {
+          total,
+          currentPage: Number(page),
+          totalPages: Math.ceil(total / Number(limit)),
+          pageSize: Number(limit),
+        },
+      };
     } catch (error) {
       throw ApiError.badRequest(error.message);
     }
   },
 
   // 🟢 GET DELETED EMPLOYEES
-  getAllDeletedEmployees: async () => {
+  getAllDeletedEmployees: async (page = 1, limit = 10) => {
     try {
-      return await EmployeeModel.find({ status: "Deleted" }).populate("avatar");
+      const skip = (Number(page) - 1) * Number(limit);
+      const filter = { status: "Deleted" };
+
+      const total = await EmployeeModel.countDocuments(filter);
+      const employees = await EmployeeModel.find(filter)
+        .populate("avatar")
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(Number(limit));
+
+      return {
+        employees,
+        pagination: {
+          total,
+          currentPage: Number(page),
+          totalPages: Math.ceil(total / Number(limit)),
+          pageSize: Number(limit),
+        },
+      };
     } catch (error) {
       throw ApiError.badRequest(error.message);
     }

@@ -119,21 +119,38 @@ class BillingExpenseService {
     static deleteMany = async (ids) => {
         return await BillingRepo.deleteMany({ _id: { $in: ids } });
     };
-    static getAllExpenses = async (accountingPeriod) => {
+    static getAllExpenses = async (accountingPeriod, page = 1, limit = 10) => {
+        const skip = (Number(page) - 1) * Number(limit);
         const { startDate, endDate } = accountingPeriod;
-        const expenses = await BillingModel.find({ isDeleted: false, billDate: { $gte: startDate, $lte: endDate } })
+        const query = { isDeleted: false, billDate: { $gte: startDate, $lte: endDate } };
+
+        const total = await BillingModel.countDocuments(query);
+        const expenses = await BillingModel.find(query)
             .populate("bankName", "bankName accountNumber")
             .populate("attachments", "_id url")
             .populate("enteredBy", "name email")
             .select("-isDeleted")
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(Number(limit))
             .lean();
 
         // Map to frontend expected shape 
-        return expenses.map((exp) => ({
+        const data = expenses.map((exp) => ({
             ...exp,
             bankName: exp.bankName?.bankName || null,
             billDate: exp.billDate ? new Date(exp.billDate).toISOString().split('T')[0] : null,
         }));
+
+        return {
+            data,
+            pagination: {
+                total,
+                currentPage: Number(page),
+                totalPages: Math.ceil(total / Number(limit)),
+                pageSize: Number(limit),
+            }
+        };
     };
     static getExpenseById = async (id) => {
         const exp = await BillingModel.findById(id)

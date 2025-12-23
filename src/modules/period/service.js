@@ -3,9 +3,9 @@ import { generateMonthlySummary, createSummary } from "../monthlySummary/service
 import { MonthlySummaryModel } from "../monthlySummary/model.js";
 
 // Start a new period
-export const startPeriod = async (startDateInput) => {
+export const startPeriod = async (startDateInput, expectedEndDateInput) => {
   const active = await AccountingPeriodModel.findOne({ status: "open" });
-  if (active) throw new Error("There is already an active period");
+  if (active) throw new Error("There is already an active month");
 
   const startDate = startDateInput ? new Date(startDateInput) : startOfMonth(new Date());
 
@@ -36,11 +36,13 @@ export const startPeriod = async (startDateInput) => {
     }
   }
 
-  const endDate = endOfMonth(startDate);
+  const endDate = expectedEndDateInput ? new Date(expectedEndDateInput) : endOfMonth(startDate);
+  const expectedEndDate = expectedEndDateInput ? new Date(expectedEndDateInput) : endDate;
 
   const period = new AccountingPeriodModel({
     startDate,
     endDate,
+    expectedEndDate,
     status: "open",
   });
 
@@ -61,6 +63,12 @@ export const closePeriod = async (endDateInput, notes = "") => {
 
   if (endStr < startStr) {
     throw new Error(`Month end date (${endDate.toLocaleDateString()}) cannot be before the start date (${active.startDate.toLocaleDateString()}).`);
+  }
+
+  // Enforce 21-day minimum duration
+  const diffInDays = Math.ceil((endDate - active.startDate) / (1000 * 60 * 60 * 24));
+  if (diffInDays < 21 ) {
+    throw new Error(`A month must be active for at least 21 days before it can be closed. Current duration: ${diffInDays} days.`);
   }
 
   active.endDate = endDate;

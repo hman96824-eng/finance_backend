@@ -20,7 +20,7 @@ function calcDays(start, end) {
   const s = normalizeDate(start);
   const e = normalizeDate(end);
 
-  return Math.ceil((e - s) / 86400000) + 1; 
+  return Math.ceil((e - s) / 86400000) + 1;
 }
 
 function splitLeaveByMonth(startDate, endDate) {
@@ -133,7 +133,7 @@ const LeaveService = {
       });
     }
 
-   leaveRecord.leaves.unshift(leavePayload);
+    leaveRecord.leaves.unshift(leavePayload);
 
     await recalcHistory(leaveRecord);
     await leaveRecord.save();
@@ -190,13 +190,29 @@ const LeaveService = {
   // ======================================
   // GET ALL LEAVES (POPULATED)
   // ======================================
-  getAllLeaves: async () => {
+  getAllLeaves: async (page = 1, limit = 10) => {
     try {
-      return await LeaveModel.find({})
+      const skip = (Number(page) - 1) * Number(limit);
+      const query = {};
+
+      const total = await LeaveModel.countDocuments(query);
+      const leaves = await LeaveModel.find(query)
         .populate("employeeId", "name email phone cnic employeeCode employeeType designation department")
         .populate("leaves.createdBy", "name")
         .populate("leaves.approvedBy", "name")
-        .sort({ createdAt: -1 });
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(Number(limit));
+
+      return {
+        data: leaves,
+        pagination: {
+          total,
+          currentPage: Number(page),
+          totalPages: Math.ceil(total / Number(limit)),
+          pageSize: Number(limit),
+        }
+      };
     } catch (err) {
       throw new AppError("Failed to fetch leaves", 500);
     }
