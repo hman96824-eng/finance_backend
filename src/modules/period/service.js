@@ -73,6 +73,7 @@ export const closePeriod = async (endDateInput, notes = "") => {
 
   active.endDate = endDate;
   active.status = "closed";
+  
   active.updatedAt = new Date();
 
   await active.save();
