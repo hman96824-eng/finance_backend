@@ -1,5 +1,6 @@
 import { LeaveModel } from "./model.js";
 import { EmployeeModel } from "../employee/model.js";
+import { deleteFromCloudinary } from "../../config/cloud.js";
 
 class AppError extends Error {
   constructor(message, status = 400) {
@@ -7,10 +8,6 @@ class AppError extends Error {
     this.status = status;
   }
 }
-
-// ----------------------------
-// Helpers
-// ----------------------------
 function normalizeDate(date) {
   const d = new Date(date);
   return new Date(d.getFullYear(), d.getMonth(), d.getDate());
@@ -47,17 +44,25 @@ function splitLeaveByMonth(startDate, endDate) {
 
   return result;
 }
-
-// ----------------------------
-// Recalculate salary effects
-// ----------------------------
+function countLeavesInMonth(leaves, month) {
+  return leaves.filter(leave => {
+    if (leave.status !== "APPROVED" && leave.status !== "PENDING") return false;
+    const leaveMonth = new Date(leave.startDate).toISOString().slice(0, 7);
+    return leaveMonth === month;
+  }).length;
+}
+function checkAndResetAnnualLeave(leaveRecord) {
+  const currentYear = new Date().getFullYear();
+  if (leaveRecord.lastResetYear < currentYear) {
+    leaveRecord.annualLeaveBalance = 18;
+    leaveRecord.lastResetYear = currentYear;
+  }
+}
 async function recalcHistory(leaveRecord) {
   const employee = await EmployeeModel.findById(leaveRecord.employeeId);
   const salary = employee?.salary?.[0]?.salaryIncome || 0;
 
   const monthSummary = {};
-
-  // Collect APPROVED leave days per month
   for (const leave of leaveRecord.leaves) {
     if (leave.status !== "APPROVED") continue;
 
@@ -89,59 +94,113 @@ async function recalcHistory(leaveRecord) {
 }
 
 async function revertApprovedLeaveEffects(leave) {
-  // reserved for future logic
+  // Delete attachment from Cloudinary if exists (handle both old string and new object format)
+  if (leave.attachment) {
+    // New format: object with publicId
+    if (typeof leave.attachment === 'object' && leave.attachment.publicId) {
+      try {
+        await deleteFromCloudinary(leave.attachment.publicId, leave.attachment.resourceType);
+        console.log(`✅ Deleted leave attachment from Cloudinary: ${leave.attachment.publicId}`);
+      } catch (error) {
+        console.error(`❌ Failed to delete leave attachment: ${error.message}`);
+      }
+    }
+    // Old format: string path - just log, no Cloudinary deletion needed
+    else if (typeof leave.attachment === 'string') {
+      console.log(`ℹ️ Old format attachment found (local file): ${leave.attachment}`);
+    }
+  }
   return;
 }
-
-// ----------------------------
-// Leave Service
-// ----------------------------
 const LeaveService = {
-
-  // ======================================
-  // CREATE LEAVE
-  // ======================================
   createLeave: async (payload) => {
-    const { employeeId, startDate, endDate, reason, status } = payload;
+    const { employeeId, startDate, endDate, reason, status, isAdminCreating, attachment, userEmail } = payload;
 
-    if (!employeeId || !startDate || !endDate)
-      throw new AppError("Missing required fields", 422);
+    if (!startDate || !endDate)
+      throw new AppError("Missing required fields: startDate and endDate", 422);
+    if (isAdminCreating === true) {
+      throw new AppError("Admin cannot create leave requests. Only users can request leaves.", 403);
+    }
+    let finalEmployeeId = employeeId;
+    
+    if (!finalEmployeeId && userEmail) {
+      const employee = await EmployeeModel.findOne({ email: userEmail });
+      if (!employee) {
+        throw new AppError(
+          `Employee record not found for email: ${userEmail}. Please contact admin to create your employee profile first.`,
+          404
+        );
+      }
+      finalEmployeeId = employee._id;
+    }
 
-    const employee = await EmployeeModel.findById(employeeId);
+    if (!finalEmployeeId) {
+      throw new AppError("Employee ID is required or user must have an employee record", 422);
+    }
+    const employee = await EmployeeModel.findById(finalEmployeeId);
     if (!employee) throw new AppError("Employee not found", 404);
 
     const creator = payload.createdBy || null;
-    const isApproved = status === "APPROVED";
+
+    const totalDays = calcDays(startDate, endDate);
+    let leaveRecord = await LeaveModel.findOne({ employeeId: finalEmployeeId });
+
+    if (!leaveRecord) {
+      leaveRecord = await LeaveModel.create({
+        employeeId: finalEmployeeId,
+        leaves: [],
+        history: [],
+        annualLeaveBalance: 18,
+        lastResetYear: new Date().getFullYear()
+      });
+    }
+   checkAndResetAnnualLeave(leaveRecord);
+
+ 
+    const leaveMonth = new Date(startDate).toISOString().slice(0, 7);
+    const leavesInMonth = countLeavesInMonth(leaveRecord.leaves, leaveMonth);
+    
+    if (leavesInMonth >= 2) {
+      throw new AppError("Maximum 2 leaves allowed per month", 400);
+    }
+
+    // VALIDATION 3: Check annual leave balance (18 per year)
+    if (leaveRecord.annualLeaveBalance < totalDays) {
+      throw new AppError(
+        `Insufficient annual leave balance. Available: ${leaveRecord.annualLeaveBalance} days, Requested: ${totalDays} days`,
+        400
+      );
+    }
 
     const leavePayload = {
       startDate: normalizeDate(startDate),
       endDate: normalizeDate(endDate),
       reason: reason || "",
-      status: status || "PENDING",
-      totalDays: calcDays(startDate, endDate),
+      status: "PENDING", // Always PENDING when created by user
+      totalDays: totalDays,
       createdBy: creator,
-      approvedBy: isApproved ? (payload.approvedBy || creator) : null
+      approvedBy: null,
+      attachment: attachment || null
     };
-
-    let leaveRecord = await LeaveModel.findOne({ employeeId });
-
-    if (!leaveRecord) {
-      leaveRecord = await LeaveModel.create({
-        employeeId,
-        leaves: [],
-        history: []
-      });
-    }
 
     leaveRecord.leaves.unshift(leavePayload);
 
     await recalcHistory(leaveRecord);
     await leaveRecord.save();
 
-    return await LeaveModel.findById(leaveRecord._id)
+    const result = await LeaveModel.findById(leaveRecord._id)
       .populate("employeeId")
       .populate("leaves.createdBy", "name")
       .populate("leaves.approvedBy", "name");
+
+    // Calculate pending days (not yet in history since not approved)
+    const pendingDays = result.leaves
+      .filter(l => l.status === "PENDING")
+      .reduce((sum, l) => sum + l.totalDays, 0);
+
+    console.log(`📊 Leave created - Pending: ${pendingDays} days, History will update when approved`);
+
+    return result;
   },
 
   // ======================================
@@ -157,11 +216,9 @@ const LeaveService = {
     const leave = leaveRecord.leaves.id(leaveId);
     if (!leave) throw new AppError("Leave entry not found", 404);
 
-    if (payload.startDate) leave.startDate = normalizeDate(payload.startDate);
-    if (payload.endDate) leave.endDate = normalizeDate(payload.endDate);
-    if (typeof payload.reason === "string") leave.reason = payload.reason;
+    const previousStatus = leave.status;
 
-    // Status update
+    // Admin can only change status, not dates/reason
     if (payload.status) {
       leave.status = payload.status;
 
@@ -169,14 +226,23 @@ const LeaveService = {
         payload.status === "APPROVED"
           ? payload.approvedBy || payload.updatedBy || leave.approvedBy
           : null;
+
+      // Handle annual leave balance based on status change
+      checkAndResetAnnualLeave(leaveRecord);
+
+      if (payload.status === "APPROVED" && previousStatus !== "APPROVED") {
+        // Deduct from annual leave balance
+        leaveRecord.annualLeaveBalance -= leave.totalDays;
+      } else if (previousStatus === "APPROVED" && payload.status === "REJECTED") {
+        // Restore to annual leave balance
+        leaveRecord.annualLeaveBalance += leave.totalDays;
+      }
     }
 
     // If only approvedBy is updated
     if (payload.approvedBy && !payload.status) {
       if (leave.status === "APPROVED") leave.approvedBy = payload.approvedBy;
     }
-
-    leave.totalDays = calcDays(leave.startDate, leave.endDate);
 
     await recalcHistory(leaveRecord);
     await leaveRecord.save();
@@ -232,8 +298,101 @@ const LeaveService = {
   },
 
   // ======================================
-  // GET LEAVE BY ID (DOCUMENT OR LEAF)
+  // GET USER'S OWN LEAVE INFO (with balance and history)
   // ======================================
+  getMyLeaveInfo: async (employeeId, userEmail) => {
+    try {
+      console.log('🔎 Service: Finding employee with:', { employeeId, userEmail });
+      
+      let finalEmployeeId = employeeId;
+
+      // If no employeeId provided, find by user's email
+      if (!finalEmployeeId && userEmail) {
+        const employee = await EmployeeModel.findOne({ email: userEmail });
+        console.log('👨‍💼 Found employee by email:', employee ? 'Yes' : 'No');
+        
+        if (!employee) {
+          throw new AppError(
+            `Employee record not found for email: ${userEmail}. Please contact admin to create your employee profile first.`,
+            404
+          );
+        }
+        finalEmployeeId = employee._id;
+      }
+
+      if (!finalEmployeeId) {
+        throw new AppError("Employee ID or email is required", 400);
+      }
+
+      console.log('🆔 Final employeeId:', finalEmployeeId);
+
+      let leaveRecord = await LeaveModel.findOne({ employeeId: finalEmployeeId })
+        .populate("employeeId", "name email phone cnic employeeCode")
+        .populate("leaves.createdBy", "name")
+        .populate("leaves.approvedBy", "name");
+
+      console.log('📋 Found leave record:', leaveRecord ? 'Yes' : 'No');
+
+      if (!leaveRecord) {
+        // Create default record if doesn't exist
+        console.log('📝 Creating new leave record...');
+        leaveRecord = await LeaveModel.create({
+          employeeId: finalEmployeeId,
+          leaves: [],
+          history: [],
+          annualLeaveBalance: 18,
+          lastResetYear: new Date().getFullYear()
+        });
+        
+        leaveRecord = await LeaveModel.findById(leaveRecord._id)
+          .populate("employeeId", "name email phone cnic employeeCode")
+          .populate("leaves.createdBy", "name")
+          .populate("leaves.approvedBy", "name");
+      }
+
+      // Check and reset if new year
+      checkAndResetAnnualLeave(leaveRecord);
+      await leaveRecord.save();
+
+      // Separate leaves by status for easy viewing
+      const pendingLeaves = leaveRecord.leaves.filter(l => l.status === "PENDING");
+      const approvedLeaves = leaveRecord.leaves.filter(l => l.status === "APPROVED");
+      const rejectedLeaves = leaveRecord.leaves.filter(l => l.status === "REJECTED");
+
+      // Calculate pending days (not in history yet)
+      const pendingDays = pendingLeaves.reduce((sum, l) => sum + l.totalDays, 0);
+      const approvedDays = approvedLeaves.reduce((sum, l) => sum + l.totalDays, 0);
+
+      console.log('✅ Successfully retrieved leave info');
+
+      return {
+        employee: leaveRecord.employeeId,
+        annualLeaveBalance: leaveRecord.annualLeaveBalance,
+        totalAnnualLeave: 18,
+        lastResetYear: leaveRecord.lastResetYear,
+        
+        // Leave counts for quick overview
+        leaveCounts: {
+          pending: pendingLeaves.length,
+          approved: approvedLeaves.length,
+          rejected: rejectedLeaves.length,
+          pendingDays: pendingDays,
+          approvedDays: approvedDays
+        },
+        
+        pendingLeaves,
+        approvedLeaves,
+        rejectedLeaves,
+        history: leaveRecord.history
+      };
+    } catch (err) {
+      console.error('❌ Service Error in getMyLeaveInfo:', err);
+      // Re-throw the original error instead of wrapping it
+      if (err instanceof AppError) throw err;
+      throw new AppError(err.message || "Failed to fetch leave information", 500);
+    }
+  },
+
   getLeaveById: async (id) => {
     if (!id.match(/^[0-9a-fA-F]{24}$/)) {
       throw new AppError("Invalid ID format", 400);
@@ -261,10 +420,6 @@ const LeaveService = {
       data: leaveRecord.leaves.id(id)
     };
   },
-
-  // ======================================
-  // DELETE LEAVE (ALSO RETURNS POPULATED)
-  // ======================================
   deleteLeave: async (ids) => {
     try {
       if (!Array.isArray(ids) || ids.length === 0) {
@@ -280,13 +435,26 @@ const LeaveService = {
       // Delete full docs
       const docs = await LeaveModel.find({ _id: { $in: ids } });
       for (const doc of docs) {
+         for (const leave of doc.leaves) {
+          if (leave.attachment) {
+            if (typeof leave.attachment === 'object' && leave.attachment.publicId) {
+              try {
+                await deleteFromCloudinary(leave.attachment.publicId, leave.attachment.resourceType);
+                console.log(`✅ Deleted attachment from Cloudinary: ${leave.attachment.publicId}`);
+              } catch (error) {
+                console.error(`❌ Failed to delete attachment: ${error.message}`);
+              }
+            }
+            else if (typeof leave.attachment === 'string') {
+              console.log(`ℹ️ Old format attachment (skipping): ${leave.attachment}`);
+            }
+          }
+        }
         await LeaveModel.findByIdAndDelete(doc._id);
         deletedDocs++;
       }
 
       const remaining = ids.filter(id => !docs.some(d => String(d._id) === id));
-
-      // Delete individual leaves
       if (remaining.length) {
         const records = await LeaveModel.find({
           "leaves._id": { $in: remaining }

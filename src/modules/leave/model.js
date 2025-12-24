@@ -10,6 +10,7 @@ const LeaveEntrySchema = new mongoose.Schema(
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     approvedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
     totalDays: { type: Number, required: true },
+    attachment: { type: mongoose.Schema.Types.Mixed, default: null }, // Accept both String and Object
   },
   { _id: true }
 );
@@ -31,6 +32,10 @@ const LeaveSchema = new mongoose.Schema(
     leaves: [LeaveEntrySchema],
 
     history: [LeaveHistorySchema],
+
+    // Annual leave tracking (18 per year)
+    annualLeaveBalance: { type: Number, default: 18 },
+    lastResetYear: { type: Number, default: () => new Date().getFullYear() },
   },
   { timestamps: true }
 );

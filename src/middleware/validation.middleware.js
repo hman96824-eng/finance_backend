@@ -17,6 +17,8 @@ export const validate = (schema) => {
         // If the error message is generic, make it more specific
         if (errorMessage.includes('expected') && errorMessage.includes('received undefined')) {
           errorMessage = `${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)} is required`;
+        } else if (errorMessage.includes('Required')) {
+          errorMessage = `${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)} is required`;
         } else if (!errorMessage.includes(fieldName) && fieldName !== 'field') {
           errorMessage = `${fieldName}: ${errorMessage}`;
         }
@@ -25,6 +27,7 @@ export const validate = (schema) => {
           success: false,
           error: "Validation error",
           message: errorMessage,
+          field: fieldName,
         });
       }
 

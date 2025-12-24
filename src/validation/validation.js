@@ -397,6 +397,36 @@ const validateRequest = (schema) => async (req, res, next) => {
 // ===============================
 // 📤 EXPORT ALL
 // ===============================
+// ===============================
+// 💬 FEEDBACK VALIDATIONS
+// ===============================
+export const submitFeedbackValidation = z.object({
+  firstName: z
+    .string()
+    .trim()
+    .min(2, { message: "First name must be at least 2 characters" }),
+  lastName: z
+    .string()
+    .trim()
+    .min(2, { message: "Last name must be at least 2 characters" }),
+  email: emailSchema,
+  phone: z
+    .string()
+    .regex(/^\+?[1-9]\d{1,14}$/, { message: messages.PHONE_CHECK })
+    .optional(),
+  message: z
+    .string()
+    .trim()
+    .min(10, { message: "Message must be at least 10 characters" }),
+});
+
+export const updateFeedbackStatusValidation = z.object({
+  status: z.enum(["pending", "reviewed", "resolved"], {
+    message: "Status must be pending, reviewed, or resolved",
+  }),
+  adminNotes: z.string().trim().optional(),
+});
+
 export default {
   // Auth
   loginValidation,
@@ -439,4 +469,7 @@ export default {
   generalExpenseUpdateSchema,
   // Salary Expense
   salaryExpenseSchema,
+  // Feedback
+  submitFeedbackValidation,
+  updateFeedbackStatusValidation,
 };
