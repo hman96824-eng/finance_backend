@@ -181,7 +181,7 @@ class DonationExpenseService {
         };
     };
 
-    static getDonationsByPeriod = async (accountingPeriod, page = 1, limit = 10) => {
+    static getDonationsByPeriod = async (accountingPeriod, page = 1, limit = 10, search = "") => {
         const skip = (Number(page) - 1) * Number(limit);
         const query = { isDeleted: false };
         if (accountingPeriod) {
@@ -190,6 +190,10 @@ class DonationExpenseService {
             } else if (accountingPeriod.startDate && accountingPeriod.endDate) {
                 query.donationDate = { $gte: accountingPeriod.startDate, $lte: accountingPeriod.endDate };
             }
+        }
+
+        if (search) {
+            query.donationName = { $regex: search, $options: "i" };
         }
 
         const total = await DonationModel.countDocuments(query);

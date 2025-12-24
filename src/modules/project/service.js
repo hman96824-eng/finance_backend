@@ -215,7 +215,7 @@ const ProService = {
     }
   },
 
-  getProjects: async (page = 1, limit = 10) => {
+  getProjects: async (page = 1, limit = 10, search = "") => {
     try {
       const skip = (Number(page) - 1) * Number(limit);
 
@@ -223,6 +223,14 @@ const ProService = {
         status: { $in: ["Pending", "Done"] },
         isDeleted: { $ne: true },
       };
+
+      if (search) {
+        query.$or = [
+          { projectName: { $regex: search, $options: "i" } },
+          { clientName: { $regex: search, $options: "i" } },
+          { projectID: { $regex: search, $options: "i" } }
+        ];
+      }
 
       const projects = await Project.find(query)
         .sort({ createdAt: -1 })
@@ -487,10 +495,18 @@ const ProService = {
     }
   },
 
-  getDeletedProjects: async (page = 1, limit = 10) => {
+  getDeletedProjects: async (page = 1, limit = 10, search) => {
     try {
       const skip = (Number(page) - 1) * Number(limit);
       const query = { status: "Deleted" };
+
+      if (search) {
+        query.$or = [
+          { projectName: { $regex: search, $options: "i" } },
+          { clientName: { $regex: search, $options: "i" } },
+          { projectManager: { $regex: search, $options: "i" } },
+        ];
+      }
 
       const deletedProjects = await ProRepo.find(query)
         .populate("banks")

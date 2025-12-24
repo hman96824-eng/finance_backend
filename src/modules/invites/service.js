@@ -13,13 +13,20 @@ const userRepo = new Repository(UserModel);
 const inviteRepo = new Repository(InviteModel);
 const roleRepo = new Repository(RoleModel);
 
-export const getAllInvitedUsers = async (acceptedFilter, page = 1, limit = 10) => {
+export const getAllInvitedUsers = async (acceptedFilter, page = 1, limit = 10, search = "") => {
   try {
     const skip = (Number(page) - 1) * Number(limit);
     let filter = {};
 
     if (acceptedFilter === "true") filter.accepted = true;
     else if (acceptedFilter === "false") filter.accepted = false;
+
+    if (search) {
+      filter.$or = [
+        { name: { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } }
+      ];
+    }
 
     const total = await InviteModel.countDocuments(filter);
     const invites = await InviteModel.find(filter)

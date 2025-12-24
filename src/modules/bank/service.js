@@ -68,17 +68,27 @@ class BankService {
     return bank;
   };
 
-  static getAllBanks = async (page = 1, limit = 10) => {
+  static getAllBanks = async (page = 1, limit = 10, search = "") => {
     const skip = (Number(page) - 1) * Number(limit);
 
+    // Build query
+    const query = {};
+    if (search) {
+      query.$or = [
+        { bankName: { $regex: search, $options: "i" } },
+        { accountTitle: { $regex: search, $options: "i" } },
+        { accountNumber: { $regex: search, $options: "i" } }
+      ];
+    }
+
     // Fetch paginated banks
-    const banks = await BankModel.find({})
+    const banks = await BankModel.find(query)
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(Number(limit));
 
     // Get total count for pagination metadata
-    const total = await BankModel.countDocuments({});
+    const total = await BankModel.countDocuments(query);
 
     return {
       banks,

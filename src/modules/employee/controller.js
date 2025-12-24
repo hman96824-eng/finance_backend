@@ -63,8 +63,8 @@ const EmpController = {
 
   getAllEmployees: async (req, res, next) => {
     try {
-      const { page = 1, limit = 10 } = req.query;
-      const data = await EmployeeService.getAllEmployees(page, limit);
+      const { page = 1, limit = 10, search } = req.query;
+      const data = await EmployeeService.getAllEmployees(page, limit, search);
       return successResponse(res, data, "Employees fetched successfully");
     } catch (error) {
       next(error);
@@ -73,8 +73,8 @@ const EmpController = {
 
   getDeletedEmployees: async (req, res, next) => {
     try {
-      const { page = 1, limit = 10 } = req.query;
-      const data = await EmployeeService.getAllDeletedEmployees(page, limit);
+      const { page = 1, limit = 10, search } = req.query;
+      const data = await EmployeeService.getAllDeletedEmployees(page, limit, search);
       return successResponse(res, data, "Deleted employees fetched successfully");
     } catch (error) {
       next(error);

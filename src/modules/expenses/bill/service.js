@@ -119,7 +119,7 @@ class BillingExpenseService {
     static deleteMany = async (ids) => {
         return await BillingRepo.deleteMany({ _id: { $in: ids } });
     };
-    static getAllExpenses = async (accountingPeriod, page = 1, limit = 10) => {
+    static getAllExpenses = async (accountingPeriod, page = 1, limit = 10, search = "") => {
         const skip = (Number(page) - 1) * Number(limit);
         const { startDate, endDate } = accountingPeriod;
         const query = { isDeleted: false };
@@ -127,6 +127,10 @@ class BillingExpenseService {
             query.accountingPeriod = accountingPeriod._id;
         } else {
             query.billDate = { $gte: startDate, $lte: endDate };
+        }
+
+        if (search) {
+            query.billName = { $regex: search, $options: "i" };
         }
 
         const total = await BillingModel.countDocuments(query);

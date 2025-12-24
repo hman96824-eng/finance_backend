@@ -127,8 +127,8 @@ const DonationExpenseController = {
                 return successResponse(res, { data: [], pagination: {} });
             }
 
-            const { page = 1, limit = 10 } = req.query;
-            const result = await DonationExpenseService.getDonationsByPeriod(accountingPeriod, page, limit);
+            const { page = 1, limit = 10, search } = req.query;
+            const result = await DonationExpenseService.getDonationsByPeriod(accountingPeriod, page, limit, search);
             return successResponse(res, result);
         } catch (err) { next(err); }
     },

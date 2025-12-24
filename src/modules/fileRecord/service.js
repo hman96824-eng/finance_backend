@@ -95,9 +95,19 @@ export const createFileRecordService = async (data, files, user) => {
   }
 };
 
-export const getAllFileRecordsService = async (page = 1, limit = 10) => {
+export const getAllFileRecordsService = async (page = 1, limit = 10, search = "") => {
   const skip = (Number(page) - 1) * Number(limit);
-  const records = await FileRecord.find()
+  const query = {};
+
+  if (search) {
+    query.$or = [
+      { title: { $regex: search, $options: "i" } },
+      { description: { $regex: search, $options: "i" } },
+      { category: { $regex: search, $options: "i" } }
+    ];
+  }
+
+  const records = await FileRecord.find(query)
     .populate([
       {
         path: "mediaFiles",
@@ -117,7 +127,7 @@ export const getAllFileRecordsService = async (page = 1, limit = 10) => {
     .skip(skip)
     .limit(Number(limit));
 
-  const total = await FileRecord.countDocuments();
+  const total = await FileRecord.countDocuments(query);
 
   return {
     records,

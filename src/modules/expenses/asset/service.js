@@ -143,7 +143,7 @@ class AssetService {
     };
 
     // ---------------- GET ----------------
-    static getAllAssets = async (accountingPeriod, page = 1, limit = 10) => {
+    static getAllAssets = async (accountingPeriod, page = 1, limit = 10, search = "") => {
         const skip = (Number(page) - 1) * Number(limit);
         const query = { isDeleted: false };
         if (accountingPeriod) {
@@ -153,6 +153,10 @@ class AssetService {
                 const { startDate, endDate } = accountingPeriod;
                 query.purchaseDate = { $gte: startDate, $lte: endDate };
             }
+        }
+
+        if (search) {
+            query.title = { $regex: search, $options: "i" };
         }
 
         const total = await Asset.countDocuments(query);

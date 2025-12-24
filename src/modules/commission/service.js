@@ -185,16 +185,21 @@ const CommissionService = {
 
 
   // GET ALL COMMISSIONS
-  getAllCommissions: async (page = 1, limit = 10) => {
+  getAllCommissions: async (page = 1, limit = 10, search = "") => {
     const skip = (Number(page) - 1) * Number(limit);
 
-    const commissions = await ProjectCommissionModel.find({})
+    const query = {};
+    if (search) {
+      query.projectName = { $regex: search, $options: "i" };
+    }
+
+    const commissions = await ProjectCommissionModel.find(query)
       .populate("projectId", "projectName projectID budgetUSD budgetPKR")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(Number(limit));
 
-    const total = await ProjectCommissionModel.countDocuments({});
+    const total = await ProjectCommissionModel.countDocuments(query);
 
     return {
       commissions,
