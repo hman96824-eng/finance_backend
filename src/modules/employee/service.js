@@ -195,10 +195,20 @@ const EmployeeService = {
     }
   },
 
-  getAllEmployees: async (page = 1, limit = 10) => {
+  getAllEmployees: async (page = 1, limit = 10, search = "") => {
     try {
       const skip = (Number(page) - 1) * Number(limit);
-      const filter = { status: { $in: ["Active", "Inactive"] } };
+
+      const filter = {
+        status: { $in: ["Active", "Inactive"] }
+      };
+
+      if (search) {
+        filter.$or = [
+          { name: { $regex: search, $options: "i" } },
+          { employeeCode: { $regex: search, $options: "i" } }
+        ];
+      }
 
       const total = await EmployeeModel.countDocuments(filter);
       const employees = await EmployeeModel.find(filter)
@@ -229,10 +239,17 @@ const EmployeeService = {
   },
 
   // 🟢 GET DELETED EMPLOYEES
-  getAllDeletedEmployees: async (page = 1, limit = 10) => {
+  getAllDeletedEmployees: async (page = 1, limit = 10, search = "") => {
     try {
       const skip = (Number(page) - 1) * Number(limit);
       const filter = { status: "Deleted" };
+
+      if (search) {
+        filter.$or = [
+          { name: { $regex: search, $options: "i" } },
+          { employeeCode: { $regex: search, $options: "i" } }
+        ];
+      }
 
       const total = await EmployeeModel.countDocuments(filter);
       const employees = await EmployeeModel.find(filter)

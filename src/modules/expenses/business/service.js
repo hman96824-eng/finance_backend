@@ -118,12 +118,16 @@ class BusinessExpenseService {
     static deleteMany = async (ids) => {
         return await BussinessRepo.deleteMany({ _id: { $in: ids } });
     };
-    static getAllExpenses = async (accountingPeriod, page = 1, limit = 10) => {
+    static getAllExpenses = async (accountingPeriod, page = 1, limit = 10, search = "") => {
         const skip = (Number(page) - 1) * Number(limit);
         const query = { isDeleted: false };
         if (accountingPeriod) {
             const { startDate, endDate } = accountingPeriod;
             query.purchaseDate = { $gte: startDate, $lte: endDate };
+        }
+
+        if (search) {
+            query.title = { $regex: search, $options: "i" };
         }
 
         const total = await BusinessModel.countDocuments(query);

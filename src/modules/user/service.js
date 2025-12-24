@@ -267,12 +267,19 @@ export const getUserById = async (id) => {
 
   return userObj;
 };
-export const getAllUsers = async (filter = {}, page = 1, limit = 10) => {
+export const getAllUsers = async (filter = {}, page = 1, limit = 10, search = "") => {
   const skip = (Number(page) - 1) * Number(limit);
   const baseFilter = {
     status: { $in: ["active", "inactive", "deleted"] },
     ...filter,
   };
+
+  if (search) {
+    baseFilter.$or = [
+      { name: { $regex: search, $options: "i" } },
+      { email: { $regex: search, $options: "i" } }
+    ];
+  }
 
   const total = await UserModel.countDocuments(baseFilter);
   const users = await UserModel.find(baseFilter)
@@ -446,10 +453,17 @@ export const toggleUserStatus = async (id) => {
     },
   };
 };
-export const getInactiveUsers = async (page = 1, limit = 10) => {
+export const getInactiveUsers = async (page = 1, limit = 10, search = "") => {
   try {
     const skip = (Number(page) - 1) * Number(limit);
     const filter = { status: "deleted" };
+
+    if (search) {
+      filter.$or = [
+        { name: { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } }
+      ];
+    }
 
     const total = await UserModel.countDocuments(filter);
     const users = await UserModel.find(filter)

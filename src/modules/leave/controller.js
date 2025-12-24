@@ -34,8 +34,8 @@ const LeaveController = {
 
     getAllLeaves: async (req, res, next) => {
         try {
-            const { page, limit } = req.query;
-            const data = await LeaveService.getAllLeaves(page, limit);
+            const { page, limit, search } = req.query;
+            const data = await LeaveService.getAllLeaves(page, limit, search);
 
             return successResponse(res, data);
         } catch (err) {

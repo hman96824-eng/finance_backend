@@ -103,8 +103,8 @@ const BillingExpenseController = {
                 return successResponse(res, { data: [], pagination: {} });
             }
 
-            const { page = 1, limit = 10 } = req.query;
-            const data = await BillingExpenseService.getAllExpenses(accountingPeriod, page, limit);
+            const { page = 1, limit = 10, search } = req.query;
+            const data = await BillingExpenseService.getAllExpenses(accountingPeriod, page, limit, search);
             return successResponse(res, data);
         } catch (err) { next(err); }
     },

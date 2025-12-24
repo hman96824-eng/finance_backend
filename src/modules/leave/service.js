@@ -190,10 +190,23 @@ const LeaveService = {
   // ======================================
   // GET ALL LEAVES (POPULATED)
   // ======================================
-  getAllLeaves: async (page = 1, limit = 10) => {
+  getAllLeaves: async (page = 1, limit = 10, search = "") => {
     try {
       const skip = (Number(page) - 1) * Number(limit);
       const query = {};
+
+      if (search) {
+        const employees = await EmployeeModel.find({
+          $or: [
+            { name: { $regex: search, $options: "i" } },
+            { email: { $regex: search, $options: "i" } },
+            { employeeCode: { $regex: search, $options: "i" } }
+          ]
+        }).select("_id");
+
+        const employeeIds = employees.map(emp => emp._id);
+        query.employeeId = { $in: employeeIds };
+      }
 
       const total = await LeaveModel.countDocuments(query);
       const leaves = await LeaveModel.find(query)

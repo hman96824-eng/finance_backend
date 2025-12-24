@@ -83,14 +83,14 @@ export const passowrdChange = async (req, res, next) => {
 
 export const getUser = async (req, res, next) => {
   try {
-    const { status, page = 1, limit = 10 } = req.query;
+    const { status, page = 1, limit = 10, search } = req.query;
     // Build filter based on query
     const filter = {};
     if (status && ["active", "inactive", "deleted"].includes(status)) {
       filter.status = status;
     }
 
-    const result = await userService.getAllUsers(filter, page, limit);
+    const result = await userService.getAllUsers(filter, page, limit, search);
 
     if (!result.users) throw ApiError.notFound(messages.USER_NOT_FOUND);
 
@@ -201,8 +201,8 @@ export const dashboard = (req, res, next) => {
 
 export const InactiveUserStatus = async (req, res, next) => {
   try {
-    const { page = 1, limit = 10 } = req.query;
-    const data = await userService.getInactiveUsers(page, limit);
+    const { page = 1, limit = 10, search } = req.query;
+    const data = await userService.getInactiveUsers(page, limit, search);
 
     return successResponse(res, data, "Inactive users fetched successfully");
   } catch (error) {

@@ -21,9 +21,9 @@ export const addFileRecord = async (req, res, next) => {
 
 export const getAllFileRecords = async (req, res, next) => {
   try {
-    const { page = 1, limit = 10 } = req.query;
-    const records = await getAllFileRecordsService(page, limit);
-    return successResponse(res, records, messages.FILES_FETCHED);
+    const { page = 1, limit = 10, search } = req.query;
+    const data = await getAllFileRecordsService(page, limit, search);
+    return successResponse(res, data, messages.FILES_FETCHED);
   } catch (error) {
     next(error);
   }

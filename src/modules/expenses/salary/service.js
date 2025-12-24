@@ -95,7 +95,7 @@ class SalaryService {
         return await SalaryExpense.deleteMany({ _id: { $in: validIds } });
     };
 
-    static getAllSalaries = async (accountingPeriod, page = 1, limit = 10) => {
+    static getAllSalaries = async (accountingPeriod, page = 1, limit = 10, search = "") => {
         const skip = (Number(page) - 1) * Number(limit);
         // Prepare search criteria
         let monthString = null;
@@ -116,6 +116,13 @@ class SalaryService {
         }
 
         const query = { isDeleted: false };
+        if (search) {
+            query.$or = [
+                { employeeName: { $regex: search, $options: "i" } },
+                { employeeId: { $regex: search, $options: "i" } }
+            ];
+        }
+
         if (monthString || periodId) {
             let filterCondition = [];
 

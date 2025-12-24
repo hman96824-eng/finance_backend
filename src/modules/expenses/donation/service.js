@@ -181,13 +181,17 @@ class DonationExpenseService {
         };
     };
 
-    static getDonationsByPeriod = async (accountingPeriod, page = 1, limit = 10) => {
+    static getDonationsByPeriod = async (accountingPeriod, page = 1, limit = 10, search = "") => {
         const skip = (Number(page) - 1) * Number(limit);
         const query = { isDeleted: false };
         if (accountingPeriod && accountingPeriod.startDate && accountingPeriod.endDate) {
             query.donationDate = { $gte: accountingPeriod.startDate, $lte: accountingPeriod.endDate };
         } else if (accountingPeriod && accountingPeriod._id) {
             query.accountingPeriod = accountingPeriod._id;
+        }
+
+        if (search) {
+            query.donationName = { $regex: search, $options: "i" };
         }
 
         const total = await DonationModel.countDocuments(query);
