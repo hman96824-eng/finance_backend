@@ -19,20 +19,20 @@ export const startPeriod = async (startDateInput, expectedEndDateInput) => {
     throw new Error(`The selected date falls within an existing ${overlapping.status} period (${overlapping.startDate.toLocaleDateString()} - ${overlapping.endDate.toLocaleDateString()}).`);
   }
 
-  // 2. Strict Chronology: Find the latest ending period to prevent any "back-dated" periods
+  // 2. Strict Chronology: Find the latest ending period to prevent any gaps
   const lastPeriod = await AccountingPeriodModel.findOne().sort({ endDate: -1 });
 
   if (lastPeriod) {
-    // Compare YYYY-MM-DD strings for strict calendar date comparison
-    const newStartStr = startDate.toISOString().split('T')[0];
-    const lastEndStr = lastPeriod.endDate.toISOString().split('T')[0];
+    const expectedStart = new Date(lastPeriod.endDate);
+    expectedStart.setDate(expectedStart.getDate() + 1);
+    expectedStart.setHours(0, 0, 0, 0);
 
-    if (newStartStr <= lastEndStr) {
-      if (newStartStr === lastEndStr) {
-        throw new Error("Cannot start a new month on the same day the previous one was closed. Please wait until tomorrow.");
-      } else {
-        throw new Error(`New months must start after the latest close month, which ended on ${lastPeriod.endDate.toLocaleDateString()}.`);
-      }
+    const providedStart = new Date(startDate);
+    providedStart.setHours(0, 0, 0, 0);
+
+    // Check if provided start date matches expected start date (next day)
+    if (providedStart.getTime() !== expectedStart.getTime()) {
+      throw new Error(`New months must start exactly on ${expectedStart.toLocaleDateString()} (the day after the last closed month). Gaps are not allowed.`);
     }
   }
 
@@ -67,13 +67,13 @@ export const closePeriod = async (endDateInput, notes = "") => {
 
   // Enforce 21-day minimum duration
   const diffInDays = Math.ceil((endDate - active.startDate) / (1000 * 60 * 60 * 24));
-  if (diffInDays < 21 ) {
+  if (diffInDays < 21) {
     throw new Error(`A month must be active for at least 21 days before it can be closed. Current duration: ${diffInDays} days.`);
   }
 
   active.endDate = endDate;
   active.status = "closed";
-  
+
   active.updatedAt = new Date();
 
   await active.save();

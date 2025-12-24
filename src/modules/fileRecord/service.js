@@ -188,9 +188,11 @@ export const updateFileRecordByIdService = async (
       // ✅ Append new files to existing array
       record.mediaFiles = [...record.mediaFiles, ...uploadedMedia];
     } catch (error) {
+      console.error("DEBUG: File update error:", error);
       // Cleanup any remaining temp files
       files.forEach((f) => fs.existsSync(f.path) && fs.unlinkSync(f.path));
-      throw ApiError.internal(error.message || "File update failed");
+      const errMsg = error.message || JSON.stringify(error);
+      throw ApiError.internal(`DEBUG: ${errMsg}`);
     }
   }
 

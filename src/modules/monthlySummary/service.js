@@ -1,4 +1,5 @@
 import { MonthlySummaryModel } from "./model.js";
+import { AccountingPeriodModel } from "../period/model.js";
 import BillingExpenseModel from "../expenses/bill/model.js";
 import DonationModel from "../expenses/donation/model.js";
 import GeneralExpense from "../expenses/general/model.js";
@@ -13,35 +14,22 @@ import mongoose from "mongoose";
  * for normalizing timezone-shifted start dates (e.g. 00:00 local becoming 19:00 previous day UTC).
  */
 const getMajorMonth = (startDate, endDate) => {
-    const counts = {};
-    let current = new Date(startDate);
+    const start = new Date(startDate);
     const end = new Date(endDate);
 
-    // Safety counter to prevent infinite loop
-    let iters = 0;
-    while (current <= end && iters < 60) {
-        iters++;
-        // Use noon to avoid edge day shifts
-        const d = new Date(current.getTime());
-        d.setUTCHours(12, 0, 0, 0);
-
-        const y = d.getUTCFullYear();
-        const m = (d.getUTCMonth() + 1).toString().padStart(2, '0');
-        const key = `${y}-${m}`;
-
-        counts[key] = (counts[key] || 0) + 1;
-        current.setUTCDate(current.getUTCDate() + 1);
+    // If years are different, or months are different
+    if (start.getMonth() !== end.getMonth() || start.getFullYear() !== end.getFullYear()) {
+        // PREFERENCE: If the period spans two months, we label it as the SECOND month (the end date's month)
+        // This aligns with user expectation that a period starting late in a month (e.g., Dec 23) is meant for the *next* month (Jan).
+        const monthNames = ["January", "February", "March", "April", "May", "June",
+            "July", "August", "September", "October", "November", "December"];
+        return `${monthNames[end.getMonth()]} ${end.getFullYear()}`;
     }
 
-    let majorKey = null;
-    let maxDays = -1;
-    for (const key in counts) {
-        if (counts[key] > maxDays) {
-            maxDays = counts[key];
-            majorKey = key;
-        }
-    }
-    return majorKey;
+    // Otherwise, standard single month logic
+    const monthNames = ["January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"];
+    return `${monthNames[start.getMonth()]} ${start.getFullYear()}`;
 };
 
 /**
@@ -55,6 +43,7 @@ export const generateMonthlySummary = async (period, notes = "") => {
 
     // Use Major Month logic to determine the key
     const monthStr = getMajorMonth(startDate, endDate);
+    console.log(`DEBUG: generating summary for period ${period._id} (${startDate} - ${endDate})`);
 
     // Helper to get Month Name Year string (e.g., "November 2025")
     const [year, month] = monthStr.split('-').map(Number);
@@ -286,11 +275,56 @@ export const getLatestClosedSummary = async () => {
 };
 
 export const getSummaryByPeriodId = async (periodId) => {
-    return await MonthlySummaryModel.findOne({ periodId });
+    // 1. Check if it's a closed summary first
+    const summary = await MonthlySummaryModel.findOne({ periodId });
+    if (summary) return summary;
+
+    // 2. If not found, check if it's a valid open period
+    const period = await AccountingPeriodModel.findById(periodId);
+    if (period && period.status === "open") {
+        // Generate live/virtual summary
+        // Note: we don't save it, just return it
+        const liveSummary = await generateMonthlySummary(period, "Active Period - Live Data");
+        return {
+            ...liveSummary,
+            _id: `active-${period._id}`, // Virtual ID
+            locked: false,
+            isVirtual: true
+        };
+    }
+
+    return null;
 };
 
 export const getAllSummaries = async () => {
-    return await MonthlySummaryModel.find({})
+    // 1. Get all saved summaries
+    const summaries = await MonthlySummaryModel.find({})
         .populate("periodId")
         .sort({ month: -1 });
+
+    // 2. Check for an active period
+    const activePeriod = await AccountingPeriodModel.findOne({ status: "open" }).lean();
+
+    if (activePeriod) {
+        // Check if a summary already exists for this active period
+        const hasSummary = summaries.some(s => s.periodId?._id?.toString() === activePeriod._id.toString());
+
+        if (!hasSummary) {
+            // Create a "virtual" summary for the active period
+            const monthStr = getMajorMonth(activePeriod.startDate, activePeriod.endDate);
+            const virtualSummary = {
+                _id: `active-${activePeriod._id}`,
+                periodId: activePeriod,
+                month: monthStr,
+                totals: {
+                    overallTotal: 0 // We don't calculate live totals here for performance
+                },
+                locked: false,
+                isVirtual: true
+            };
+            return [virtualSummary, ...summaries];
+        }
+    }
+
+    return summaries;
 };

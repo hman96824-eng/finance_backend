@@ -26,12 +26,18 @@ export const uploadMedia = async (filePath, folder = "uploads", uploadedBy = nul
             uploadedBy,
         });
 
-        // delete temp file
-        if (filePath && fs.existsSync(filePath)) await fs.promises.unlink(filePath);
-
-        return media; // return full doc (you’ll get media._id)
+        return media;
     } catch (error) {
         throw ApiError.internal(error.message || messages.MEDIA_UPLOAD_FAILED);
+    } finally {
+        // Always delete temp file if it exists
+        if (filePath && fs.existsSync(filePath)) {
+            try {
+                await fs.promises.unlink(filePath);
+            } catch (unlinkError) {
+                console.error("Cleanup failed for temp file:", filePath, unlinkError.message);
+            }
+        }
     }
 };
 

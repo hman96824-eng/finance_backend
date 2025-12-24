@@ -122,8 +122,12 @@ class BusinessExpenseService {
         const skip = (Number(page) - 1) * Number(limit);
         const query = { isDeleted: false };
         if (accountingPeriod) {
-            const { startDate, endDate } = accountingPeriod;
-            query.purchaseDate = { $gte: startDate, $lte: endDate };
+            if (accountingPeriod._id) {
+                query.accountingPeriod = accountingPeriod._id;
+            } else {
+                const { startDate, endDate } = accountingPeriod;
+                query.purchaseDate = { $gte: startDate, $lte: endDate };
+            }
         }
 
         const total = await BusinessModel.countDocuments(query);

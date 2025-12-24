@@ -120,11 +120,19 @@ class SalaryService {
             let filterCondition = [];
 
             if (periodId) {
+                // 1. Strict match by ID
                 filterCondition.push({ $eq: ["$$s.accountingPeriod", new mongoose.Types.ObjectId(periodId)] });
             }
 
             if (monthString && verboseMonth) {
-                filterCondition.push({ $eq: ["$$s.salaryMonth", verboseMonth] });
+                // 2. Fallback: Match by month string, BUT ONLY IF accountingPeriod is missing
+                // This prevents matching records that belong to a DIFFERENT period in the same month
+                filterCondition.push({
+                    $and: [
+                        { $eq: [{ $type: "$$s.accountingPeriod" }, "missing"] }, // Ensure period ID is missing
+                        { $eq: ["$$s.salaryMonth", verboseMonth] }
+                    ]
+                });
             }
 
             const aggregationPipeline = [

@@ -114,8 +114,13 @@ class GeneralExpenseService {
         const skip = (Number(page) - 1) * Number(limit);
         const query = { isDeleted: false };
         if (accountingPeriod) {
-            const { startDate, endDate } = accountingPeriod;
-            query.purchaseDate = { $gte: startDate, $lte: endDate };
+            if (accountingPeriod._id) {
+                query.accountingPeriod = accountingPeriod._id;
+            } else {
+                // Fallback for cases without _id (shouldn't happen with middleware)
+                const { startDate, endDate } = accountingPeriod;
+                query.purchaseDate = { $gte: startDate, $lte: endDate };
+            }
         }
 
         const total = await GeneralExpenseModel.countDocuments(query);

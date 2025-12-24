@@ -122,7 +122,12 @@ class BillingExpenseService {
     static getAllExpenses = async (accountingPeriod, page = 1, limit = 10) => {
         const skip = (Number(page) - 1) * Number(limit);
         const { startDate, endDate } = accountingPeriod;
-        const query = { isDeleted: false, billDate: { $gte: startDate, $lte: endDate } };
+        const query = { isDeleted: false };
+        if (accountingPeriod._id) {
+            query.accountingPeriod = accountingPeriod._id;
+        } else {
+            query.billDate = { $gte: startDate, $lte: endDate };
+        }
 
         const total = await BillingModel.countDocuments(query);
         const expenses = await BillingModel.find(query)

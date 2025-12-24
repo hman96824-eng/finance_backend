@@ -17,9 +17,28 @@ export const validateExpenseDate = async (dateInput, dateFieldName = "Date", isM
 
     const inputDate = new Date(dateInput);
     const startDate = new Date(activePeriod.startDate);
+    const today = new Date();
 
     inputDate.setHours(0, 0, 0, 0);
     startDate.setHours(0, 0, 0, 0);
+    today.setHours(0, 0, 0, 0);
+
+    // 1. Future date check
+    if (inputDate > today) {
+        throw ApiError.badRequest(
+            `Expense ${dateFieldName} (${inputDate.toLocaleDateString()}) cannot be a future date.`
+        );
+    }
+
+    // 2. 31-day limit check (Duration of the month)
+    const diffTime = Math.abs(today - startDate);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays > 31) {
+        throw ApiError.badRequest(
+            `This month has already reached its 31-day limit (${diffDays} days). No more data can be added. Please close this month.`
+        );
+    }
 
     if (isMonthOnly) {
         // Compare year and month only
@@ -35,10 +54,8 @@ export const validateExpenseDate = async (dateInput, dateFieldName = "Date", isM
     }
 
     if (inputDate < startDate) {
-
         throw ApiError.badRequest(
             `Expense ${dateFieldName} (${inputDate.toLocaleDateString()}) cannot be before the active month start date (${startDate.toLocaleDateString()}).`
         );
     }
 };
- 

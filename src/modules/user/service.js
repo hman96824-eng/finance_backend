@@ -541,12 +541,18 @@ export const uploadProfileImage = async (req, res, next) => {
     };
     await user.save();
 
-    // Remove temp file
-    fs.unlinkSync(req.file.path);
-
     res.json({ message: "Profile image updated", avatar: user.avatar });
   } catch (err) {
     next(err);
+  } finally {
+    // Ensure temp file is removed
+    if (req.file?.path && fs.existsSync(req.file.path)) {
+      try {
+        fs.unlinkSync(req.file.path);
+      } catch (unlinkError) {
+        console.error("Failed to delete temp profile image:", req.file.path, unlinkError.message);
+      }
+    }
   }
 };
 export const removeProfileImage = async (req, res, next) => {
