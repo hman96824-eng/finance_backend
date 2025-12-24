@@ -19,14 +19,14 @@ export const generateTeamInviteTemplate = (token, role, email, name) => {
   const plainText = `
 Hello,
 
-You’ve been invited to join Onu as a ${role}!
+You’ve been invited to join invextechas a ${role}!
 
 Click the link below to accept your invitation (valid for 24 hours):
 ${inviteUrl}
 
 If you didn’t expect this invitation, please ignore this email.
 
-— The Onu Team
+— The invextechTeam
 `;
 
   const html = `<!DOCTYPE html>
@@ -35,7 +35,7 @@ If you didn’t expect this invitation, please ignore this email.
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="x-apple-disable-message-reformatting" />
-  <meta name="description" content="Onu Invitation Email" />
+  <meta name="description" content="invextechInvitation Email" />
   <title>You're Invited to Onu</title>
 </head>
 <body style="margin:0;padding:0;background-color:#f4f6f8;font-family:Arial, sans-serif;line-height:1.6;">
@@ -45,10 +45,10 @@ If you didn’t expect this invitation, please ignore this email.
       <tbody>
         <tr>
           <td align="center" style="padding:24px 16px">
-            <img src="https://onu.ai/wp-content/uploads/2024/03/onu-logo-blue-300-min.png"
-              alt="Onu Team Logo" width="120" style="border:none;margin-bottom:12px;">
+            <img src="https://60mmmfp5nx.ucarecd.net/caef637e-72da-4b3f-b987-3ac4570ed3ae/-/preview/200x200/"
+              alt="Invextech Team Logo" width="80" style="border:none;margin-bottom:12px;">
             <h2 style="margin:8px 0 0;font-size:22px;font-weight:600;color:#003366;">
-              You’re Invited to Join Onu
+              You’re Invited to Join Invextech Team!
             </h2>
           </td>
         </tr>
@@ -89,7 +89,7 @@ If you didn’t expect this invitation, please ignore this email.
                     <p style="margin-top:16px;color:#555;text-align:center;font-size:14px;">
                       Didn’t expect this email? You can safely ignore it.
                     </p>
-                    <p style="margin:10px 0;color:#555;text-align:center;">Best regards,<br>The Onu Team</p>
+                    <p style="margin:10px 0;color:#555;text-align:center;">Best regards,<br>The Invextech Team</p>
                   </td>
                 </tr>
               </tbody>
@@ -100,7 +100,7 @@ If you didn’t expect this invitation, please ignore this email.
     </table>
 
     <p style="margin:16px 0;color:#6a737d;font-size:13px;text-align:center;">
-      You received this email because an administrator at Onu sent you an invitation.<br>
+      You received this email because an administrator at invextechsent you an invitation.<br>
       If you believe this was a mistake, please contact us at
       <a href="mailto:support@onu.ai" style="color:#0070f3;">support@onu.ai</a>
     </p>
@@ -136,8 +136,8 @@ export const generateEmailVerificationTemplate = (token) => {
                                 <tr>
                                     <td style="padding:24px">
                                         <h3 style="    text-align: center;
-                                        font-size:20px;font-weight:600;line-height:1.25!important; color :#24292f !important">Onu account verification</h3>
-                                        <p style="margin-top:0;margin-bottom:10px">We've noticed that you need to verify your Onu account. No worries, we've got you covered!</p>
+                                        font-size:20px;font-weight:600;line-height:1.25!important; color :#24292f !important">invextechaccount verification</h3>
+                                        <p style="margin-top:0;margin-bottom:10px">We've noticed that you need to verify your invextechaccount. No worries, we've got you covered!</p>
                                         <p style="margin-top:0;margin-bottom:10px">Simply click the button below to verify your account:</p>
                                         <table border="0" cellspacing="0" cellpadding="0" align="center" style="margin-bottom: 33px; margin-top:20px;">
                                             <tbody>
@@ -149,7 +149,7 @@ export const generateEmailVerificationTemplate = (token) => {
                                             </tbody>
                                         </table>
                                         <p style="margin-top:0;margin-bottom:10px">If you don’t verify your account within 3 hours, the link will expire. You can request a new verification link by visiting: <a style=" color:#723BFF !important" href="${config.frontEndUrl}auth/verify-email-resend" target="_blank">${config.frontEndUrl}verify-email</a></p>
-                                        <p style="margin-top:0;margin-bottom:10px">Thanks,<br>The Onu Team</p>
+                                        <p style="margin-top:0;margin-bottom:10px">Thanks,<br>The invextechTeam</p>
                                     </td>
                                 </tr>
                             </tbody>
@@ -162,7 +162,7 @@ export const generateEmailVerificationTemplate = (token) => {
             <tbody>
                 <tr>
                     <td style="padding:16px">
-                        <p style="margin-top:0;margin-bottom:10px;color:#6a737d!important;font-size:14px!important;">You're receiving this email because a verification for your Onu account was requested.</p>
+                        <p style="margin-top:0;margin-bottom:10px;color:#6a737d!important;font-size:14px!important;">You're receiving this email because a verification for your invextechaccount was requested.</p>
                     </td>
                 </tr>
             </tbody>
@@ -197,8 +197,8 @@ export const generateForgotEmailTemplate = (token) => {
                                 <tr>
                                     <td style="padding:24px">
                                         <h3 style="    text-align: center;
-                                        font-size:20px;font-weight:600;line-height:1.25!important; color :#24292f !important">Onu password reset</h3>
-                                        <p style="margin-top:0;margin-bottom:10px">We've noticed that you need to reset your Onu account password. No worries, we've got you covered!</p>
+                                        font-size:20px;font-weight:600;line-height:1.25!important; color :#24292f !important">invextechpassword reset</h3>
+                                        <p style="margin-top:0;margin-bottom:10px">We've noticed that you need to reset your invextechaccount password. No worries, we've got you covered!</p>
                                         <p style="margin-top:0;margin-bottom:10px">Simply click the button below to reset your password</p>
                                         <table border="0" cellspacing="0" cellpadding="0" align="center" style="margin-bottom: 33px; margin-top:20px;">
                                             <tbody>
@@ -210,7 +210,7 @@ export const generateForgotEmailTemplate = (token) => {
                                             </tbody>
                                         </table>
                                         <p style="margin-top:0;margin-bottom:10px">If you don’t forgot your password within 3 hours, the link will expire. You can request a new reset link by visiting: <a style=" color:#723BFF !important" href="${config.frontEndUrl}auth/password-reset-resend-email" target="_blank">${config.frontEndUrl}auth/password-reset-resend-email</a></p>
-                                        <p style="margin-top:0;margin-bottom:10px">Thanks,<br>The Onu Team</p>
+                                        <p style="margin-top:0;margin-bottom:10px">Thanks,<br>The invextechTeam</p>
                                     </td>
                                 </tr>
                             </tbody>
@@ -223,7 +223,7 @@ export const generateForgotEmailTemplate = (token) => {
             <tbody>
                 <tr>
                     <td style="padding:16px">
-                        <p style="margin-top:0;margin-bottom:10px;color:#6a737d!important;font-size:14px!important;">You're receiving this email because a verification for your Onu account was requested.</p>
+                        <p style="margin-top:0;margin-bottom:10px;color:#6a737d!important;font-size:14px!important;">You're receiving this email because a verification for your invextechaccount was requested.</p>
                     </td>
                 </tr>
             </tbody>
@@ -258,8 +258,8 @@ export const generateTeamEmailTemplate = (token) => {
                                 <tr>
                                     <td style="padding:24px">
                                         <h3 style="    text-align: center;
-                                        font-size:20px;font-weight:600;line-height:1.25!important; color :#24292f !important">Onu account invitaion</h3>
-                                        <p style="margin-top:0;margin-bottom:10px">You're just a step away from exploring all the amazing features Onu has to offer.</p>
+                                        font-size:20px;font-weight:600;line-height:1.25!important; color :#24292f !important">invextechaccount invitaion</h3>
+                                        <p style="margin-top:0;margin-bottom:10px">You're just a step away from exploring all the amazing features invextechhas to offer.</p>
                                         <p style="margin-top:0;margin-bottom:10px">Simply click the button below to accept your invitation:</p>
                                         <table border="0" cellspacing="0" cellpadding="0" align="center" style="margin-bottom: 33px; margin-top:20px;">
                                             <tbody>
@@ -271,7 +271,7 @@ export const generateTeamEmailTemplate = (token) => {
                                             </tbody>
                                         </table>
                                         <p style="margin-top:0;margin-bottom:10px">If you fail to verify your account within 3 hours, the link will expire. Please reach out to your company administrator for assistance. </p>
-                                        <p style="margin-top:0;margin-bottom:10px">Thanks,<br>The Onu Team</p>
+                                        <p style="margin-top:0;margin-bottom:10px">Thanks,<br>The invextechTeam</p>
                                     </td>
                                 </tr>
                             </tbody>
@@ -284,7 +284,7 @@ export const generateTeamEmailTemplate = (token) => {
             <tbody>
                 <tr>
                     <td style="padding:16px">
-                        <p style="margin-top:0;margin-bottom:10px;color:#6a737d!important;font-size:14px!important;">You're receiving this email because an invitation to join Onu has been sent to you.</p>
+                        <p style="margin-top:0;margin-bottom:10px;color:#6a737d!important;font-size:14px!important;">You're receiving this email because an invitation to join invextechhas been sent to you.</p>
                     </td>
                 </tr>
             </tbody>

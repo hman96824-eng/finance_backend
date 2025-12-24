@@ -6,8 +6,6 @@ const SalaryController = {
     createSalary: async (req, res, next) => {
         try {
             const userId = req.user.id;
-
-            // 1. Get Active Accounting Period
             const activePeriod = await AccountingPeriodModel.findOne({ status: "open" });
             if (!activePeriod) {
                 return res.status(404).json({ message: "No active month found" });
@@ -61,6 +59,44 @@ const SalaryController = {
             const data = await SalaryService.getSalaryById(req.params.id);
             return successResponse(res, data);
         } catch (err) { next(err); }
+    },
+
+    getSalaryByEmployee: async (req, res, next) => {
+        try {
+            // Can accept employeeId or email
+            const identifier = req.params.identifier;
+            const data = await SalaryService.getSalaryByEmployee(identifier);
+            return successResponse(res, data, "Salary records retrieved successfully");
+        } catch (err) { next(err); }
+    },
+
+    getMySalaryInfo: async (req, res, next) => {
+        try {
+            console.log('🎯 Controller: getMySalaryInfo called');
+            console.log('📧 User email from token:', req.user?.email);
+            console.log('🔢 Query params:', req.query);
+            
+            // Get employeeId from query params (optional)
+            const employeeId = req.query.employeeId;
+            
+            // Get email from query params or from JWT token
+            const emailFromQuery = req.query.email;
+            const userEmail = emailFromQuery || req.user?.email;
+            
+            console.log('🔍 Final search params:', { employeeId, userEmail });
+
+            if (!employeeId && !userEmail) {
+                return res.status(400).json({ 
+                    message: "Employee ID or email is required" 
+                });
+            }
+
+            const data = await SalaryService.getMySalaryInfo(employeeId, userEmail);
+            return successResponse(res, data, "Salary information retrieved successfully");
+        } catch (err) { 
+            console.error('❌ Controller Error:', err);
+            next(err); 
+        }
     }
 };
 

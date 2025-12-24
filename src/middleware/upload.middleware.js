@@ -56,4 +56,7 @@ const upload = multer({
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB max
 });
 
+// Export for single file upload with field name "file"
+export const uploadSingle = upload.single("file");
+
 export default upload;

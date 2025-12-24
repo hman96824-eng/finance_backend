@@ -20,5 +20,7 @@ router
     .delete("/delete-many", middleware.authenticate, validate(validation.deleteManySchema), SalaryController.deleteManySalary)
 
     .get("/all", middleware.authenticate, accountingPeriodMiddleware, SalaryController.getAllSalaries)
+    .get("/my-salary-info", middleware.authenticate, SalaryController.getMySalaryInfo)
+    .get("/employee/:identifier", middleware.authenticate, SalaryController.getSalaryByEmployee)
     .get("/:id", middleware.authenticate, SalaryController.getSalaryById)
 export default router;

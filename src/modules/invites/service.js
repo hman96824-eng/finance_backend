@@ -80,7 +80,7 @@ export const createInvite = async (name, email, roleName) => {
 
   await sendEmail({
     to: email,
-    subject: `Invitation to join Onu as ${role.name}`,
+    subject: `Invitation to join Invextech as ${role.name}`,
     html,
     text: plainText,
   });
