@@ -122,7 +122,7 @@ const LeaveService = {
       throw new AppError("Admin cannot create leave requests. Only users can request leaves.", 403);
     }
     let finalEmployeeId = employeeId;
-    
+
     if (!finalEmployeeId && userEmail) {
       const employee = await EmployeeModel.findOne({ email: userEmail });
       if (!employee) {
@@ -154,12 +154,12 @@ const LeaveService = {
         lastResetYear: new Date().getFullYear()
       });
     }
-   checkAndResetAnnualLeave(leaveRecord);
+    checkAndResetAnnualLeave(leaveRecord);
 
- 
+
     const leaveMonth = new Date(startDate).toISOString().slice(0, 7);
     const leavesInMonth = countLeavesInMonth(leaveRecord.leaves, leaveMonth);
-    
+
     if (leavesInMonth >= 2) {
       throw new AppError("Maximum 2 leaves allowed per month", 400);
     }
@@ -316,14 +316,14 @@ const LeaveService = {
   getMyLeaveInfo: async (employeeId, userEmail) => {
     try {
       console.log('🔎 Service: Finding employee with:', { employeeId, userEmail });
-      
+
       let finalEmployeeId = employeeId;
 
       // If no employeeId provided, find by user's email
       if (!finalEmployeeId && userEmail) {
         const employee = await EmployeeModel.findOne({ email: userEmail });
         console.log('👨‍💼 Found employee by email:', employee ? 'Yes' : 'No');
-        
+
         if (!employee) {
           throw new AppError(
             `Employee record not found for email: ${userEmail}. Please contact admin to create your employee profile first.`,
@@ -338,9 +338,8 @@ const LeaveService = {
       }
 
       console.log('🆔 Final employeeId:', finalEmployeeId);
-
       let leaveRecord = await LeaveModel.findOne({ employeeId: finalEmployeeId })
-        .populate("employeeId", "name email phone cnic employeeCode")
+        .populate("employeeId", "name email phone cnic employeeCode department")
         .populate("leaves.createdBy", "name")
         .populate("leaves.approvedBy", "name")
         .populate("leaves.noteBy", "name");
@@ -357,9 +356,9 @@ const LeaveService = {
           annualLeaveBalance: 18,
           lastResetYear: new Date().getFullYear()
         });
-        
+
         leaveRecord = await LeaveModel.findById(leaveRecord._id)
-          .populate("employeeId", "name email phone cnic employeeCode")
+          .populate("employeeId", "name email phone cnic employeeCode department")
           .populate("leaves.createdBy", "name")
           .populate("leaves.approvedBy", "name")
           .populate("leaves.noteBy", "name");
@@ -385,7 +384,7 @@ const LeaveService = {
         annualLeaveBalance: leaveRecord.annualLeaveBalance,
         totalAnnualLeave: 18,
         lastResetYear: leaveRecord.lastResetYear,
-        
+
         // Leave counts for quick overview
         leaveCounts: {
           pending: pendingLeaves.length,
@@ -394,7 +393,7 @@ const LeaveService = {
           pendingDays: pendingDays,
           approvedDays: approvedDays
         },
-        
+
         pendingLeaves,
         approvedLeaves,
         rejectedLeaves,
