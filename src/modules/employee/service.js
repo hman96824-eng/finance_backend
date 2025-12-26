@@ -276,6 +276,7 @@ const EmployeeService = {
   getEmployeeById: async (id) => {
     try {
       const employee = await EmployeeModel.findById(id).populate("avatar");
+      console.log("employee", employee);
       if (!employee) throw ApiError.notFound("Employee not found");
       return employee;
     } catch (error) {
