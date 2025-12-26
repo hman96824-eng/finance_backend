@@ -25,7 +25,7 @@ router.get(
 
 // Get all feedback (Admin only)
 router.get(
-  "/allfeedback",
+  "/",
   middleware.authenticate,
   checkPermission(["view_feedback"]), // Admin permission
   feedbackController.getAllFeedback

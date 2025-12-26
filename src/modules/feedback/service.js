@@ -55,7 +55,7 @@ export const createFeedback = async (feedbackData, userId, filePath = null) => {
         }
         throw ApiError.badRequest("Failed to upload attachment");
       }
-    } 
+    }
     // Handle URL attachment
     else if (feedbackData.file && typeof feedbackData.file === "string") {
       attachmentUrl = feedbackData.file;
@@ -95,7 +95,10 @@ export const createFeedback = async (feedbackData, userId, filePath = null) => {
 /**
  * Get all feedback (Admin only)
  */
-export const getAllFeedback = async (filters = {}) => {
+/**
+ * Get all feedback (Admin only)
+ */
+export const getAllFeedback = async (filters = {}, page = 1, limit = 10, search = "") => {
   try {
     const { status, startDate, endDate, senderRole } = filters;
 
@@ -116,6 +119,19 @@ export const getAllFeedback = async (filters = {}) => {
       if (endDate) query.createdAt.$lte = new Date(endDate);
     }
 
+    // Add search functionality
+    if (search) {
+      query.$or = [
+        { firstName: { $regex: search, $options: "i" } },
+        { lastName: { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } },
+      ];
+    }
+
+    const skip = (Number(page) - 1) * Number(limit);
+
+    const total = await feedbackRepo.countDocuments(query);
+
     const feedbacks = await feedbackRepo.findWithPopulate(
       query,
       [
@@ -128,10 +144,12 @@ export const getAllFeedback = async (filters = {}) => {
           },
         },
       ],
-      { createdAt: -1 } // Sort by newest first
+      { createdAt: -1 }, // Sort by newest first
+      skip,
+      Number(limit)
     );
 
-    return feedbacks.map((feedback) => ({
+    const data = feedbacks.map((feedback) => ({
       _id: feedback._id,
       firstName: feedback.firstName,
       lastName: feedback.lastName,
@@ -151,6 +169,16 @@ export const getAllFeedback = async (filters = {}) => {
       createdAt: feedback.createdAt,
       updatedAt: feedback.updatedAt,
     }));
+
+    return {
+      data,
+      pagination: {
+        total,
+        currentPage: Number(page),
+        totalPages: Math.ceil(total / Number(limit)),
+        pageSize: Number(limit),
+      }
+    };
   } catch (error) {
     throw error;
   }

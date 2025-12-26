@@ -64,26 +64,29 @@ export const submitFeedback = async (req, res, next) => {
  */
 export const getAllFeedback = async (req, res, next) => {
   try {
-    let { status, startDate, endDate, senderRole } = req.query;
+    const { status, startDate, endDate, senderRole, page, limit, search } = req.query;
 
     // Convert "All" or empty strings to undefined so service ignores filter
+    let processedStatus = status;
     if (!status || status.toLowerCase() === "all") {
-      status = undefined;
+      processedStatus = undefined;
     }
+
+    let processedSenderRole = senderRole;
     if (!senderRole || senderRole.toLowerCase() === "all") {
-      senderRole = undefined;
+      processedSenderRole = undefined;
     }
 
     const filters = {};
-    if (status) filters.status = status;
-    if (senderRole) filters.senderRole = senderRole;
+    if (processedStatus) filters.status = processedStatus;
+    if (processedSenderRole) filters.senderRole = processedSenderRole;
     if (startDate || endDate) {
       filters.createdAt = {};
       if (startDate) filters.createdAt.$gte = new Date(startDate);
       if (endDate) filters.createdAt.$lte = new Date(endDate);
     }
 
-    const result = await feedbackService.getAllFeedback(filters);
+    const result = await feedbackService.getAllFeedback(filters, page, limit, search);
 
     return successResponse(res, result, "Feedback retrieved successfully", 200);
   } catch (error) {

@@ -121,6 +121,10 @@ export default class Repository {
     return this.model.countDocuments(query);
   }
 
+  async countDocuments(query = {}) {
+    return this.count(query);
+  }
+
   // ========================
   // 🟠 UPDATE
   // ========================
@@ -302,9 +306,11 @@ export default class Repository {
     return this.model.findById(id).populate(populateFields).exec();
   }
 
-  // Keeping the old methods for backward compatibility
-  async findWithPopulate(query = {}, populateField, selectFields = "") {
-    return this.findAndPopulate(query, populateField, { sort: { updatedAt: 1 } });
+  async findWithPopulate(query = {}, populateField, sort = { updatedAt: 1 }, skip = 0, limit = 0) {
+    const options = { sort };
+    if (skip) options.skip = skip;
+    if (limit) options.limit = limit;
+    return this.findAndPopulate(query, populateField, options);
   }
 
   async findOneWithPopulate(query = {}, populateField, selectFields = "") {
