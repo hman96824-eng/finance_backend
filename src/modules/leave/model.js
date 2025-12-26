@@ -11,6 +11,9 @@ const LeaveEntrySchema = new mongoose.Schema(
     approvedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
     totalDays: { type: Number, required: true },
     attachment: { type: mongoose.Schema.Types.Mixed, default: null }, // Accept both String and Object
+    note: { type: String, default: null }, // Admin note for status change
+    noteBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null }, // Admin who added the note
+    noteAt: { type: Date, default: null }, // When the note was added
   },
   { _id: true }
 );

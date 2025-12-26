@@ -191,7 +191,8 @@ const LeaveService = {
     const result = await LeaveModel.findById(leaveRecord._id)
       .populate("employeeId")
       .populate("leaves.createdBy", "name")
-      .populate("leaves.approvedBy", "name");
+      .populate("leaves.approvedBy", "name")
+      .populate("leaves.noteBy", "name");
 
     // Calculate pending days (not yet in history since not approved)
     const pendingDays = result.leaves
@@ -227,6 +228,13 @@ const LeaveService = {
           ? payload.approvedBy || payload.updatedBy || leave.approvedBy
           : null;
 
+      // Add note if provided
+      if (payload.note) {
+        leave.note = payload.note;
+        leave.noteBy = payload.updatedBy;
+        leave.noteAt = new Date();
+      }
+
       // Handle annual leave balance based on status change
       checkAndResetAnnualLeave(leaveRecord);
 
@@ -248,6 +256,10 @@ const LeaveService = {
     await leaveRecord.save();
 
     return await LeaveModel.findById(leaveRecord._id)
+      .populate("employeeId")
+      .populate("leaves.createdBy", "name")
+      .populate("leaves.approvedBy", "name")
+      .populate("leaves.noteBy", "name")
       .populate("employeeId")
       .populate("leaves.createdBy", "name")
       .populate("leaves.approvedBy", "name");
@@ -279,6 +291,7 @@ const LeaveService = {
         .populate("employeeId", "name email phone cnic employeeCode employeeType designation department")
         .populate("leaves.createdBy", "name")
         .populate("leaves.approvedBy", "name")
+        .populate("leaves.noteBy", "name")
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(Number(limit));
@@ -329,7 +342,8 @@ const LeaveService = {
       let leaveRecord = await LeaveModel.findOne({ employeeId: finalEmployeeId })
         .populate("employeeId", "name email phone cnic employeeCode")
         .populate("leaves.createdBy", "name")
-        .populate("leaves.approvedBy", "name");
+        .populate("leaves.approvedBy", "name")
+        .populate("leaves.noteBy", "name");
 
       console.log('📋 Found leave record:', leaveRecord ? 'Yes' : 'No');
 
@@ -347,7 +361,8 @@ const LeaveService = {
         leaveRecord = await LeaveModel.findById(leaveRecord._id)
           .populate("employeeId", "name email phone cnic employeeCode")
           .populate("leaves.createdBy", "name")
-          .populate("leaves.approvedBy", "name");
+          .populate("leaves.approvedBy", "name")
+          .populate("leaves.noteBy", "name");
       }
 
       // Check and reset if new year
@@ -402,7 +417,8 @@ const LeaveService = {
     const doc = await LeaveModel.findById(id)
       .populate("employeeId", "name email")
       .populate("leaves.createdBy", "name")
-      .populate("leaves.approvedBy", "name");
+      .populate("leaves.approvedBy", "name")
+      .populate("leaves.noteBy", "name");
 
     if (doc) return { type: "document", data: doc };
 
@@ -410,7 +426,8 @@ const LeaveService = {
     const leaveRecord = await LeaveModel.findOne({ "leaves._id": id })
       .populate("employeeId", "name email")
       .populate("leaves.createdBy", "name")
-      .populate("leaves.approvedBy", "name");
+      .populate("leaves.approvedBy", "name")
+      .populate("leaves.noteBy", "name");
 
     if (!leaveRecord) throw new AppError("Leave not found", 404);
 
@@ -420,7 +437,7 @@ const LeaveService = {
       data: leaveRecord.leaves.id(id)
     };
   },
-  deleteLeave: async (ids) => {
+  deleteLeave: async (ids, userEmail, userRole) => {
     try {
       if (!Array.isArray(ids) || ids.length === 0) {
         throw new AppError("Please provide an array of IDs", 400);
@@ -429,12 +446,22 @@ const LeaveService = {
       const invalid = ids.filter(id => !id.match(/^[0-9a-fA-F]{24}$/));
       if (invalid.length) throw new AppError("Invalid IDs provided", 400);
 
+      const isAdmin = userRole === "ADMIN" || userRole === "Admin";
+
       let deletedDocs = 0;
       let deletedLeaves = 0;
 
       // Delete full docs
       const docs = await LeaveModel.find({ _id: { $in: ids } });
       for (const doc of docs) {
+        // Check permission: users can only delete their own leaves
+        if (!isAdmin) {
+          const employee = await EmployeeModel.findById(doc.employeeId);
+          if (!employee || String(employee.email).toLowerCase() !== String(userEmail).toLowerCase()) {
+            throw new AppError("You can only delete your own leave records", 403);
+          }
+        }
+
          for (const leave of doc.leaves) {
           if (leave.attachment) {
             if (typeof leave.attachment === 'object' && leave.attachment.publicId) {
@@ -461,6 +488,14 @@ const LeaveService = {
         });
 
         for (const record of records) {
+          // Check permission for individual leave entries
+          if (!isAdmin) {
+            const employee = await EmployeeModel.findById(record.employeeId);
+            if (!employee || String(employee.email).toLowerCase() !== String(userEmail).toLowerCase()) {
+              throw new AppError("You can only delete your own leave records", 403);
+            }
+          }
+
           for (const id of remaining) {
             const leave = record.leaves.id(id);
             if (leave) {

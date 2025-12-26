@@ -111,7 +111,10 @@ const LeaveController = {
     deleteLeave: async (req, res, next) => {
         try {
             const ids = req.body.ids || [req.params.leaveId];
-            const data = await LeaveService.deleteLeave(ids);
+            const userEmail = req.user.email;
+            const userRole = req.user.role;
+            
+            const data = await LeaveService.deleteLeave(ids, userEmail, userRole);
 
             return successResponse(res, data, "Leave(s) deleted");
         } catch (err) {
