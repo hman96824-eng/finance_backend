@@ -21,9 +21,9 @@ export const refreshToken = async (req, res) => {
 
     const tokens = await userService.refreshAccessToken(refreshToken);
 
-    successResponse(res, tokens, "new access token ");
+    return successResponse(res, tokens, "Access token refreshed successfully");
   } catch (error) {
-    errorResponse(res, 401, error.message);
+    return errorResponse(res, 401, error.message);
   }
 };
 export const signup = async (req, res, next) => {
