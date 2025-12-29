@@ -8,8 +8,6 @@ const LeaveController = {
             const createdBy = req.user.id;
             const userEmail = req.user.email; // From JWT token
             const isAdminCreating = req.user.role === "ADMIN" || req.user.role === "Admin";
-            
-            // Get attachment from Cloudinary upload OR from body (URL string)
             let attachment = null;
             
             if (req.cloudinaryFile) {
@@ -39,8 +37,8 @@ const LeaveController = {
                 isAdminCreating,
                 attachment 
             };
-
-            const data = await LeaveService.createLeave(payload);
+        const data = await LeaveService.createLeave(payload);
+        console.log('📝 Leave created:', data);
 
             return successResponse(res, data, "Leave request created successfully");
         } catch (err) {
