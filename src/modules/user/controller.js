@@ -19,11 +19,11 @@ export const refreshToken = async (req, res) => {
   try {
     const { refreshToken } = req.body;
 
-    const accessToken = await userService.refreshAccessToken(refreshToken);
+    const tokens = await userService.refreshAccessToken(refreshToken);
 
-    successResponse(res, accessToken, "new access token ");
+    successResponse(res, tokens, "new access token ");
   } catch (error) {
-    errorResponse(res, 400, error.message);
+    errorResponse(res, 401, error.message);
   }
 };
 export const signup = async (req, res, next) => {

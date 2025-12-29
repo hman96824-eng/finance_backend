@@ -116,8 +116,12 @@ export const refreshAccessToken = async (refreshToken) => {
   };
 
   const newAccessToken = jwt.generateToken(payload);
+  const newRefreshToken = jwt.generateRefreshToken(payload);
 
-  return newAccessToken;
+  return {
+    accessToken: newAccessToken,
+    refreshToken: newRefreshToken
+  };
 };
 export const signup = async ({
   name,
