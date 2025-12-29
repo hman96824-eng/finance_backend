@@ -293,29 +293,50 @@ export const getUserFeedback = async (userId) => {
 /**
  * Delete feedback (Admin only)
  */
-export const deleteFeedback = async (feedbackId) => {
-  try {
-    const feedback = await feedbackRepo.findById(feedbackId);
-    if (!feedback) {
-      throw ApiError.notFound("Feedback not found");
-    }
+// export const deleteFeedback = async (feedbackId) => {
+//   try {
+//     const feedback = await feedbackRepo.findById(feedbackId);
+//     if (!feedback) {
+//       throw ApiError.notFound("Feedback not found");
+//     }
 
-    // Delete from cloudinary if attachment exists
-    if (feedback.attachmentPublicId) {
-      try {
-        const cloudinary = (await import("../../config/cloud.js")).default;
-        await cloudinary.uploader.destroy(feedback.attachmentPublicId);
-      } catch (cloudError) {
-        console.error("Failed to delete cloudinary file:", cloudError);
-      }
-    }
+//     // Delete from cloudinary if attachment exists
+//     if (feedback.attachmentPublicId) {
+//       try {
+//         const cloudinary = (await import("../../config/cloud.js")).default;
+//         await cloudinary.uploader.destroy(feedback.attachmentPublicId);
+//       } catch (cloudError) {
+//         console.error("Failed to delete cloudinary file:", cloudError);
+//       }
+//     }
 
-    await feedbackRepo.delete(feedbackId);
+//     await feedbackRepo.delete(feedbackId);
 
-    return { message: "Feedback deleted successfully" };
-  } catch (error) {
-    throw error;
+//     return { message: "Feedback deleted successfully" };
+//   } catch (error) {
+//     throw error;
+//   }
+// };
+
+/**
+ * Delete feedback by ID
+ * @param {String} id - Feedback ID
+ * @returns {Object} Success message
+ */
+const deleteFeedback = async (id) => {
+  // Check if feedback exists
+  const feedback = await feedbackRepo.findById(id);
+  
+  if (!feedback) {
+    throw ApiError.notFound("Feedback not found");
   }
+
+  // Delete the feedback
+  await feedbackRepo.findByIdAndDelete(id);
+
+  return {
+    message: "Feedback deleted successfully"
+  };
 };
 
 export default {
