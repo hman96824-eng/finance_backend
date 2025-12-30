@@ -18,6 +18,7 @@ import admindashboard from "../modules/dashboard/route.js"
 import sessionPeriod from "../modules/period/route.js"
 import monthlySummaryRoutes from "../modules/monthlySummary/route.js";
 import feedbackRoutes from "../modules/feedback/routes.js";
+import userDashboardRoutes from "../modules/userDashboard/route.js";
 import express from "express";
 
 const app = express();
@@ -45,6 +46,7 @@ export default (app) => {
   apiRoute.use("/sessionperiod", sessionPeriod)
   apiRoute.use("/summary", monthlySummaryRoutes)
   apiRoute.use("/feedback", feedbackRoutes)
+  apiRoute.use("/user-dashboard", userDashboardRoutes)
 
   app.use("/api/v1", apiRoute);
 };
