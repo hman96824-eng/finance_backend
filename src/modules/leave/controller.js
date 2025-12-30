@@ -118,6 +118,38 @@ const LeaveController = {
         } catch (err) {
             next(err);
         }
+    },
+
+    getAllDeletedLeaves: async (req, res, next) => {
+        try {
+            const { page, limit, search } = req.query;
+            const data = await LeaveService.getAllDeletedLeaves(page, limit, search);
+
+            return successResponse(res, data, "Deleted leaves retrieved successfully");
+        } catch (err) {
+            next(err);
+        }
+    },
+
+    deleteAllLeave: async (req, res, next) => {
+        try {
+            const ids = req.body.ids || req.body;
+            const userEmail = req.user.email;
+            const userRole = req.user.role;
+            
+            if (!Array.isArray(ids) || ids.length === 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Please provide an array of leave IDs"
+                });
+            }
+
+            const data = await LeaveService.deleteLeave(ids, userEmail, userRole);
+
+            return successResponse(res, data, "Multiple leaves deleted successfully");
+        } catch (err) {
+            next(err);
+        }
     }
 
 };

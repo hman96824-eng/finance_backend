@@ -16,4 +16,10 @@ router.get("/:leaveId", middleware.authenticate, LeaveController.getLeaveById);
 // Users can delete their own leaves, admins can delete any leave
 router.delete("/delete", middleware.authenticate, LeaveController.deleteLeave);
 
+// Get all deleted leaves (admin only)
+router.get("/deleted", middleware.authenticate, middleware.checkAdmin, LeaveController.getAllDeletedLeaves);
+
+// Delete multiple leaves at once
+router.delete("/delete-many", middleware.authenticate, LeaveController.deleteAllLeave);
+
 export default router;

@@ -525,6 +525,51 @@ const LeaveService = {
       if (err instanceof AppError) throw err;
       throw new AppError("Failed to delete leave(s)", 500);
     }
+  },
+
+  // ======================================
+  // GET ALL DELETED LEAVES (SOFT DELETED)
+  // ======================================
+  getAllDeletedLeaves: async (page = 1, limit = 10, search = "") => {
+    try {
+      const skip = (Number(page) - 1) * Number(limit);
+      const query = { isDeleted: true }; // Assuming soft delete with isDeleted flag
+
+      if (search) {
+        const employees = await EmployeeModel.find({
+          $or: [
+            { name: { $regex: search, $options: "i" } },
+            { email: { $regex: search, $options: "i" } },
+            { employeeCode: { $regex: search, $options: "i" } }
+          ]
+        }).select("_id");
+
+        const employeeIds = employees.map(emp => emp._id);
+        query.employeeId = { $in: employeeIds };
+      }
+
+      const total = await LeaveModel.countDocuments(query);
+      const deletedLeaves = await LeaveModel.find(query)
+        .populate("employeeId", "name email phone cnic employeeCode employeeType designation department")
+        .populate("leaves.createdBy", "name")
+        .populate("leaves.approvedBy", "name")
+        .populate("leaves.noteBy", "name")
+        .sort({ deletedAt: -1 }) // Sort by deletion date
+        .skip(skip)
+        .limit(Number(limit));
+
+      return {
+        data: deletedLeaves,
+        pagination: {
+          total,
+          currentPage: Number(page),
+          totalPages: Math.ceil(total / Number(limit)),
+          pageSize: Number(limit),
+        }
+      };
+    } catch (err) {
+      throw new AppError("Failed to fetch deleted leaves", 500);
+    }
   }
 };
 
