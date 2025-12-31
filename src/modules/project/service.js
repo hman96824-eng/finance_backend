@@ -274,11 +274,12 @@ const ProService = {
           }, 0);
         }, 0);
 
-        const budget = Number(proj.budget) || 0;
+        const budget = Number(proj.budget || proj.budgetPKR || 0);
         const pendingAmount = Math.max(budget - totalPaid, 0);
 
         // Persist totals back to DB (keeps DB consistent with bank payments)
         await Project.findByIdAndUpdate(proj._id, {
+          budget,
           totalPaid,
           pendingAmount
         }, { new: true });
@@ -335,11 +336,12 @@ const ProService = {
         }, 0);
       }, 0);
 
-      const budget = Number(project.budget) || 0;
+      const budget = Number(project.budget || project.budgetPKR || 0);
       const pendingAmount = Math.max(budget - totalPaid, 0);
 
       // Persist totals back to DB
       await Project.findByIdAndUpdate(id, {
+        budget,
         totalPaid,
         pendingAmount
       }, { new: true });
@@ -384,58 +386,36 @@ const ProService = {
       if (startDate) existingProject.startDate = startDate;
       if (endDate) existingProject.endDate = endDate;
       if (status) existingProject.status = status;
-      if (budget) existingProject.budget = budget;
       if (overrideReason) existingProject.overrideReason = overrideReason;
 
-      // 🏦 2️⃣ Process new or updated payments (if provided)
-      if (Array.isArray(payments) && payments.length > 0) {
-        for (const payment of payments) {
-          const { bankName, accountTitle, accountNumber, ibanNumber, amount } =
-            payment;
-          if (!amount || amount <= 0) continue;
+      // 🧩 Align budget logic with addProject
+      const providedBudgetUSD = typeof data?.budgetUSD !== "undefined" ? Number(data.budgetUSD) : undefined;
 
-          const normalizedBank = {
-            bankName: bankName?.trim().toLowerCase(),
-            accountTitle: accountTitle?.trim().toLowerCase(),
-            accountNumber: accountNumber?.trim(),
-            ibanNumber: ibanNumber?.trim().toUpperCase(),
-          };
+      if (typeof providedBudgetUSD !== "undefined" && !Number.isNaN(providedBudgetUSD) && providedBudgetUSD > 0) {
+        existingProject.budgetUSD = providedBudgetUSD;
+        const converted = await convertUSDToPKR(providedBudgetUSD);
+        existingProject.budgetPKR = Number(converted) || 0;
+        existingProject.budget = existingProject.budgetPKR;
+      } else if (typeof budget !== "undefined") {
+        const safeBudget = Number(budget) || 0;
+        existingProject.budget = safeBudget;
+        existingProject.budgetPKR = safeBudget;
+        // If budget is provided as PKR, budgetUSD is set to whatever is passed or 0
+        existingProject.budgetUSD = data.budgetUSD || 0;
+      }
 
-          // 🔍 Find existing bank by accountNumber + IBAN
-          let bank = await Bank.findOne({
-            accountNumber: normalizedBank.accountNumber,
-            ibanNumber: normalizedBank.ibanNumber,
-          });
-
-          // 🏦 Create new bank if not found
-          if (!bank)
-            throw ApiError.badRequest(
-              "Bank not found for the provided details"
-            );
-
-          // 💰 Add this new payment
-          bank.paymentHistory.push({
-            project: projectId,
-            amount,
-            type: "credit",
-            note: "Updated project payment",
-          });
-          await bank.save();
-
-          // 🔗 Link this bank to the project if not already linked
-          if (!existingProject.banks.includes(bank._id)) {
-            existingProject.banks.push(bank._id);
-          }
-        }
+      // 🏦 2️⃣ Process banks (if provided)
+      if (Array.isArray(data.banks)) {
+        existingProject.banks = data.banks;
       }
 
       // 💵 3️⃣ Recalculate totals
       const banks = await Bank.find({ _id: { $in: existingProject.banks } });
       const totalPaid = banks.reduce((sum, bank) => {
-        const projectPayments = bank.paymentHistory.filter(
-          (tx) => tx.project.toString() === projectId.toString()
+        const projectPayments = (bank.paymentHistory || []).filter(
+          (tx) => tx && tx.project && tx.project.toString() === projectId.toString()
         );
-        return sum + projectPayments.reduce((a, tx) => a + tx.amount, 0);
+        return sum + projectPayments.reduce((a, tx) => a + (Number(tx.amount) || 0), 0);
       }, 0);
 
       existingProject.totalPaid = totalPaid;
