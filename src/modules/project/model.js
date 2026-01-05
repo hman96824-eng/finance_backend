@@ -41,6 +41,7 @@ const ProjectSchema = new mongoose.Schema(
 
     // auto-calculated PKR
     budgetPKR: { type: Number, default: 0 },
+    budget: { type: Number, default: 0 },
     advanceAmount: { type: Number, default: 0 },
     totalPaid: { type: Number, default: 0 },
     pendingAmount: { type: Number, default: 0 },
