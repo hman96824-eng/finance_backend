@@ -100,6 +100,14 @@ const BankController = {
       next(err);
     }
   },
+  getDashboardStats: async (req, res, next) => {
+    try {
+      const stats = await BankService.getBankDashboardStats();
+      return successResponse(res, stats, "Dashboard stats fetched successfully");
+    } catch (err) {
+      next(err);
+    }
+  },
 
 };
 

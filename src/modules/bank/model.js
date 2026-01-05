@@ -33,16 +33,34 @@ const BankSchema = new mongoose.Schema(
 // Unique constraint - global uniqueness on account number
 BankSchema.index({ accountNumber: 1 }, { unique: true, sparse: true });
 
-// Auto-update balance on save
+// Auto-update balance on save (ONLY when paymentHistory is modified)
 BankSchema.pre("save", function (next) {
   if (this.isNew) {
     this.balance = Number(this.balance || 0);
-  } else {
-    const latest = this.paymentHistory[this.paymentHistory.length - 1];
-    if (latest) {
-      this.balance =
-        Number(this.balance || 0) +
-        (latest.type === "credit" ? Number(latest.amount || 0) : -Number(latest.amount || 0));
+  } else if (this.isModified("paymentHistory")) {
+    const ph = this.paymentHistory;
+    if (ph.length > 0) {
+      // Find entries that were added in this session
+      // Since we usually push to the end, we can compare with original if using a session
+      // However, a safer way is to always recalculate balance if history changed, 
+      // or just trust the service layer which already updates balance explicitly.
+
+      // DECISION: Service layer already handles balance logic explicitly. 
+      // We will keep this hook as a fallback but ONLY for new entries.
+      // Better: Recalculate from scratch to be 100% safe if history modified.
+      let total = 0;
+      ph.forEach(p => {
+        total += (p.type === "credit" ? Number(p.amount || 0) : -Number(p.amount || 0));
+      });
+      // Note: This might overwrite manual balance adjustments if we don't have all history.
+      // Given the current state, let's just ENSURE we don't double count.
+
+      // If the service layer ALREADY updated the balance, this hook might overwrite it.
+      // So we check if balance was NOT already modified.
+      if (!this.isModified("balance")) {
+        const latest = ph[ph.length - 1];
+        this.balance = (Number(this.balance) || 0) + (latest.type === "credit" ? Number(latest.amount) : -Number(latest.amount));
+      }
     }
   }
   next();

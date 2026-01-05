@@ -13,6 +13,7 @@ router.use(Middleware.authenticate);
 router
   .post("/create", Middleware.checkAdmin, validate(validation.bankSchema), BankController.createBank)
   .get("/all", BankController.getAllBanks)
+  .get("/dashboard-stats", BankController.getDashboardStats)
   .get("/:id", BankController.getBankById)
   .put("/update/:id", Middleware.checkAdmin, BankController.updateBank)
   .delete("/delete/:id", Middleware.checkAdmin, BankController.deleteBank)

@@ -1,6 +1,7 @@
 import axios from "axios";
 import Project from "./model.js";
 import Bank from "../bank/model.js";
+import Transaction from "../transaction/model.js";
 import ApiError from "../../utils/ApiError.js";
 import Repository from "../../utils/repository.js";
 
@@ -66,7 +67,7 @@ const ProService = {
         projectName,
         projectType,
         projectDetails,
-        clientName,
+        platform,
         projectManager,
         teamMembers,
         startDate,
@@ -114,7 +115,7 @@ const ProService = {
         projectID,
         projectType,
         projectDetails,
-        clientName,
+        platform,
         projectManager,
         teamMembers,
         startDate,
@@ -130,42 +131,62 @@ const ProService = {
         bankPayments: []
       });
 
-      // Process each initial payment, create or update banks, and add bankPayments entry
+      // 🏦 Process each initial payment, create or update banks, and add bankPayments entry
       for (const payment of safePayments) {
-        const { bankName, accountTitle, accountNumber, ibanNumber, amount, note } = payment || {};
-
-        const normalizedBank = {
-          bankName: bankName ? String(bankName).trim() : undefined,
-          accountTitle: accountTitle ? String(accountTitle).trim() : undefined,
-          accountNumber: accountNumber ? String(accountNumber).trim() : undefined,
-          ibanNumber: ibanNumber ? String(ibanNumber).trim().toUpperCase() : undefined
-        };
-
-        const findQuery = {};
-        if (normalizedBank.accountNumber) findQuery.accountNumber = normalizedBank.accountNumber;
-        if (normalizedBank.ibanNumber) findQuery.ibanNumber = normalizedBank.ibanNumber;
+        const { bankName, accountTitle, accountNumber, ibanNumber, amount, note, bankId } = payment || {};
 
         let bank = null;
-        if (Object.keys(findQuery).length > 0) {
-          bank = await Bank.findOne(findQuery);
+
+        // 🔍 Priority 1: Direct Bank ID
+        if (bankId) {
+          bank = await Bank.findById(bankId);
         }
 
+        // 🔍 Priority 2: Account Number / IBAN
         if (!bank) {
+          const findQuery = {};
+          if (accountNumber) findQuery.accountNumber = accountNumber?.trim();
+          if (ibanNumber) findQuery.ibanNumber = ibanNumber?.trim().toUpperCase();
+
+          if (Object.keys(findQuery).length > 0) {
+            bank = await Bank.findOne(findQuery);
+          }
+        }
+
+        // 🏦 Create new bank if still not found (Legacy compatibility)
+        if (!bank && (bankName || accountTitle)) {
           bank = await Bank.create({
-            bankName: normalizedBank.bankName || "unknown",
-            accountTitle: normalizedBank.accountTitle || "",
-            accountNumber: normalizedBank.accountNumber || "",
-            ibanNumber: normalizedBank.ibanNumber || "",
-            totalBankBalance: 0,
+            bankName: bankName || "Unknown Bank",
+            accountTitle: accountTitle || "Unknown Account",
+            accountNumber: accountNumber || `AUTO-${Date.now()}`,
+            ibanNumber: ibanNumber || "",
+            balance: 0,
             paymentHistory: [],
-            // createdBy field is required; if you have a current user context pass it in. For now leave it empty if not known.
           });
         }
 
+        if (!bank) continue;
+
         const amt = Number(amount) || 0;
         if (amt > 0) {
-          // add payment entry to bank
-          bank.paymentHistory = Array.isArray(bank.paymentHistory) ? bank.paymentHistory : [];
+          const balanceBefore = Number(bank.balance) || 0;
+          const balanceAfter = balanceBefore + amt;
+
+          // 📝 Create Transaction Record
+          await Transaction.create({
+            projectId: project._id,
+            clientId: project.clientId,
+            bankId: bank._id,
+            transactionType: "credit",
+            amount: amt,
+            balanceBefore,
+            balanceAfter,
+            description: note || `Initial project payment for ${projectName}`,
+            transactionDate: new Date(),
+          });
+
+          // 🏦 Update Bank balance and history
+          bank.balance = balanceAfter;
           bank.paymentHistory.push({
             project: project._id,
             amount: amt,
@@ -173,11 +194,9 @@ const ProService = {
             note: note || "Initial project payment",
             date: new Date()
           });
-          bank.totalBankBalance = (Number(bank.totalBankBalance) || 0) + amt;
           await bank.save();
 
-          // add bankPayments entry on project
-          project.bankPayments = Array.isArray(project.bankPayments) ? project.bankPayments : [];
+          // 🔗 add bankPayments entry on project
           project.bankPayments.push({
             bank: bank._id,
             amount: amt,
@@ -227,7 +246,7 @@ const ProService = {
       if (search) {
         query.$or = [
           { projectName: { $regex: search, $options: "i" } },
-          { clientName: { $regex: search, $options: "i" } },
+          { platform: { $regex: search, $options: "i" } },
           { projectID: { $regex: search, $options: "i" } }
         ];
       }
@@ -364,7 +383,7 @@ const ProService = {
       const {
         projectName,
         projectDetails,
-        clientName,
+        platform,
         projectManager,
         teamMembers,
         startDate,
@@ -378,47 +397,105 @@ const ProService = {
       // 🧩 1️⃣ Update basic project fields
       if (projectName) existingProject.projectName = projectName;
       if (projectDetails) existingProject.projectDetails = projectDetails;
-      if (clientName) existingProject.clientName = clientName;
+      if (platform) existingProject.platform = platform;
       if (projectManager) existingProject.projectManager = projectManager;
       if (teamMembers) existingProject.teamMembers = teamMembers;
       if (startDate) existingProject.startDate = startDate;
       if (endDate) existingProject.endDate = endDate;
       if (status) existingProject.status = status;
-      if (budget) existingProject.budget = budget;
+      
+      // 🔧 Handle budget fields (support both budget and budgetUSD for compatibility)
+      if (budget !== undefined) {
+        existingProject.budgetUSD = Number(budget) || 0;
+        // Auto-calculate PKR if conversion rate is available
+        try {
+          const pkrAmount = await convertUSDToPKR(existingProject.budgetUSD);
+          existingProject.budgetPKR = pkrAmount;
+        } catch (error) {
+          console.warn("Currency conversion failed, keeping existing PKR value");
+        }
+      }
+      if (data.budgetUSD !== undefined) {
+        existingProject.budgetUSD = Number(data.budgetUSD) || 0;
+        try {
+          const pkrAmount = await convertUSDToPKR(existingProject.budgetUSD);
+          existingProject.budgetPKR = pkrAmount;
+        } catch (error) {
+          console.warn("Currency conversion failed, keeping existing PKR value");
+        }
+      }
+      
       if (overrideReason) existingProject.overrideReason = overrideReason;
 
       // 🏦 2️⃣ Process new or updated payments (if provided)
       if (Array.isArray(payments) && payments.length > 0) {
         for (const payment of payments) {
-          const { bankName, accountTitle, accountNumber, ibanNumber, amount } =
+          const { bankName, accountTitle, accountNumber, ibanNumber, amount, bankId, note } =
             payment;
           if (!amount || amount <= 0) continue;
 
-          const normalizedBank = {
-            bankName: bankName?.trim().toLowerCase(),
-            accountTitle: accountTitle?.trim().toLowerCase(),
-            accountNumber: accountNumber?.trim(),
-            ibanNumber: ibanNumber?.trim().toUpperCase(),
-          };
+          let bank = null;
 
-          // 🔍 Find existing bank by accountNumber + IBAN
-          let bank = await Bank.findOne({
-            accountNumber: normalizedBank.accountNumber,
-            ibanNumber: normalizedBank.ibanNumber,
+          // 🔍 Priority 1: Direct Bank ID
+          if (bankId) {
+            bank = await Bank.findById(bankId);
+          }
+
+          // 🔍 Priority 2: Account Number / IBAN
+          if (!bank) {
+            const normalizedBank = {
+              accountNumber: accountNumber?.trim(),
+              ibanNumber: ibanNumber?.trim().toUpperCase(),
+            };
+            if (normalizedBank.accountNumber || normalizedBank.ibanNumber) {
+              bank = await Bank.findOne({
+                $or: [
+                  { accountNumber: normalizedBank.accountNumber },
+                  { ibanNumber: normalizedBank.ibanNumber },
+                ].filter(q => q.accountNumber || q.ibanNumber),
+              });
+            }
+          }
+
+          // 🏦 Create Bank if not found (Legacy compatibility)
+          if (!bank && (bankName || accountTitle)) {
+            bank = await Bank.create({
+              bankName: bankName || "Unknown Bank",
+              accountTitle: accountTitle || "Unknown Account",
+              accountNumber: accountNumber || `AUTO-${Date.now()}`,
+              ibanNumber: ibanNumber || "",
+              balance: 0,
+              paymentHistory: [],
+            });
+          }
+
+          if (!bank) continue;
+
+          const amt = Number(amount);
+          const balanceBefore = Number(bank.balance) || 0;
+          const balanceAfter = balanceBefore + amt;
+
+          // 📝 Create Transaction Record
+          await Transaction.create({
+            projectId: existingProject._id,
+            clientId: existingProject.clientId,
+            bankId: bank._id,
+            transactionType: "credit",
+            amount: amt,
+            balanceBefore,
+            balanceAfter,
+            description: note || "Updated project payment",
+            transactionDate: new Date(),
           });
 
-          // 🏦 Create new bank if not found
-          if (!bank)
-            throw ApiError.badRequest(
-              "Bank not found for the provided details"
-            );
-
-          // 💰 Add this new payment
+          // 🏦 Update Bank balance and history
+          bank.balance = balanceAfter;
           bank.paymentHistory.push({
             project: projectId,
-            amount,
+            amount: amt,
             type: "credit",
-            note: "Updated project payment",
+            note: note || "Updated project payment",
+            date: new Date(),
           });
           await bank.save();
 
@@ -426,6 +503,20 @@ const ProService = {
           if (!existingProject.banks.includes(bank._id)) {
             existingProject.banks.push(bank._id);
           }
+
+          // 📝 Also update project's bankPayments snapshot
+          existingProject.bankPayments.push({
+            bank: bank._id,
+            amount: amt,
+            type: "credit",
+            note: note || "Updated project payment",
+            date: new Date(),
+            bankSnapshot: {
+              bankName: bank.bankName,
+              accountNumber: bank.accountNumber,
+              accountTitle: bank.accountTitle
+            }
+          });
         }
       }
 
@@ -439,7 +530,7 @@ const ProService = {
       }, 0);
 
       existingProject.totalPaid = totalPaid;
-      existingProject.pendingAmount = existingProject.budget - totalPaid;
+      existingProject.pendingAmount = existingProject.budgetUSD - totalPaid;
 
       // 💾 4️⃣ Save updated project
       await existingProject.save();
@@ -503,7 +594,7 @@ const ProService = {
       if (search) {
         query.$or = [
           { projectName: { $regex: search, $options: "i" } },
-          { clientName: { $regex: search, $options: "i" } },
+          { platform: { $regex: search, $options: "i" } },
           { projectManager: { $regex: search, $options: "i" } },
         ];
       }
