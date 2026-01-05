@@ -9,6 +9,7 @@ const PaymentSchema = new mongoose.Schema(
     type: { type: String, enum: ["credit", "debit", "commission"], default: "credit" },
     note: { type: String },
     date: { type: Date, default: Date.now },
+    note: { type: String },
   },
   { _id: false }
 );

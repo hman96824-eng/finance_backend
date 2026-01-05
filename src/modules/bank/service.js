@@ -176,6 +176,7 @@ class BankService {
           type,
           note: note || "",
           date: new Date(),
+          note: note || "",
         };
 
         bank.paymentHistory.push(paymentEntry);
