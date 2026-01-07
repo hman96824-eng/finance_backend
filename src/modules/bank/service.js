@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import BankModel from "./model.js";
 import ProjectModel from "../project/model.js";
+import TransactionModel from "../transaction/model.js";
 import ApiError from "../../utils/ApiError.js";
 import repository from "../../utils/repository.js";
 import messages from "../../constants/messages.js";
@@ -210,6 +211,24 @@ class BankService {
           );
         }
 
+        const balanceBefore = Number(bank.balance) || 0;
+        const balanceAfter = balanceBefore + paymentAmt;
+
+        // 📝 Create Transaction Record
+        await TransactionModel.create({
+          projectId: projectDoc._id,
+          bankId: bank._id,
+          transactionType: type, // "credit" or "debit"
+          amount: amt,
+          balanceBefore,
+          balanceAfter,
+          description: note || `Payment for project: ${projectDoc.projectName}`,
+          transactionDate: new Date(),
+        });
+
+        // 🏦 Update Bank balance
+        bank.balance = balanceAfter;
+
         await bank.save({ session });
         await projectDoc.save({ session });
       });
@@ -304,6 +323,22 @@ class BankService {
       throw new ApiError(400, "Bank does not have sufficient balance");
     }
 
+    const balanceBefore = Number(bank.balance) || 0;
+    const balanceAfter = balanceBefore - amount;
+
+
+    // 📝 Create Transaction Record
+    await TransactionModel.create({
+      projectId: project._id,
+      bankId: bank._id,
+      transactionType: "debit",
+      amount: amount,
+      balanceBefore,
+      balanceAfter,
+      description: `Commission payment to ${holder.holderName} for project ${project.projectName}`,
+      transactionDate: new Date(),
+    });
+
     bank.paymentHistory.push({
       commissionHolderId,
       projectId: project._id,
@@ -314,8 +349,9 @@ class BankService {
       date: new Date(),
     });
 
-    // 6️⃣ UPDATE HOLDER
+    // 6️⃣ UPDATE HOLDER & BANK
     holder.paidAmount = paidAmount + amount;
+    bank.balance = balanceAfter;
 
     // 7️⃣ SAVE BOTH
     await bank.save();
@@ -333,9 +369,67 @@ class BankService {
       paidAmount: holder.paidAmount,
       message: "Commission payment completed successfully",
     };
+  }
+  static getBankDashboardStats = async () => {
+    // 1️⃣ Calculate Total Balance from all banks
+    const totalBalanceResult = await BankModel.aggregate([
+      { $match: { status: "Active" } },
+      { $group: { _id: null, totalBalance: { $sum: "$balance" } } }
+    ]);
+    const totalBalance = totalBalanceResult[0]?.totalBalance || 0;
+
+    // 2️⃣ Get Banks with their individual balances
+    const banks = await BankModel.find({ status: "Active" }).select("bankName accountTitle balance accountNumber iban");
+
+    // 3️⃣ Monthly Trends (Credit transactions for the last 3 months)
+    const threeMonthsAgo = new Date();
+    threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 2);
+    threeMonthsAgo.setDate(1); // Start of the month
+    threeMonthsAgo.setHours(0, 0, 0, 0);
+
+    const monthlyTrends = await TransactionModel.aggregate([
+      {
+        $match: {
+          transactionType: "credit",
+          isDeleted: false,
+          transactionDate: { $gte: threeMonthsAgo }
+        }
+      },
+      {
+        $group: {
+          _id: {
+            year: { $year: "$transactionDate" },
+            month: { $month: "$transactionDate" }
+          },
+          totalIncome: { $sum: "$amount" }
+        }
+      },
+      { $sort: { "_id.year": 1, "_id.month": 1 } }
+    ]);
+
+    // Format monthly trends for frontend
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const now = new Date();
+    const formattedTrends = [];
+
+    for (let i = 2; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const year = d.getFullYear();
+      const month = d.getMonth() + 1; // 1-indexed
+
+      const trend = monthlyTrends.find(t => t._id.year === year && t._id.month === month);
+      formattedTrends.push({
+        month: monthNames[d.getMonth()],
+        totalIncome: trend?.totalIncome || 0,
+      });
+    }
+
+    return {
+      totalBalance,
+      banks,
+      monthlyTrends: formattedTrends
+    };
   };
-
-
 
 }
 

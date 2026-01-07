@@ -93,6 +93,7 @@ const EmpController = {
   },
 
   softDeleteEmployee: async (req, res, next) => {
+    
     try {
       const deleted = await EmployeeService.softDeleteEmployee(req.params.id);
       res.status(200).json(ApiError.ok("Employee soft deleted", deleted));

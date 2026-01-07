@@ -185,7 +185,7 @@ export const messages = {
   ASSET_CREATED: "Asset created successfully",
   ASSET_UPDATED: "Asset updated successfully",
   ASSET_DELETED: "Asset deleted successfully",
-
+  PLEASE_ADD_AS_EMPLOYEE: "Please first add the user as an employee",
 };
 
 export default messages;

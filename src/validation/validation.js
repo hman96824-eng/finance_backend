@@ -268,6 +268,7 @@ export const assetExpenseSchema = z.object({
   purchaseBy: z.string().trim().min(1, { message: "Purchase by field is required" }),
   purchaseDate: z.string().min(1, { message: "Purchase date is required" }),
   bank: z.string().regex(/^[a-f\d]{24}$/i, { message: "Invalid bank ID" }),
+  category: z.string().trim().optional(),
 });
 
 // Asset Expense update validation (all fields optional)
@@ -278,6 +279,7 @@ export const assetExpenseUpdateSchema = z.object({
   purchaseBy: z.string().trim().min(1, { message: "Purchase by field is required" }).optional(),
   purchaseDate: z.string().min(1, { message: "Purchase date is required" }).optional(),
   bank: z.string().regex(/^[a-f\d]{24}$/i, { message: "Invalid bank ID" }).optional(),
+  category: z.string().trim().optional(),
 });
 
 // Billing Expense validation schema
@@ -324,9 +326,7 @@ export const donationExpenseUpdateSchema = z.object({
 // ===============================
 export const generalExpenseSchema = z.object({
   title: z.string().trim().min(1, { message: "Expense title is required" }),
-  category: z.enum(["office", "utility", "travel", "food", "maintenance", "misc"], {
-    message: "Invalid category"
-  }),
+  category: z.string().trim().min(1, { message: "Category is required" }),
   purchaseBy: z.string().trim().min(1, { message: "Purchase by field is required" }),
   amount: z.number().positive({ message: "Amount must be positive" }),
   description: z.string().trim().optional(),
@@ -336,9 +336,7 @@ export const generalExpenseSchema = z.object({
 
 export const generalExpenseUpdateSchema = z.object({
   title: z.string().trim().min(1, { message: "Expense title is required" }).optional(),
-  category: z.enum(["office", "utility", "travel", "food", "maintenance", "misc"], {
-    message: "Invalid category"
-  }).optional(),
+  category: z.string().trim().min(1, { message: "Category is required" }).optional(),
   purchaseBy: z.string().trim().min(1, { message: "Purchase by field is required" }).optional(),
   amount: z.number().positive({ message: "Amount must be positive" }).optional(),
   description: z.string().trim().optional(),

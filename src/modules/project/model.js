@@ -23,7 +23,7 @@ const ProjectSchema = new mongoose.Schema(
     projectID: { type: String, required: true, unique: true, trim: true },
     projectType: { type: String, trim: true },
     projectDetails: { type: String, trim: true },
-    clientName: { type: String, trim: true },
+    platform: { type: String, trim: true },
     projectManager: { type: String, trim: true },
     teamMembers: { type: [String], default: [] },
     startDate: { type: Date },
