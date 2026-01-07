@@ -124,7 +124,11 @@ const LeaveService = {
     let finalEmployeeId = employeeId;
 
     if (!finalEmployeeId && userEmail) {
-      const employee = await EmployeeModel.findOne({ email: userEmail });
+      console.log(`[LeaveService] Finding employee for email: "${userEmail}"`);
+      const escapedEmail = userEmail.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const employee = await EmployeeModel.findOne({
+        email: { $regex: new RegExp(`^${escapedEmail}$`, "i") }
+      });
       if (!employee) {
         throw new AppError(
           `Employee record not found for email: ${userEmail}. Please contact admin to create your employee profile first.`,
@@ -321,7 +325,11 @@ const LeaveService = {
 
       // If no employeeId provided, find by user's email
       if (!finalEmployeeId && userEmail) {
-        const employee = await EmployeeModel.findOne({ email: userEmail });
+        console.log(`[LeaveService] Finding employee for email in getMyLeaveInfo: "${userEmail}"`);
+        const escapedEmail = userEmail.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const employee = await EmployeeModel.findOne({
+          email: { $regex: new RegExp(`^${escapedEmail}$`, "i") }
+        });
         console.log('👨‍💼 Found employee by email:', employee ? 'Yes' : 'No');
 
         if (!employee) {
@@ -461,7 +469,7 @@ const LeaveService = {
           }
         }
 
-         for (const leave of doc.leaves) {
+        for (const leave of doc.leaves) {
           if (leave.attachment) {
             if (typeof leave.attachment === 'object' && leave.attachment.publicId) {
               try {

@@ -11,8 +11,18 @@ class UserDashboardService {
   static getUserDashboard = async (userEmail) => {
     try {
       // Find employee by email
-      const employee = await EmployeeModel.findOne({ email: userEmail });
-      
+      if (!userEmail) {
+        throw ApiError.badRequest("User email is required to fetch dashboard data.");
+      }
+
+      console.log(`[UserDashboard] Fetching dashboard for email: "${userEmail}"`);
+
+      // Find employee by email, escaping special characters for regex
+      const escapedEmail = userEmail.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const employee = await EmployeeModel.findOne({
+        email: { $regex: new RegExp(`^${escapedEmail}$`, "i") }
+      });
+
       if (!employee) {
         throw ApiError.notFound(
           "Employee record not found. Please contact admin to create your employee profile."
@@ -41,14 +51,14 @@ class UserDashboardService {
       const pendingLeaves = leaveData.leaves?.filter(l => l.status === "PENDING") || [];
       const approvedLeaves = leaveData.leaves?.filter(l => l.status === "APPROVED") || [];
       const rejectedLeaves = leaveData.leaves?.filter(l => l.status === "REJECTED") || [];
-      
+
       const totalPendingDays = pendingLeaves.reduce((sum, l) => sum + l.totalDays, 0);
       const totalApprovedDays = approvedLeaves.reduce((sum, l) => sum + l.totalDays, 0);
 
       // Fetch Salary Data
-      const salaryData = await SalaryExpense.findOne({ 
+      const salaryData = await SalaryExpense.findOne({
         employeeId: employee.employeeCode,
-        isDeleted: false 
+        isDeleted: false
       });
 
       // Calculate salary statistics
@@ -61,16 +71,16 @@ class UserDashboardService {
 
       if (salaryData && salaryData.salaries && salaryData.salaries.length > 0) {
         salaryStats.totalSalaries = salaryData.salaries.length;
-        
+
         // Get latest salary (last in array)
         salaryStats.latestSalary = salaryData.salaries[salaryData.salaries.length - 1];
-        
+
         // Calculate total earnings
         salaryStats.totalEarnings = salaryData.salaries.reduce(
-          (sum, s) => sum + (s.netSalary || 0), 
+          (sum, s) => sum + (s.netSalary || 0),
           0
         );
-        
+
         // Calculate average salary
         salaryStats.averageSalary = Math.round(
           salaryStats.totalEarnings / salaryStats.totalSalaries
@@ -78,8 +88,8 @@ class UserDashboardService {
       }
 
       // Fetch Feedback Data (sent by this user)
-      const feedbacks = await FeedbackModel.find({ 
-        email: userEmail 
+      const feedbacks = await FeedbackModel.find({
+        email: userEmail
       })
         .sort({ createdAt: -1 })
         .select("-__v");
@@ -101,7 +111,7 @@ class UserDashboardService {
           phone: employee.phone,
           status: employee.status,
         },
-        
+
         leave: {
           annualLeaveBalance: leaveData.annualLeaveBalance || 18,
           lastResetYear: leaveData.lastResetYear || new Date().getFullYear(),

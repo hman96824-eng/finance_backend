@@ -50,7 +50,7 @@ const EmployeeSchema = new mongoose.Schema(
   {
     // Basic Info
     name: { type: String, required: true },
-    email: { type: String, required: true, unique: true },
+    email: { type: String, required: true, unique: true, lowercase: true, trim: true },
     role: { type: String, default: "EMPLOYEE" },
     status: { type: String, default: "Active" },
     phone: { type: String, required: true },

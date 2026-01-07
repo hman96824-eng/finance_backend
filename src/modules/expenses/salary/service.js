@@ -12,11 +12,11 @@ const BankRepo = new Repo(Bank);
 class SalaryService {
     static createSalary = async (body) => {
         await validateExpenseDate(body.salaryMonth, "Salary Month", true);
-         // Validate accountingPeriod exists
+        // Validate accountingPeriod exists
         if (!body.accountingPeriod) {
             throw ApiError.badRequest("Accounting period is required");
         }
-       const salaryData = {
+        const salaryData = {
             baseSalary: body.baseSalary,
             allowances: body.allowances || 0,
             deductions: body.deductions || 0,
@@ -128,9 +128,9 @@ class SalaryService {
             }
 
             if (monthString && verboseMonth) {
-                  filterCondition.push({ $eq: ["$$s.salaryMonth", verboseMonth] });
+                filterCondition.push({ $eq: ["$$s.salaryMonth", verboseMonth] });
             }
-        return await SalaryExpense.aggregate([
+            return await SalaryExpense.aggregate([
                 { $match: { isDeleted: false } },
                 {
                     $project: {
@@ -206,28 +206,29 @@ class SalaryService {
     };
 
     static getSalaryByEmployee = async (identifier) => {
-        let employee = await SalaryExpense.findOne({ 
-            employeeId: identifier, 
-            isDeleted: false 
+        let employee = await SalaryExpense.findOne({
+            employeeId: identifier,
+            isDeleted: false
         });
         // If not found by employeeId, search by email
         if (!employee) {
-           const employeeModel = await mongoose.connection.db.collection('employees').findOne({
-                email: { $regex: new RegExp(`^${identifier}$`, 'i') }
+            const escapedIdentifier = identifier.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const employeeModel = await mongoose.connection.db.collection('employees').findOne({
+                email: { $regex: new RegExp(`^${escapedIdentifier}$`, 'i') }
             });
-     
+
             if (employeeModel) {
                 console.log('Found employee model by email:', employeeModel);
                 // Try to match salary by both ObjectId and employeeCode
-                employee = await SalaryExpense.findOne({ 
+                employee = await SalaryExpense.findOne({
                     $or: [
                         { employeeId: employeeModel._id.toString() },
                         { employeeId: employeeModel.employeeCode }
                     ],
-                    isDeleted: false 
+                    isDeleted: false
                 });
-                
-         }
+
+            }
         }
 
         if (!employee) {
@@ -241,22 +242,23 @@ class SalaryService {
     static getMySalaryInfo = async (employeeId, userEmail) => {
         try {
             console.log('🔎 Salary Service: Finding employee with:', { employeeId, userEmail });
-            
+
             let finalEmployeeId = employeeId;
 
             // If no employeeId provided, find by user's email
             if (!finalEmployeeId && userEmail) {
+                const escapedEmail = userEmail.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
                 const employeeModel = await mongoose.connection.db.collection('employees').findOne({
-                    email: { $regex: new RegExp(`^${userEmail}$`, 'i') }
+                    email: { $regex: new RegExp(`^${escapedEmail}$`, 'i') }
                 });
                 console.log('👨‍💼 Found employee by email:', employeeModel ? 'Yes' : 'No');
-                
+
                 if (!employeeModel) {
                     throw ApiError.notFound(
                         `Employee record not found for email: ${userEmail}. Please contact admin to create your employee profile first.`
                     );
                 }
-                
+
                 // Store both ObjectId and employeeCode for flexible matching
                 finalEmployeeId = employeeModel._id.toString();
                 console.log('🆔 Employee found - ID:', finalEmployeeId, 'Code:', employeeModel.employeeCode);
@@ -269,25 +271,26 @@ class SalaryService {
             console.log('🔍 Searching salary with employeeId:', finalEmployeeId);
 
             // Try to find by employeeId (could be ObjectId or Employee Code like EMP-023)
-            let salaryRecord = await SalaryExpense.findOne({ 
-                employeeId: finalEmployeeId, 
-                isDeleted: false 
+            let salaryRecord = await SalaryExpense.findOne({
+                employeeId: finalEmployeeId,
+                isDeleted: false
             });
 
             // If not found and we have email, try with employeeCode as well
             if (!salaryRecord && userEmail) {
+                const escapedEmail = userEmail.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
                 const employeeModel = await mongoose.connection.db.collection('employees').findOne({
-                    email: { $regex: new RegExp(`^${userEmail}$`, 'i') }
+                    email: { $regex: new RegExp(`^${escapedEmail}$`, 'i') }
                 });
-                
+
                 if (employeeModel && employeeModel.employeeCode) {
                     console.log('🔄 Trying with employeeCode:', employeeModel.employeeCode);
-                    salaryRecord = await SalaryExpense.findOne({ 
+                    salaryRecord = await SalaryExpense.findOne({
                         $or: [
                             { employeeId: employeeModel._id.toString() },
                             { employeeId: employeeModel.employeeCode }
                         ],
-                        isDeleted: false 
+                        isDeleted: false
                     });
                 }
             }
@@ -303,7 +306,7 @@ class SalaryService {
             // Calculate total salary info
             const totalSalaries = salaryRecord.salaries.length;
             const latestSalary = salaryRecord.salaries[salaryRecord.salaries.length - 1];
-            
+
             const totalEarnings = salaryRecord.salaries.reduce((sum, s) => sum + (s.netSalary || 0), 0);
 
             console.log('✅ Successfully retrieved salary info');
