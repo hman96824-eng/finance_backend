@@ -22,6 +22,7 @@ import userDashboardRoutes from "../modules/userDashboard/route.js";
 import clientRoutes from "../modules/client/routes.js";
 import transRoutes from "../modules/transaction/routes.js";
 import otherTransRoutes from "../modules/otherTransaction/routes.js";
+import categoryRoutes from "../modules/expenses/category/route.js";
 import express from "express";
 
 const app = express();
@@ -53,6 +54,7 @@ export default (app) => {
   apiRoute.use("/clients", clientRoutes);
   apiRoute.use("/transactions", transRoutes);
   apiRoute.use("/other-transactions", otherTransRoutes);
+  apiRoute.use("/expense-categories", categoryRoutes);
 
   app.use("/api/v1", apiRoute);
 };

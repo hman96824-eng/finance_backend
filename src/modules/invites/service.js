@@ -8,6 +8,7 @@ import { RoleModel } from "../role/model.js";
 import { UserModel } from "../user/model.js";
 import sendEmail from "../../utils/email.js";
 import messages from "../../constants/messages.js";
+import { EmployeeModel } from "../employee/model.js";
 
 const userRepo = new Repository(UserModel);
 const inviteRepo = new Repository(InviteModel);
@@ -63,28 +64,31 @@ export const createInvite = async (name, email, roleName) => {
   const cleanEmail = email.trim().toLowerCase();
 
   const existUser = await userRepo.findOne({ email: cleanEmail });
-  if (existUser) throw ApiError.unauthorized(messages.USER_ALREADY_EXISTS);
+  if (existUser) throw ApiError.badRequest(messages.USER_ALREADY_EXISTS);
 
-  // 🔹 Step 1: Find role by name
+  const checkemployee = await EmployeeModel.findOne({ email: cleanEmail });
+  if (!checkemployee) throw ApiError.badRequest(messages.PLEASE_ADD_AS_EMPLOYEE);
+
   const role = await RoleModel.findOne({ name: roleName });
   if (!role) {
-    throw new Error(`Role '${roleName}' not found`);
+    throw ApiError.badRequest(`Role '${roleName}' not found`);
   }
 
-  // 🔹 Step 2: Check existing invite
   let invite = await inviteRepo.findOne({ email: cleanEmail });
 
   const token = crypto.randomBytes(32).toString("hex");
-  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
   if (invite) {
-    invite.name = name; // ✅ Update name if needed
-    invite.token = token;
-    invite.expiresAt = expiresAt;
-    invite.invite += 1;
-    invite.role_id = role._id;
-    invite.accepted = "false";
-    invite.status = "pending";
+    Object.assign(invite, {
+      name,
+      token,
+      expiresAt,
+      role_id: role._id,
+      accepted: false,
+      status: "pending",
+      invite: invite.invite + 1,
+    });
     await invite.save();
   } else {
     invite = await inviteRepo.create({
@@ -96,12 +100,13 @@ export const createInvite = async (name, email, roleName) => {
     });
   }
 
-  const { html, plainText } = templates.generateTeamInviteTemplate(
-    invite.token,
-    role.name,
-    email,
-    name
-  );
+  const { html, plainText } =
+    templates.generateTeamInviteTemplate(
+      invite.token,
+      role.name,
+      email,
+      name
+    );
 
   await sendEmail({
     to: email,
@@ -112,22 +117,23 @@ export const createInvite = async (name, email, roleName) => {
 
   return invite;
 };
+
 export const registerUser = async (inviteToken, userData) => {
   const { phone, password, confirmPassword } = userData;
   if (!password || password !== confirmPassword)
-    throw ApiError.unauthorized(messages.PASSWORD_INVALID);
+    throw ApiError.badRequest(messages.PASSWORD_INVALID);
 
   const invite = await inviteRepo.findOne({ token: inviteToken });
-  if (!invite) throw ApiError.unauthorized(messages.TOKEN_INVALID);
+  if (!invite) throw ApiError.badRequest(messages.TOKEN_INVALID);
   if (!invite.expiresAt || invite.expiresAt < new Date())
     throw ApiError.badRequest(messages.TOKEN_EXPIRED);
 
   const role = await roleRepo.findById(invite.role_id);
-  if (!role) throw ApiError.unauthorized(messages.ROLE_NOT_FOUND);
+  if (!role) throw ApiError.badRequest(messages.ROLE_NOT_FOUND);
 
   const existingUser = await userRepo.findOne({ email: invite.email });
   if (existingUser && invite.accepted)
-    throw ApiError.unauthorized(messages.USER_ALREADY_EXISTS);
+    throw ApiError.badRequest(messages.USER_ALREADY_EXISTS);
 
   const hashedPassword = await hashPassword(password);
 

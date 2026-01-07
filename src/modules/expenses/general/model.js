@@ -7,14 +7,6 @@ const GeneralExpenseSchema = new mongoose.Schema({
     },
     category: {
         type: String,
-        enum: [
-            "office",
-            "utility",
-            "travel",
-            "food",
-            "maintenance",
-            "misc"
-        ],
         required: true
     },
     amount: {
