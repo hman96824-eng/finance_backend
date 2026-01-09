@@ -3,6 +3,7 @@ import ApiError from "../../utils/ApiError.js";
 import bcrypt from "bcrypt";
 import Repository from "../../utils/repository.js"; // ⬅️ make sure this path is correct
 import moment from "moment";
+import messages from "../../constants/messages.js";
 
 const EmpRepo = new Repository(EmployeeModel);
 // 🔹 Generate Sequential Employee Code
@@ -76,6 +77,13 @@ const EmployeeService = {
   // 🟢 CREATE EMPLOYEE
   createEmployee: async (data, avatarId = null) => {
     try {
+      if (data?.email) {
+        const existingEmployee = await EmployeeModel.findOne({ email: data.email.toLowerCase().trim() });
+        if (existingEmployee) {
+          throw ApiError.badRequest(messages.USER_EXISTS);
+        }
+      }
+
       if (data.password) data.password = await bcrypt.hash(data.password, 10);
 
       const employee = await EmployeeModel.create({
@@ -138,6 +146,14 @@ const EmployeeService = {
       // 2️⃣ Fetch existing employee
       const existingEmployee = await EmployeeModel.findById(id);
       if (!existingEmployee) throw ApiError.notFound("Employee not found");
+
+      // 2.5️⃣ Check if email is being changed and if new email already exists
+      if (data.email && data.email.toLowerCase().trim() !== existingEmployee.email) {
+        const emailExists = await EmployeeModel.findOne({ email: data.email.toLowerCase().trim() });
+        if (emailExists) {
+          throw ApiError.badRequest(messages.USER_EXISTS);
+        }
+      }
 
       // 3️⃣ Get last salary entry
       const lastSalaryEntry = existingEmployee.salary?.at(-1);
