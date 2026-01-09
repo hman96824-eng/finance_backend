@@ -66,7 +66,6 @@ export const resetPassword = z
 
 // ✅ Dynamic Role Validation — checks from DB
 export const inviteUserValidation = z.object({
-  name: z.string().trim().nonempty({ message: "Name is required" }),
   email: z.string().email({ message: "Valid email is required" }),
   role_id: z
     .string()

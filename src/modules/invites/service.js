@@ -60,7 +60,7 @@ export const getAllInvitedUsers = async (acceptedFilter, page = 1, limit = 10, s
     throw ApiError.badRequest(error.message);
   }
 };
-export const createInvite = async (name, email, roleName) => {
+export const createInvite = async (email, roleName) => {
   const cleanEmail = email.trim().toLowerCase();
 
   const existUser = await userRepo.findOne({ email: cleanEmail });
@@ -73,15 +73,13 @@ export const createInvite = async (name, email, roleName) => {
   if (!role) {
     throw ApiError.badRequest(`Role '${roleName}' not found`);
   }
-
   let invite = await inviteRepo.findOne({ email: cleanEmail });
-
   const token = crypto.randomBytes(32).toString("hex");
   const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
   if (invite) {
     Object.assign(invite, {
-      name,
+      name: checkemployee.name,
       token,
       expiresAt,
       role_id: role._id,
@@ -92,22 +90,20 @@ export const createInvite = async (name, email, roleName) => {
     await invite.save();
   } else {
     invite = await inviteRepo.create({
-      name,
+      name: checkemployee.name,
       email: cleanEmail,
       role_id: role._id,
       token,
       expiresAt,
     });
   }
-
   const { html, plainText } =
     templates.generateTeamInviteTemplate(
       invite.token,
       role.name,
       email,
-      name
+      checkemployee.name
     );
-
   await sendEmail({
     to: email,
     subject: `Invitation to join Invextech as ${role.name}`,

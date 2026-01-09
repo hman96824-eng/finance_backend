@@ -16,9 +16,8 @@ export const getAllInvitedUsers = async (req, res, next) => {
 };
 export const sendInvitation = async (req, res) => {
   try {
-    const { name, email, role_id } = req.body;
-
-    const invite = await inviteService.createInvite(name, email, role_id);
+    const {email, role_id } = req.body;
+    const invite = await inviteService.createInvite(email, role_id);
 
     res.status(201).json({
       success: true,
