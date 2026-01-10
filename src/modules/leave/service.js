@@ -168,7 +168,31 @@ const LeaveService = {
       throw new AppError("Maximum 2 leaves allowed per month", 400);
     }
 
-    // VALIDATION 3: Check annual leave balance (18 per year)
+    // VALIDATION 3: Check for overlapping dates (only PENDING and APPROVED)
+    const requestedStart = normalizeDate(startDate);
+    const requestedEnd = normalizeDate(endDate);
+
+    const hasOverlap = leaveRecord.leaves.some(existingLeave => {
+      // Only check PENDING and APPROVED leaves (REJECTED leaves don't count)
+      if (existingLeave.status !== 'PENDING' && existingLeave.status !== 'APPROVED') {
+        return false;
+      }
+
+      const existingStart = normalizeDate(existingLeave.startDate);
+      const existingEnd = normalizeDate(existingLeave.endDate);
+
+      // Check if dates overlap
+      return (requestedStart <= existingEnd && requestedEnd >= existingStart);
+    });
+
+    if (hasOverlap) {
+      throw new AppError(
+        "You have already applied for leave on these dates. Please wait for approval or choose different dates.",
+        400
+      );
+    }
+
+    // VALIDATION 4: Check annual leave balance (18 per year)
     if (leaveRecord.annualLeaveBalance < totalDays) {
       throw new AppError(
         `Insufficient annual leave balance. Available: ${leaveRecord.annualLeaveBalance} days, Requested: ${totalDays} days`,

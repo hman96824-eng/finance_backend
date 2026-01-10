@@ -9,7 +9,7 @@ const LeaveController = {
             const userEmail = req.user.email; // From JWT token
             const isAdminCreating = req.user.role === "ADMIN" || req.user.role === "Admin";
             let attachment = null;
-            
+
             if (req.cloudinaryFile) {
                 // File was uploaded to Cloudinary
                 attachment = {
@@ -29,16 +29,20 @@ const LeaveController = {
                     size: 0
                 };
             }
-            
-            const payload = { 
-                ...req.body, 
+
+            // SECURITY FIX: Remove employeeId from request body to prevent spoofing
+            // Only use the authenticated user's email from JWT token
+            delete req.body.employeeId;
+
+            const payload = {
+                ...req.body,
                 createdBy,
-                userEmail,
+                userEmail, // This will be used to find the employee record
                 isAdminCreating,
-                attachment 
+                attachment
             };
-        const data = await LeaveService.createLeave(payload);
-        console.log('📝 Leave created:', data);
+            const data = await LeaveService.createLeave(payload);
+            console.log('📝 Leave created:', data);
 
             return successResponse(res, data, "Leave request created successfully");
         } catch (err) {
@@ -77,7 +81,7 @@ const LeaveController = {
         try {
             console.log('📥 Received leave info request:', req.query);
             console.log('👤 User from JWT:', req.user);
-            
+
             // Get employeeId or email from query params, or use JWT email as fallback
             const employeeId = req.query.employeeId;
             const emailFromQuery = req.query.email;
@@ -111,7 +115,7 @@ const LeaveController = {
             const ids = req.body.ids || [req.params.leaveId];
             const userEmail = req.user.email;
             const userRole = req.user.role;
-            
+
             const data = await LeaveService.deleteLeave(ids, userEmail, userRole);
 
             return successResponse(res, data, "Leave(s) deleted");
@@ -136,7 +140,7 @@ const LeaveController = {
             const ids = req.body.ids || req.body;
             const userEmail = req.user.email;
             const userRole = req.user.role;
-            
+
             if (!Array.isArray(ids) || ids.length === 0) {
                 return res.status(400).json({
                     success: false,
